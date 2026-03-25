@@ -1072,6 +1072,14 @@ function pintarDet(b){
   else if(tabActual==='obs') content=_tabObs(b);
   else if(tabActual==='adjdoc') content=_tabAdjDoc(b);
   else if(tabActual==='medicacion') content=_tabMedicacion(b);
+  else if(tabActual==='postural') content=_tabPostural(b);
+  else if(tabActual==='curas') content=_tabCuras(b);
+  else if(tabActual==='paniales') content=_tabPaniales(b);
+  else if(tabActual==='contenciones') content=_tabContenciones(b);
+  else if(tabActual==='supervision') content=_tabSupervision(b);
+  else if(tabActual==='dieta') content=_tabDieta(b);
+  else if(tabActual==='enteral') content=_tabEnteral(b);
+  else if(tabActual==='otros_reg') content=_tabOtrosReg(b);
   else{var tobj=ALL_TABS.find(function(t){return t.id===tabActual;});content=_tabBlank(tobj?tobj.lbl:'');}
 
   document.getElementById('view-detalle').innerHTML=
@@ -1960,6 +1968,531 @@ function medGuardarRegistro(bid,pid){
   tabActual='medicacion';
   var b=BD.find(function(x){return x.id===bid;});
   if(b) pintarDet(b);
+}
+
+/* ══════════════════════════════════════════════════════
+   MÓDULOS DE PAUTAS — estructura común reutilizable
+   ══════════════════════════════════════════════════════ */
+
+/* Almacén genérico para todos los módulos de pautas */
+if(!window.PAUTA_DATA) window.PAUTA_DATA={};
+function _pautaGet(bid,mod){
+  if(!PAUTA_DATA[bid]) PAUTA_DATA[bid]={};
+  if(!PAUTA_DATA[bid][mod]) PAUTA_DATA[bid][mod]={pauta:null,registros:[]};
+  return PAUTA_DATA[bid][mod];
+}
+
+/* Helper: cabecera común de módulo */
+function _pautaCabecera(icono,titulo,bid,mod,btnExtra){
+  return '<div class="card-header"><span class="card-title">'+icono+' '+titulo+'</span>'
+    +'<div style="display:flex;gap:8px">'+(btnExtra||'')+'</div></div>';
+}
+
+/* Helper: fila de registro */
+function _pautaRegRow(r,campos){
+  return '<div class="med-reg-row med-reg-ok" style="flex-wrap:wrap;gap:6px">'
+    +'<span style="font-size:13px;font-weight:600;min-width:140px">'+r.fecha_hora+'</span>'
+    +(r.profesional?'<span style="font-size:12px;color:#475569">'+esc(r.profesional)+'</span>':'')
+    +campos
+    +(r.obs?'<span style="font-size:11px;color:#64748b;width:100%">'+esc(r.obs)+'</span>':'')
+    +'<button style="margin-left:auto;font-size:11px;background:none;border:none;color:#dc2626;cursor:pointer" onclick="this.closest(\'.med-reg-row\').remove()">✕</button>'
+    +'</div>';
+}
+
+/* Helper: zona drop de documentos reutilizable */
+function _pautaDocZona(modKey, uid){
+  var key=modKey+'_'+uid;
+  if(!window.PAUTA_DOCS) window.PAUTA_DOCS={};
+  if(!PAUTA_DOCS[key]) PAUTA_DOCS[key]=[];
+  var docs=PAUTA_DOCS[key];
+  var items=docs.map(function(doc,i){
+    var isImg=doc.tipo&&doc.tipo.startsWith('image/');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px">'
+      +'<span style="font-size:18px">'+(isImg?'🖼️':'📄')+'</span>'
+      +'<div style="flex:1"><div style="font-size:12px;font-weight:600">'+esc(doc.nombre)+'</div>'
+      +(isImg?'<img src="'+doc.data+'" style="max-height:120px;max-width:100%;border-radius:6px;margin-top:4px;cursor:pointer" onclick="window.open().document.write(\'<img src=\\\"'+doc.data+'\\\" style=\\\"max-width:100%\\\">\')"/>':'<a href="#" style="font-size:11px;color:#0270c4" onclick="var w=window.open();w.document.write(\'<embed src=\\\"'+doc.data+'\\\" width=\\\"100%\\\" height=\\\"100%\\\">\');return false">Ver PDF</a>')
+      +'</div>'
+      +'<button style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px" onclick="PAUTA_DOCS[\''+key+'\'].splice('+i+',1);this.closest(\'[data-doczona]\').outerHTML=_pautaDocZona(\''+modKey+'\',\''+uid+'\')">🗑</button>'
+      +'</div>';
+  }).join('');
+  return '<div data-doczona style="margin-top:16px">'
+    +'<div class="det-sec-title">Documentos adjuntos</div>'
+    +items
+    +'<div onclick="document.getElementById(\'pdoc-inp-'+key+'\').click()" style="border:2px dashed #cbd5e1;border-radius:10px;padding:14px;text-align:center;cursor:pointer" onmouseover="this.style.borderColor=\'#0270c4\'" onmouseout="this.style.borderColor=\'#cbd5e1\'">'
+    +'<span style="font-size:20px">📤</span> <span style="font-size:12px;font-weight:600;color:#0270c4">Subir foto o documento</span>'
+    +'<div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG, PDF</div></div>'
+    +'<input type="file" id="pdoc-inp-'+key+'" style="display:none" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" onchange="_pautaSubirDoc(\''+modKey+'\',\''+uid+'\',this)" />'
+    +'</div>';
+}
+function _pautaSubirDoc(mod,uid,input){
+  var key=mod+'_'+uid;
+  if(!window.PAUTA_DOCS) window.PAUTA_DOCS={};
+  if(!PAUTA_DOCS[key]) PAUTA_DOCS[key]=[];
+  var today=new Date().toLocaleDateString('es-ES');
+  var files=Array.from(input.files), pending=files.length;
+  files.forEach(function(f){
+    var r=new FileReader();
+    r.onload=function(e){
+      PAUTA_DOCS[key].push({nombre:f.name,tipo:f.type,fecha:today,size:f.size,data:e.target.result});
+      if(--pending===0){
+        var zona=document.querySelector('[data-doczona]');
+        if(zona) zona.outerHTML=_pautaDocZona(mod,uid);
+      }
+    };
+    r.readAsDataURL(f);
+  });
+}
+
+/* Helper genérico de modal */
+function _pautaModal(html){
+  var ov=document.createElement('div');
+  ov.className='med-modal-overlay'; ov.id='pauta-modal-ov';
+  ov.innerHTML='<div class="med-modal">'+html+'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)_pautaCerrarModal();});
+}
+function _pautaCerrarModal(){var o=document.getElementById('pauta-modal-ov');if(o)o.remove();}
+
+/* ── CAMBIOS POSTURALES ── */
+function _tabPostural(b){
+  var d=_pautaGet(b.id,'postural');
+  var p=d.pauta;
+  var regs=d.registros.slice().reverse();
+  var regsHtml=regs.length?regs.map(function(r){
+    return _pautaRegRow(r,'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:12px">'+esc(r.posicion)+'</span>');
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  return '<div class="card">'
+    +_pautaCabecera('🔄','Cambio postural',b.id,'postural',
+      '<button class="btn-primary" onclick="posturalRegistrar('+b.id+')">+ Registrar cambio</button>'
+      +'<button class="btn-secondary" onclick="posturalEditarPauta('+b.id+')">⚙️ Pauta</button>')
+    +(p?'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px">'
+      +'<div style="font-size:13px;font-weight:700;color:#065f46">Pauta activa: cada <strong>'+p.frecuencia+'h</strong></div>'
+      +'<div style="font-size:12px;color:#047857;margin-top:4px">Posiciones: '+esc(p.posiciones)+'</div>'
+      +(p.obs?'<div style="font-size:11px;color:#64748b;margin-top:4px">'+esc(p.obs)+'</div>':'')
+      +'</div>'
+      :'<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#854d0e">⚠️ Sin pauta configurada. Pulsa "⚙️ Pauta" para definirla.</div>')
+    +'<div class="det-sec-title">Registros</div>'+regsHtml
+    +_pautaDocZona('postural',b.id)
+    +'</div>';
+}
+function posturalEditarPauta(bid){
+  var d=_pautaGet(bid,'postural'); var p=d.pauta||{};
+  _pautaModal('<div class="med-modal-title">🔄 Configurar pauta postural</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Frecuencia (horas)</label>'
+    +'<select id="pp-frec" class="med-select">'+[1,2,3,4,6].map(function(h){return '<option'+(p.frecuencia==h?' selected':'')+'>'+h+'</option>';}).join('')+'</select></div>'
+    +'<div><label class="med-label">Posiciones</label><input id="pp-pos" class="med-input" placeholder="D.supino, D.lat.der, D.lat.izq..." value="'+(p.posiciones||'')+'" /></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones</label><textarea id="pp-obs" class="med-input" rows="2">'+(p.obs||'')+'</textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="posturalGuardarPauta('+bid+')">Guardar</button></div>');
+}
+function posturalGuardarPauta(bid){
+  var d=_pautaGet(bid,'postural');
+  d.pauta={frecuencia:document.getElementById('pp-frec').value,posiciones:document.getElementById('pp-pos').value,obs:document.getElementById('pp-obs').value};
+  _pautaCerrarModal(); tabActual='postural'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+function posturalRegistrar(bid){
+  var d=_pautaGet(bid,'postural');
+  var posOpts=d.pauta&&d.pauta.posiciones?d.pauta.posiciones.split(',').map(function(s){return s.trim();}):['Decúbito supino','Decúbito lateral derecho','Decúbito lateral izquierdo','Fowler','Semi-Fowler'];
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">🔄 Registrar cambio postural</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Posición aplicada *</label>'
+    +'<select id="preg-pos" class="med-select">'+posOpts.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select></div>'
+    +'<div><label class="med-label">Fecha y hora</label><input id="preg-fh" class="med-input" value="'+now+'" /></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Profesional</label><input id="preg-prof" class="med-input" placeholder="Tu nombre" /></div>'
+    +'<div><label class="med-label">Observaciones</label><input id="preg-obs" class="med-input" placeholder="Opcional" /></div></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="posturalGuardarReg('+bid+')">Guardar</button></div>');
+}
+function posturalGuardarReg(bid){
+  var d=_pautaGet(bid,'postural');
+  d.registros.push({fecha_hora:document.getElementById('preg-fh').value,posicion:document.getElementById('preg-pos').value,profesional:document.getElementById('preg-prof').value,obs:document.getElementById('preg-obs').value});
+  _pautaCerrarModal(); tabActual='postural'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+
+/* ── CURAS ── */
+function _tabCuras(b){
+  var d=_pautaGet(b.id,'curas');
+  var regs=d.registros.slice().reverse();
+  var heridas=d.heridas||[];
+  var regsHtml=regs.length?regs.map(function(r){
+    return _pautaRegRow(r,'<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:12px">'+esc(r.herida)+'</span>'
+      +'<span style="font-size:12px;color:#475569">'+esc(r.evolucion)+'</span>');
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  var heridasHtml=heridas.length?heridas.map(function(h,i){
+    return '<div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div><div style="font-size:13px;font-weight:700;color:#9f1239">'+esc(h.nombre)+'</div>'
+      +'<div style="font-size:12px;color:#be123c;margin-top:2px">'+esc(h.localizacion)+' · Grado '+esc(h.grado)+'</div>'
+      +(h.protocolo?'<div style="font-size:11px;color:#64748b;margin-top:2px">'+esc(h.protocolo)+'</div>':'')
+      +'</div><button class="btn-secondary" style="font-size:11px" onclick="curasRegistrar('+b.id+',\''+h.nombre+'\')">+ Registrar cura</button>'
+      +'</div>';
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin heridas/úlceras activas</div>';
+
+  return '<div class="card">'
+    +_pautaCabecera('🩹','Curas y heridas',b.id,'curas',
+      '<button class="btn-primary" onclick="curasNuevaHerida('+b.id+')">+ Nueva herida</button>')
+    +'<div class="det-sec-title">Heridas activas</div>'+heridasHtml
+    +'<div class="det-sec-title" style="margin-top:16px">Historial de curas</div>'+regsHtml
+    +_pautaDocZona('curas',b.id)
+    +'</div>';
+}
+function curasNuevaHerida(bid){
+  _pautaModal('<div class="med-modal-title">🩹 Nueva herida / úlcera</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Nombre / identificador *</label><input id="ch-nom" class="med-input" placeholder="Ej: Úlcera sacro, Herida rodilla..." /></div>'
+    +'<div><label class="med-label">Localización</label><input id="ch-loc" class="med-input" placeholder="Ej: Sacro, talón izq..." /></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Tipo</label>'
+    +'<select id="ch-tipo" class="med-select"><option>Úlcera por presión</option><option>Herida quirúrgica</option><option>Herida traumática</option><option>Úlcera vascular</option><option>Rozadura</option><option>Otro</option></select></div>'
+    +'<div><label class="med-label">Grado (úlceras)</label>'
+    +'<select id="ch-grado" class="med-select"><option>—</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Protocolo de cura</label><textarea id="ch-prot" class="med-input" rows="2" placeholder="Materiales, técnica..."></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="curasGuardarHerida('+bid+')">Guardar</button></div>');
+}
+function curasGuardarHerida(bid){
+  var d=_pautaGet(bid,'curas'); if(!d.heridas) d.heridas=[];
+  d.heridas.push({nombre:document.getElementById('ch-nom').value,localizacion:document.getElementById('ch-loc').value,tipo:document.getElementById('ch-tipo').value,grado:document.getElementById('ch-grado').value,protocolo:document.getElementById('ch-prot').value});
+  _pautaCerrarModal(); tabActual='curas'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+function curasRegistrar(bid,herida){
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">🩹 Registrar cura — '+esc(herida)+'</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Fecha y hora</label><input id="creg-fh" class="med-input" value="'+now+'" /></div>'
+    +'<div><label class="med-label">Profesional</label><input id="creg-prof" class="med-input" placeholder="Tu nombre" /></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Evolución</label>'
+    +'<select id="creg-evol" class="med-select"><option>Mejora</option><option>Estable</option><option>Empeora</option><option>Cicatrizada</option></select></div>'
+    +'<div><label class="med-label">Materiales usados</label><input id="creg-mat" class="med-input" placeholder="Ej: Apósito hidrocoloide..." /></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones</label><textarea id="creg-obs" class="med-input" rows="2"></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="curasGuardarReg('+bid+',\''+herida+'\')">Guardar</button></div>');
+}
+function curasGuardarReg(bid,herida){
+  var d=_pautaGet(bid,'curas');
+  d.registros.push({fecha_hora:document.getElementById('creg-fh').value,herida:herida,evolucion:document.getElementById('creg-evol').value,materiales:document.getElementById('creg-mat').value,profesional:document.getElementById('creg-prof').value,obs:document.getElementById('creg-obs').value});
+  _pautaCerrarModal(); tabActual='curas'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+
+/* ── PAÑALES ── */
+function _tabPaniales(b){
+  var d=_pautaGet(b.id,'paniales');
+  var regs=d.registros.slice().reverse();
+  var regsHtml=regs.length?regs.map(function(r){
+    var color=r.tipo==='orina'?'#dbeafe':r.tipo==='deposicion'?'#fef9c3':'#f3e8ff';
+    var textColor=r.tipo==='orina'?'#1e40af':r.tipo==='deposicion'?'#854d0e':'#6b21a8';
+    return _pautaRegRow(r,'<span style="background:'+color+';color:'+textColor+';padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">'+esc(r.tipo.charAt(0).toUpperCase()+r.tipo.slice(1))+'</span>'
+      +(r.cantidad?'<span style="font-size:12px;color:#475569">'+esc(r.cantidad)+'</span>':''));
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  return '<div class="card">'
+    +_pautaCabecera('🧴','Control de pañales',b.id,'paniales',
+      '<button class="btn-primary" onclick="panialesRegistrar('+b.id+')">+ Registrar cambio</button>')
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'
+    +'<div style="background:#dbeafe;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:800;color:#1e40af">'+d.registros.filter(function(r){return r.tipo==='orina';}).length+'</div><div style="font-size:11px;color:#1e40af;font-weight:600">Orina (total)</div></div>'
+    +'<div style="background:#fef9c3;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:800;color:#854d0e">'+d.registros.filter(function(r){return r.tipo==='deposicion';}).length+'</div><div style="font-size:11px;color:#854d0e;font-weight:600">Deposición (total)</div></div>'
+    +'<div style="background:#f3e8ff;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:800;color:#6b21a8">'+d.registros.filter(function(r){return r.tipo==='ambos';}).length+'</div><div style="font-size:11px;color:#6b21a8;font-weight:600">Ambos (total)</div></div>'
+    +'</div>'
+    +'<div class="det-sec-title">Registros</div>'+regsHtml+'</div>';
+}
+function panialesRegistrar(bid){
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">🧴 Registrar cambio de pañal</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Tipo *</label>'
+    +'<select id="pan-tipo" class="med-select"><option value="orina">Orina</option><option value="deposicion">Deposición</option><option value="ambos">Ambos</option><option value="preventivo">Preventivo</option></select></div>'
+    +'<div><label class="med-label">Cantidad / características</label><input id="pan-cant" class="med-input" placeholder="Ej: Abundante, normal..." /></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Fecha y hora</label><input id="pan-fh" class="med-input" value="'+now+'" /></div>'
+    +'<div><label class="med-label">Profesional</label><input id="pan-prof" class="med-input" placeholder="Tu nombre" /></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones</label><textarea id="pan-obs" class="med-input" rows="2" placeholder="Estado de la piel, incidencias..."></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="panialesGuardar('+bid+')">Guardar</button></div>');
+}
+function panialesGuardar(bid){
+  var d=_pautaGet(bid,'paniales');
+  d.registros.push({fecha_hora:document.getElementById('pan-fh').value,tipo:document.getElementById('pan-tipo').value,cantidad:document.getElementById('pan-cant').value,profesional:document.getElementById('pan-prof').value,obs:document.getElementById('pan-obs').value});
+  _pautaCerrarModal(); tabActual='paniales'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+
+/* ── CONTENCIONES ── */
+function _tabContenciones(b){
+  var d=_pautaGet(b.id,'contenciones');
+  var activas=d.pautas||[];
+  var regs=d.registros||[];
+
+  var activasHtml=activas.length?activas.map(function(c,i){
+    return '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 14px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+      +'<div><div style="font-size:13px;font-weight:700;color:#9a3412">'+esc(c.tipo)+'</div>'
+      +'<div style="font-size:12px;color:#c2410c;margin-top:2px">'+esc(c.motivo)+'</div>'
+      +(c.autorizacion?'<div style="font-size:11px;color:#16a34a;margin-top:3px">✔ Autorización firmada</div>':'<div style="font-size:11px;color:#dc2626;margin-top:3px">⚠ Sin autorización registrada</div>')
+      +'</div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<button class="btn-secondary" style="font-size:11px" onclick="contencionRegistrar('+b.id+','+i+')">+ Aplicación</button>'
+      +'<button class="btn-secondary" style="font-size:11px;color:#dc2626" onclick="var d=_pautaGet('+b.id+',\'contenciones\');d.pautas.splice('+i+',1);tabActual=\'contenciones\';var b=BD.find(function(x){return x.id==='+b.id+'});if(b)pintarDet(b)">Retirar</button>'
+      +'</div></div></div>';
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin contenciones activas</div>';
+
+  var regsHtml=regs.slice().reverse().map(function(r){
+    return _pautaRegRow(r,'<span style="background:#fff7ed;color:#9a3412;padding:2px 8px;border-radius:10px;font-size:12px">'+esc(r.tipo)+'</span>');
+  }).join('')||'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  return '<div class="card">'
+    +_pautaCabecera('🦺','Contenciones',b.id,'contenciones',
+      '<button class="btn-primary" onclick="contencionNueva('+b.id+')">+ Nueva contención</button>')
+    +'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#991b1b">⚠️ Toda contención requiere autorización firmada del tutor legal y revisión periódica.</div>'
+    +'<div class="det-sec-title">Contenciones activas</div>'+activasHtml
+    +'<div class="det-sec-title" style="margin-top:16px">Registro de aplicaciones</div>'+regsHtml
+    +_pautaDocZona('contenciones',b.id)+'</div>';
+}
+function contencionNueva(bid){
+  _pautaModal('<div class="med-modal-title">🦺 Nueva contención</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Tipo *</label>'
+    +'<select id="ct-tipo" class="med-select"><option>Muñequera</option><option>Chaleco abdominal</option><option>Cinturón pélvico</option><option>Barandillas cama</option><option>Mesa silla</option><option>Farmacológica</option><option>Otra</option></select></div>'
+    +'<div><label class="med-label">Autorización firmada</label>'
+    +'<select id="ct-aut" class="med-select"><option value="1">Sí, firmada</option><option value="0">Pendiente</option></select></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Motivo de la contención *</label><textarea id="ct-mot" class="med-input" rows="2" placeholder="Justificación clínica..."></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="contencionGuardar('+bid+')">Guardar</button></div>');
+}
+function contencionGuardar(bid){
+  var d=_pautaGet(bid,'contenciones'); if(!d.pautas) d.pautas=[];
+  d.pautas.push({tipo:document.getElementById('ct-tipo').value,motivo:document.getElementById('ct-mot').value,autorizacion:document.getElementById('ct-aut').value==='1'});
+  _pautaCerrarModal(); tabActual='contenciones'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+function contencionRegistrar(bid,idx){
+  var d=_pautaGet(bid,'contenciones'); var c=d.pautas[idx];
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">Registrar aplicación — '+esc(c.tipo)+'</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Fecha y hora</label><input id="cr-fh" class="med-input" value="'+now+'" /></div>'
+    +'<div><label class="med-label">Profesional</label><input id="cr-prof" class="med-input" /></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones</label><textarea id="cr-obs" class="med-input" rows="2"></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="contencionGuardarReg('+bid+',\''+c.tipo+'\')">Guardar</button></div>');
+}
+function contencionGuardarReg(bid,tipo){
+  var d=_pautaGet(bid,'contenciones'); if(!d.registros) d.registros=[];
+  d.registros.push({fecha_hora:document.getElementById('cr-fh').value,tipo:tipo,profesional:document.getElementById('cr-prof').value,obs:document.getElementById('cr-obs').value});
+  _pautaCerrarModal(); tabActual='contenciones'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+
+/* ── SUPERVISIÓN HORARIA ── */
+function _tabSupervision(b){
+  var d=_pautaGet(b.id,'supervision');
+  var p=d.pauta;
+  var regs=d.registros.slice().reverse();
+  var regsHtml=regs.length?regs.map(function(r){
+    var col=r.estado==='correcto'?'#d1fae5':r.estado==='incidencia'?'#fee2e2':'#fef9c3';
+    var tc=r.estado==='correcto'?'#065f46':r.estado==='incidencia'?'#991b1b':'#854d0e';
+    return _pautaRegRow(r,'<span style="background:'+col+';color:'+tc+';padding:2px 8px;border-radius:10px;font-size:12px">'+esc(r.estado)+'</span>');
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  return '<div class="card">'
+    +_pautaCabecera('⏰','Supervisión horaria',b.id,'supervision',
+      '<button class="btn-primary" onclick="supervisionRegistrar('+b.id+')">+ Registrar supervisión</button>'
+      +'<button class="btn-secondary" onclick="supervisionEditarPauta('+b.id+')">⚙️ Pauta</button>')
+    +(p?'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;margin-bottom:16px">'
+      +'<div style="font-size:13px;font-weight:700;color:#0369a1">Supervisión cada <strong>'+p.frecuencia+' min</strong></div>'
+      +'<div style="font-size:12px;color:#0284c7;margin-top:4px">'+esc(p.motivo)+'</div>'
+      +'</div>'
+      :'<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#854d0e">⚠️ Sin pauta configurada.</div>')
+    +'<div class="det-sec-title">Registros</div>'+regsHtml+'</div>';
+}
+function supervisionEditarPauta(bid){
+  var d=_pautaGet(bid,'supervision'); var p=d.pauta||{};
+  _pautaModal('<div class="med-modal-title">⏰ Pauta de supervisión</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Frecuencia (minutos)</label>'
+    +'<select id="sp-frec" class="med-select">'+[15,30,60,120].map(function(m){return '<option'+(p.frecuencia==m?' selected':'')+'>'+m+'</option>';}).join('')+'</select></div>'
+    +'<div><label class="med-label">Motivo</label><input id="sp-mot" class="med-input" placeholder="Ej: Riesgo de fuga, agitación..." value="'+(p.motivo||'')+'" /></div></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="supervisionGuardarPauta('+bid+')">Guardar</button></div>');
+}
+function supervisionGuardarPauta(bid){
+  var d=_pautaGet(bid,'supervision');
+  d.pauta={frecuencia:document.getElementById('sp-frec').value,motivo:document.getElementById('sp-mot').value};
+  _pautaCerrarModal(); tabActual='supervision'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+function supervisionRegistrar(bid){
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">⏰ Registrar supervisión</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Estado</label>'
+    +'<select id="sv-est" class="med-select"><option value="correcto">Correcto — sin incidencias</option><option value="incidencia">Incidencia</option><option value="ausente">Usuario ausente de zona</option></select></div>'
+    +'<div><label class="med-label">Fecha y hora</label><input id="sv-fh" class="med-input" value="'+now+'" /></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Profesional</label><input id="sv-prof" class="med-input" /></div>'
+    +'<div><label class="med-label">Observaciones</label><input id="sv-obs" class="med-input" /></div></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="supervisionGuardarReg('+bid+')">Guardar</button></div>');
+}
+function supervisionGuardarReg(bid){
+  var d=_pautaGet(bid,'supervision');
+  d.registros.push({fecha_hora:document.getElementById('sv-fh').value,estado:document.getElementById('sv-est').value,profesional:document.getElementById('sv-prof').value,obs:document.getElementById('sv-obs').value});
+  _pautaCerrarModal(); tabActual='supervision'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+
+/* ── DIETA ESPECIAL ── */
+function _tabDieta(b){
+  var d=_pautaGet(b.id,'dieta');
+  var p=d.pauta;
+  var regs=d.registros.slice().reverse();
+  var regsHtml=regs.length?regs.map(function(r){
+    var col=r.ingesta==='completa'?'#d1fae5':r.ingesta==='parcial'?'#fef9c3':'#fee2e2';
+    var tc=r.ingesta==='completa'?'#065f46':r.ingesta==='parcial'?'#854d0e':'#991b1b';
+    return _pautaRegRow(r,
+      '<span style="font-size:12px;font-weight:600;color:#475569">'+esc(r.comida)+'</span>'
+      +'<span style="background:'+col+';color:'+tc+';padding:2px 8px;border-radius:10px;font-size:12px">'+esc(r.ingesta)+'</span>');
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  var dietasActivas=(p&&p.dietas)||[];
+  return '<div class="card">'
+    +_pautaCabecera('🥗','Dieta especial',b.id,'dieta',
+      '<button class="btn-primary" onclick="dietaRegistrar('+b.id+')">+ Registrar ingesta</button>'
+      +'<button class="btn-secondary" onclick="dietaEditarPauta('+b.id+')">⚙️ Dieta</button>')
+    +(dietasActivas.length?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">'
+      +dietasActivas.map(function(d){return '<span style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600">✓ '+esc(d)+'</span>';}).join('')+'</div>'
+      :'<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#854d0e">⚠️ Sin dieta especial configurada.</div>')
+    +(p&&p.obs?'<div style="background:#f8fafc;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#475569">'+esc(p.obs)+'</div>':'')
+    +'<div class="det-sec-title">Registro de ingestas</div>'+regsHtml+'</div>';
+}
+function dietaEditarPauta(bid){
+  var d=_pautaGet(bid,'dieta'); var p=d.pauta||{dietas:[]};
+  var opciones=['Normal','Blanda','Triturada','Diabética','Hiposódica','Sin gluten','Alérgico pescado','Vegetariana','Hipocalórica','Hiperproteica','Protección gástrica','Astringente'];
+  _pautaModal('<div class="med-modal-title">🥗 Configurar dieta especial</div>'
+    +'<div class="med-form-row full" style="margin-bottom:12px"><label class="med-label">Tipos de dieta (selecciona los que aplican)</label>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">'
+    +opciones.map(function(op){
+      var checked=p.dietas&&p.dietas.indexOf(op)>=0;
+      return '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer">'
+        +'<input type="checkbox" class="diet-cb" value="'+op+'"'+(checked?' checked':'')+' /> '+op+'</label>';
+    }).join('')+'</div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones / indicaciones</label><textarea id="dt-obs" class="med-input" rows="2">'+(p.obs||'')+'</textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="dietaGuardarPauta('+bid+')">Guardar</button></div>');
+}
+function dietaGuardarPauta(bid){
+  var d=_pautaGet(bid,'dieta');
+  var sel=Array.from(document.querySelectorAll('.diet-cb:checked')).map(function(cb){return cb.value;});
+  d.pauta={dietas:sel,obs:document.getElementById('dt-obs').value};
+  _pautaCerrarModal(); tabActual='dieta'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+function dietaRegistrar(bid){
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">🥗 Registrar ingesta</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Comida</label>'
+    +'<select id="dt-com" class="med-select"><option>Desayuno</option><option>Media mañana</option><option>Comida</option><option>Merienda</option><option>Cena</option></select></div>'
+    +'<div><label class="med-label">Ingesta</label>'
+    +'<select id="dt-ing" class="med-select"><option value="completa">Completa</option><option value="parcial">Parcial (50-75%)</option><option value="minima">Mínima (&lt;50%)</option><option value="rechazada">Rechazada</option></select></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Fecha y hora</label><input id="dt-fh" class="med-input" value="'+now+'" /></div>'
+    +'<div><label class="med-label">Profesional</label><input id="dt-prof" class="med-input" /></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones</label><textarea id="dt-obs2" class="med-input" rows="2"></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="dietaGuardarReg('+bid+')">Guardar</button></div>');
+}
+function dietaGuardarReg(bid){
+  var d=_pautaGet(bid,'dieta');
+  d.registros.push({fecha_hora:document.getElementById('dt-fh').value,comida:document.getElementById('dt-com').value,ingesta:document.getElementById('dt-ing').value,profesional:document.getElementById('dt-prof').value,obs:document.getElementById('dt-obs2').value});
+  _pautaCerrarModal(); tabActual='dieta'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+
+/* ── NUTRICIÓN ENTERAL ── */
+function _tabEnteral(b){
+  var d=_pautaGet(b.id,'enteral');
+  var p=d.pauta;
+  var regs=d.registros.slice().reverse();
+  var regsHtml=regs.length?regs.map(function(r){
+    return _pautaRegRow(r,'<span style="font-size:12px;color:#475569">'+esc(r.formula)+' · '+esc(r.volumen)+' ml</span>'
+      +(r.incidencia?'<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px">⚠ '+esc(r.incidencia)+'</span>':''));
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  return '<div class="card">'
+    +_pautaCabecera('💉','Nutrición enteral',b.id,'enteral',
+      '<button class="btn-primary" onclick="enteralRegistrar('+b.id+')">+ Registrar administración</button>'
+      +'<button class="btn-secondary" onclick="enteralEditarPauta('+b.id+')">⚙️ Pauta</button>')
+    +(p?'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px">'
+      +'<div style="font-size:13px;font-weight:700;color:#065f46">'+esc(p.formula)+'</div>'
+      +'<div style="font-size:12px;color:#047857;margin-top:3px">'+esc(p.volumen)+' ml · '+esc(p.frecuencia)+'</div>'
+      +'<div style="font-size:12px;color:#047857;margin-top:2px">Vía: '+esc(p.via)+'</div>'
+      +(p.obs?'<div style="font-size:11px;color:#64748b;margin-top:4px">'+esc(p.obs)+'</div>':'')
+      +'</div>'
+      :'<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#854d0e">⚠️ Sin pauta configurada.</div>')
+    +'<div class="det-sec-title">Registros</div>'+regsHtml
+    +_pautaDocZona('enteral',b.id)+'</div>';
+}
+function enteralEditarPauta(bid){
+  var d=_pautaGet(bid,'enteral'); var p=d.pauta||{};
+  _pautaModal('<div class="med-modal-title">💉 Pauta nutrición enteral</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Fórmula / producto *</label><input id="en-form" class="med-input" placeholder="Ej: Ensure, Fresubin..." value="'+(p.formula||'')+'" /></div>'
+    +'<div><label class="med-label">Vía</label><select id="en-via" class="med-select"><option>Sonda nasogástrica</option><option>Sonda PEG</option><option>Oral</option></select></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Volumen por toma (ml)</label><input id="en-vol" class="med-input" type="number" placeholder="Ej: 250" value="'+(p.volumen||'')+'" /></div>'
+    +'<div><label class="med-label">Frecuencia</label><input id="en-frec" class="med-input" placeholder="Ej: 4 tomas/día, cada 6h..." value="'+(p.frecuencia||'')+'" /></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones</label><textarea id="en-obs" class="med-input" rows="2">'+(p.obs||'')+'</textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="enteralGuardarPauta('+bid+')">Guardar</button></div>');
+}
+function enteralGuardarPauta(bid){
+  var d=_pautaGet(bid,'enteral');
+  d.pauta={formula:document.getElementById('en-form').value,via:document.getElementById('en-via').value,volumen:document.getElementById('en-vol').value,frecuencia:document.getElementById('en-frec').value,obs:document.getElementById('en-obs').value};
+  _pautaCerrarModal(); tabActual='enteral'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+function enteralRegistrar(bid){
+  var d=_pautaGet(bid,'enteral'); var p=d.pauta||{};
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">💉 Registrar administración enteral</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Fórmula</label><input id="er-form" class="med-input" value="'+(p.formula||'')+'" /></div>'
+    +'<div><label class="med-label">Volumen administrado (ml)</label><input id="er-vol" class="med-input" type="number" value="'+(p.volumen||'')+'" /></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Fecha y hora</label><input id="er-fh" class="med-input" value="'+now+'" /></div>'
+    +'<div><label class="med-label">Profesional</label><input id="er-prof" class="med-input" /></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Incidencia (si la hay)</label><input id="er-inc" class="med-input" placeholder="Náuseas, residuo gástrico, obstrucción..." /></div>'
+    +'<div class="med-form-row full"><label class="med-label">Observaciones</label><textarea id="er-obs" class="med-input" rows="2"></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="enteralGuardarReg('+bid+')">Guardar</button></div>');
+}
+function enteralGuardarReg(bid){
+  var d=_pautaGet(bid,'enteral');
+  d.registros.push({fecha_hora:document.getElementById('er-fh').value,formula:document.getElementById('er-form').value,volumen:document.getElementById('er-vol').value,incidencia:document.getElementById('er-inc').value,profesional:document.getElementById('er-prof').value,obs:document.getElementById('er-obs').value});
+  _pautaCerrarModal(); tabActual='enteral'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
+}
+
+/* ── OTROS REGISTROS ── */
+function _tabOtrosReg(b){
+  var d=_pautaGet(b.id,'otros_reg');
+  var regs=d.registros.slice().reverse();
+  var regsHtml=regs.length?regs.map(function(r){
+    return _pautaRegRow(r,'<span style="background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:10px;font-size:12px">'+esc(r.categoria)+'</span>');
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0;font-style:italic">Sin registros aún</div>';
+
+  return '<div class="card">'
+    +_pautaCabecera('📋','Otros registros',b.id,'otros_reg',
+      '<button class="btn-primary" onclick="otrosRegistrar('+b.id+')">+ Nuevo registro</button>')
+    +'<div class="det-sec-title">Registros</div>'+regsHtml+'</div>';
+}
+function otrosRegistrar(bid){
+  var now=new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  _pautaModal('<div class="med-modal-title">📋 Nuevo registro</div>'
+    +'<div class="med-form-row"><div><label class="med-label">Categoría *</label>'
+    +'<select id="or-cat" class="med-select"><option>Higiene personal</option><option>Fisioterapia</option><option>Terapia ocupacional</option><option>Psicología</option><option>Trabajo social</option><option>Caída</option><option>Agitación / crisis</option><option>Visita médica</option><option>Otro</option></select></div>'
+    +'<div><label class="med-label">Fecha y hora</label><input id="or-fh" class="med-input" value="'+now+'" /></div></div>'
+    +'<div class="med-form-row"><div><label class="med-label">Profesional</label><input id="or-prof" class="med-input" /></div><div></div></div>'
+    +'<div class="med-form-row full"><label class="med-label">Descripción *</label><textarea id="or-desc" class="med-input" rows="3" placeholder="Describe lo ocurrido o realizado..."></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="_pautaCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="otrosGuardarReg('+bid+')">Guardar</button></div>');
+}
+function otrosGuardarReg(bid){
+  var desc=document.getElementById('or-desc').value.trim();
+  if(!desc){alert('La descripción es obligatoria.');return;}
+  var d=_pautaGet(bid,'otros_reg');
+  d.registros.push({fecha_hora:document.getElementById('or-fh').value,categoria:document.getElementById('or-cat').value,profesional:document.getElementById('or-prof').value,obs:desc});
+  _pautaCerrarModal(); tabActual='otros_reg'; var b=BD.find(function(x){return x.id===bid;}); if(b)pintarDet(b);
 }
 
 function _tabBlank(lbl){
