@@ -1071,6 +1071,7 @@ function pintarDet(b){
   else if(tabActual==='contacto') content=_tabContacto(b);
   else if(tabActual==='obs') content=_tabObs(b);
   else if(tabActual==='adjdoc') content=_tabAdjDoc(b);
+  else if(tabActual==='medicacion') content=_tabMedicacion(b);
   else{var tobj=ALL_TABS.find(function(t){return t.id===tabActual;});content=_tabBlank(tobj?tobj.lbl:'');}
 
   document.getElementById('view-detalle').innerHTML=
@@ -1493,6 +1494,368 @@ function borrarDoc(bid,idx){
 }
 
 /* ── TAB EN BLANCO ── */
+/* ══════════════════════════════════════════════════════
+   MÓDULO MEDICACIÓN
+   ══════════════════════════════════════════════════════ */
+
+/* Estilos del módulo */
+(function(){
+  if(document.getElementById('med-styles')) return;
+  var s=document.createElement('style');
+  s.id='med-styles';
+  s.textContent=[
+    '.med-badge-cronica{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}',
+    '.med-badge-aguda{background:#fef9c3;color:#854d0e;border:1px solid #fde047;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}',
+    '.med-badge-demanda{background:#fce7f3;color:#9d174d;border:1px solid #fbcfe8;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}',
+    '.med-badge-activa{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}',
+    '.med-badge-suspendida{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}',
+    '.med-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s,border-color .15s}',
+    '.med-card:hover{box-shadow:0 2px 12px rgba(2,112,196,.10);border-color:#bae0fd}',
+    '.med-card-header{display:flex;align-items:flex-start;gap:12px}',
+    '.med-nombre{font-size:15px;font-weight:700;color:#1e293b}',
+    '.med-sub{font-size:12px;color:#64748b;margin-top:3px}',
+    '.med-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}',
+    '.med-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-top:16px}',
+    '.med-field-lbl{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}',
+    '.med-field-val{font-size:13px;color:#1e293b;font-weight:500}',
+    '.med-reg-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:6px;font-size:13px}',
+    '.med-reg-ok{background:#f0fdf4;border-color:#bbf7d0}',
+    '.med-reg-no{background:#fff7ed;border-color:#fed7aa}',
+    '.med-reg-rechazo{background:#fdf2f8;border-color:#f9a8d4}',
+    '.med-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1000;display:flex;align-items:center;justify-content:center}',
+    '.med-modal{background:#fff;border-radius:16px;padding:28px;width:560px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.18)}',
+    '.med-modal-title{font-size:18px;font-weight:800;color:#1e293b;margin-bottom:20px}',
+    '.med-form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}',
+    '.med-form-row.full{grid-template-columns:1fr;margin-bottom:14px}',
+    '.med-label{font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;display:block}',
+    '.med-input{width:100%;border:1.5px solid #d1d5db;border-radius:9px;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box;transition:border-color .15s}',
+    '.med-input:focus{border-color:#0270c4}',
+    '.med-select{width:100%;border:1.5px solid #d1d5db;border-radius:9px;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box;background:#fff}',
+    '.med-tabs-mini{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:20px}',
+    '.med-tab-mini{padding:8px 16px;font-size:13px;font-weight:600;color:#64748b;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}',
+    '.med-tab-mini.active{color:#0270c4;border-bottom-color:#0270c4}',
+    '.med-reg-form{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:14px}',
+    '.med-condicion-box{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-top:8px}'
+  ].join('');
+  document.head.appendChild(s);
+})();
+
+/* Datos de medicación en memoria, indexados por usuario */
+if(!window.MED_DATA) window.MED_DATA={};
+
+function _medGetPautas(bid){
+  if(!MED_DATA[bid]) MED_DATA[bid]={pautas:[],registros:[]};
+  return MED_DATA[bid];
+}
+
+function _medBadgeTipo(tipo){
+  if(tipo==='cronica') return '<span class="med-badge-cronica">Cr\xf3nica</span>';
+  if(tipo==='aguda')   return '<span class="med-badge-aguda">Aguda</span>';
+  return '<span class="med-badge-demanda">A demanda</span>';
+}
+
+function _medBadgeEstado(activa){
+  return activa
+    ? '<span class="med-badge-activa">\u2714 Activa</span>'
+    : '<span class="med-badge-suspendida">Suspendida</span>';
+}
+
+/* ── TAB PRINCIPAL MEDICACIÓN ── */
+function _tabMedicacion(b){
+  var data=_medGetPautas(b.id);
+  var pautas=data.pautas;
+  var cronicas=pautas.filter(function(p){return p.tipo==='cronica';});
+  var agudas=pautas.filter(function(p){return p.tipo==='aguda';});
+  var demanda=pautas.filter(function(p){return p.tipo==='demanda';});
+
+  function renderGrupo(lista, titulo, icono){
+    if(!lista.length) return '<div style="color:#94a3b8;font-size:13px;padding:8px 0 16px;font-style:italic">Sin pautas de este tipo</div>';
+    return lista.map(function(p){
+      var regs=data.registros.filter(function(r){return r.pauta_id===p.id;});
+      var ultimoReg=regs.length?regs[regs.length-1]:null;
+      var ultimoTxt=ultimoReg?('<span style="font-size:11px;color:#64748b">Último registro: '+ultimoReg.fecha_hora+' \u2014 '+
+        (ultimoReg.estado==='ok'?'<span style="color:#16a34a">Administrada</span>':
+         ultimoReg.estado==='rechazo'?'<span style="color:#db2777">Rechazada</span>':
+         '<span style="color:#ea580c">No administrada</span>')+'</span>'):'';
+      return '<div class="med-card" onclick="medVerDetalle('+b.id+',\''+p.id+'\')">'
+        +'<div class="med-card-header">'
+        +'<div style="flex:1">'
+        +'<div class="med-nombre">\ud83d\udc8a '+esc(p.nombre)+(p.principio_activo?' <span style="font-size:12px;color:#64748b;font-weight:400">('+esc(p.principio_activo)+')</span>':'')+' '+_medBadgeEstado(p.activa)+'</div>'
+        +'<div class="med-sub">'+esc(p.dosis)+' \u00b7 '+esc(p.via)+' \u00b7 '+esc(p.frecuencia)+'</div>'
+        +'<div class="med-badges">'+_medBadgeTipo(p.tipo)+(p.tipo==='demanda'?'<span style="font-size:11px;background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:12px;border:1px solid #fbcfe8">Si: '+esc(p.condicion)+'</span>':'')+'</div>'
+        +(ultimoTxt?'<div style="margin-top:6px">'+ultimoTxt+'</div>':'')
+        +'</div>'
+        +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
+        +'<button class="btn-primary" style="font-size:11px;padding:5px 10px" onclick="event.stopPropagation();medRegistrar('+b.id+',\''+p.id+'\')">\u2713 Registrar</button>'
+        +'</div></div></div>';
+    }).join('');
+  }
+
+  return '<div class="card">'
+    +'<div class="card-header"><span class="card-title">\ud83d\udc8a Medicaci\xf3n</span>'
+    +'<button class="btn-primary" onclick="medNuevaPauta('+b.id+')">+ Nueva pauta</button></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">'
+    +'<div style="background:#dbeafe;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#1e40af">'+cronicas.length+'</div><div style="font-size:11px;color:#1e40af;font-weight:600">Cr\xf3nicas</div></div>'
+    +'<div style="background:#fef9c3;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#854d0e">'+agudas.length+'</div><div style="font-size:11px;color:#854d0e;font-weight:600">Agudas</div></div>'
+    +'<div style="background:#fce7f3;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#9d174d">'+demanda.length+'</div><div style="font-size:11px;color:#9d174d;font-weight:600">A demanda</div></div>'
+    +'</div>'
+    +(pautas.length===0?'<div style="text-align:center;padding:40px 20px;color:#94a3b8"><div style="font-size:36px;margin-bottom:12px">\ud83d\udc8a</div><div style="font-size:14px;font-weight:600">Sin pautas de medicaci\xf3n</div><div style="font-size:12px;margin-top:6px">Pulsa "+ Nueva pauta" para a\xf1adir la primera</div></div>'
+    :'<div class="det-sec-title">Medicaci\xf3n cr\xf3nica</div>'+renderGrupo(cronicas)
+    +'<div class="det-sec-title">Medicaci\xf3n aguda</div>'+renderGrupo(agudas)
+    +'<div class="det-sec-title">A demanda</div>'+renderGrupo(demanda))
+    +'</div>';
+}
+
+/* ── DETALLE DE UNA PAUTA ── */
+function medVerDetalle(bid, pid){
+  var data=_medGetPautas(bid);
+  var p=data.pautas.find(function(x){return x.id===pid;});
+  if(!p) return;
+  var regs=data.registros.filter(function(r){return r.pauta_id===pid;}).slice().reverse();
+
+  var regsHtml=regs.length?regs.map(function(r){
+    var cls=r.estado==='ok'?'med-reg-ok':r.estado==='rechazo'?'med-reg-rechazo':'med-reg-no';
+    var icon=r.estado==='ok'?'\u2714\ufe0f':r.estado==='rechazo'?'\u274c':'\u26a0\ufe0f';
+    return '<div class="med-reg-row '+cls+'">'
+      +'<span style="font-size:16px">'+icon+'</span>'
+      +'<span style="flex:1"><strong>'+r.fecha_hora+'</strong>'+(r.profesional?' &mdash; '+esc(r.profesional):'')+'</span>'
+      +(r.observaciones?'<span style="font-size:11px;color:#64748b">'+esc(r.observaciones)+'</span>':'')
+      +'</div>';
+  }).join(''):'<div style="color:#94a3b8;font-size:13px;padding:10px 0">Sin registros a\xfan</div>';
+
+  var html='<div class="card">'
+    +'<div class="card-header">'
+    +'<span class="card-title">\ud83d\udc8a '+esc(p.nombre)+'</span>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn-secondary" onclick="medEditarPauta('+bid+',\''+p.id+'\')">\u270f\ufe0f Editar</button>'
+    +'<button class="btn-secondary" style="color:'+(p.activa?'#dc2626':'#16a34a')+'" onclick="medToggleActiva('+bid+',\''+p.id+'\')">'+(p.activa?'\u23f8 Suspender':'\u25b6 Reactivar')+'</button>'
+    +'<button class="btn-secondary" onclick="tabActual=\'medicacion\';var b=BD.find(function(x){return x.id==='+bid+'});if(b)pintarDet(b)">\u2190 Volver</button>'
+    +'</div></div>'
+    +'<div class="med-badges" style="margin-bottom:16px">'+_medBadgeTipo(p.tipo)+_medBadgeEstado(p.activa)+'</div>'
+    +(p.tipo==='demanda'?'<div class="med-condicion-box">\u26a0\ufe0f Administrar solo si: <strong>'+esc(p.condicion)+'</strong></div>':'')
+    +'<div class="med-detail-grid">'
+    +'<div><div class="med-field-lbl">Medicamento</div><div class="med-field-val">'+esc(p.nombre)+'</div></div>'
+    +(p.principio_activo?'<div><div class="med-field-lbl">Principio activo</div><div class="med-field-val">'+esc(p.principio_activo)+'</div></div>':'')
+    +'<div><div class="med-field-lbl">Dosis</div><div class="med-field-val">'+esc(p.dosis)+'</div></div>'
+    +'<div><div class="med-field-lbl">V\xeda</div><div class="med-field-val">'+esc(p.via)+'</div></div>'
+    +'<div><div class="med-field-lbl">Frecuencia</div><div class="med-field-val">'+esc(p.frecuencia)+'</div></div>'
+    +(p.horarios?'<div><div class="med-field-lbl">Horarios</div><div class="med-field-val">'+esc(p.horarios)+'</div></div>':'')
+    +(p.fecha_inicio?'<div><div class="med-field-lbl">Inicio</div><div class="med-field-val">'+fd(p.fecha_inicio)+'</div></div>':'')
+    +(p.fecha_fin?'<div><div class="med-field-lbl">Fin previsto</div><div class="med-field-val">'+fd(p.fecha_fin)+'</div></div>':'')
+    +(p.prescrita_por?'<div><div class="med-field-lbl">Prescrita por</div><div class="med-field-val">'+esc(p.prescrita_por)+'</div></div>':'')
+    +(p.observaciones?'<div style="grid-column:1/-1"><div class="med-field-lbl">Observaciones</div><div class="med-field-val">'+esc(p.observaciones)+'</div></div>':'')
+    +'</div>'
+    +'<div class="det-sec-title" style="margin-top:24px">Historial de administraci\xf3n</div>'
+    +'<button class="btn-primary" style="margin-bottom:14px" onclick="medRegistrar('+bid+',\''+pid+'\')">\u2713 Registrar administraci\xf3n ahora</button>'
+    +regsHtml
+    +'</div>';
+
+  document.getElementById('det-tc').innerHTML=html;
+}
+
+/* ── MODAL NUEVA / EDITAR PAUTA ── */
+function medNuevaPauta(bid, pauteId){
+  var data=_medGetPautas(bid);
+  var p=pauteId?data.pautas.find(function(x){return x.id===pauteId;}):null;
+  var titulo=p?'Editar pauta':'Nueva pauta de medicaci\xf3n';
+  var overlay=document.createElement('div');
+  overlay.className='med-modal-overlay';
+  overlay.id='med-modal-overlay';
+  overlay.innerHTML='<div class="med-modal">'
+    +'<div class="med-modal-title">'+titulo+'</div>'
+    +'<div class="med-form-row">'
+    +'<div><label class="med-label">Tipo de pauta *</label>'
+    +'<select id="mp-tipo" class="med-select" onchange="medToggleCamposTipo()">'
+    +'<option value="cronica"'+(p&&p.tipo==='cronica'?' selected':'')+'>Cr\xf3nica (permanente)</option>'
+    +'<option value="aguda"'+(p&&p.tipo==='aguda'?' selected':'')+'>Aguda (temporal)</option>'
+    +'<option value="demanda"'+(p&&p.tipo==='demanda'?' selected':'')+'>A demanda (si condici\xf3n)</option>'
+    +'</select></div>'
+    +'<div><label class="med-label">Estado</label>'
+    +'<select id="mp-activa" class="med-select">'
+    +'<option value="1"'+(p&&!p.activa?'':' selected')+'>Activa</option>'
+    +'<option value="0"'+(p&&!p.activa?' selected':'')+'>Suspendida</option>'
+    +'</select></div>'
+    +'</div>'
+    +'<div class="med-form-row">'
+    +'<div><label class="med-label">Nombre del medicamento *</label>'
+    +'<input id="mp-nombre" class="med-input" placeholder="Ej: Omeprazol 20mg" value="'+(p?esc(p.nombre):'')+'" /></div>'
+    +'<div><label class="med-label">Principio activo</label>'
+    +'<input id="mp-principio" class="med-input" placeholder="Ej: Omeprazol" value="'+(p?esc(p.principio_activo||''):'')+'" /></div>'
+    +'</div>'
+    +'<div class="med-form-row">'
+    +'<div><label class="med-label">Dosis *</label>'
+    +'<input id="mp-dosis" class="med-input" placeholder="Ej: 1 comprimido, 5ml..." value="'+(p?esc(p.dosis):'')+'" /></div>'
+    +'<div><label class="med-label">V\xeda de administraci\xf3n *</label>'
+    +'<select id="mp-via" class="med-select">'
+    +['Oral','Sublingual','Inhalada','Intravenosa','Intramuscular','Sucut\xe1nea','T\xf3pica','Rectal','Transdermal','Oftálmica','Nasal','Otra'].map(function(v){
+      return '<option'+(p&&p.via===v?' selected':'')+'>'+v+'</option>';
+    }).join('')
+    +'</select></div>'
+    +'</div>'
+    +'<div class="med-form-row">'
+    +'<div><label class="med-label">Frecuencia *</label>'
+    +'<select id="mp-frecuencia" class="med-select">'
+    +['Una vez al d\xeda','Dos veces al d\xeda','Tres veces al d\xeda','Cada 4 horas','Cada 6 horas','Cada 8 horas','Cada 12 horas','En ayunas','Con comida','Antes de dormir','Semanal','Según pauta'].map(function(v){
+      return '<option'+(p&&p.frecuencia===v?' selected':'')+'>'+v+'</option>';
+    }).join('')
+    +'</select></div>'
+    +'<div><label class="med-label">Horarios concretos</label>'
+    +'<input id="mp-horarios" class="med-input" placeholder="Ej: 08:00, 14:00, 21:00" value="'+(p?esc(p.horarios||''):'')+'" /></div>'
+    +'</div>'
+    +'<div id="mp-condicion-row" class="med-form-row full" style="display:'+(p&&p.tipo==='demanda'?'block':'none')+'">'
+    +'<label class="med-label">Condici\xf3n para administrar (si demanda) *</label>'
+    +'<input id="mp-condicion" class="med-input" placeholder="Ej: Si dolor EVA &gt; 5, Si agitaci\xf3n, Si fiebre &gt; 38\xb0C..." value="'+(p?esc(p.condicion||''):'')+'" />'
+    +'</div>'
+    +'<div class="med-form-row">'
+    +'<div><label class="med-label">Fecha inicio</label>'
+    +'<input id="mp-finicio" type="date" class="med-input" value="'+(p?p.fecha_inicio||'':'')+'" /></div>'
+    +'<div id="mp-ffin-row"><label class="med-label">Fecha fin (si aguda)</label>'
+    +'<input id="mp-ffin" type="date" class="med-input" value="'+(p?p.fecha_fin||'':'')+'" /></div>'
+    +'</div>'
+    +'<div class="med-form-row">'
+    +'<div><label class="med-label">Prescrita por</label>'
+    +'<input id="mp-prescrita" class="med-input" placeholder="Nombre del m\xe9dico" value="'+(p?esc(p.prescrita_por||''):'')+'" /></div>'
+    +'<div></div>'
+    +'</div>'
+    +'<div class="med-form-row full">'
+    +'<label class="med-label">Observaciones</label>'
+    +'<textarea id="mp-obs" class="med-input" rows="2" style="resize:vertical">'+(p?esc(p.observaciones||''):'')+'</textarea>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">'
+    +'<button class="btn-secondary" onclick="medCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="medGuardarPauta('+bid+','+(p?'\''+p.id+'\'':'null')+')">Guardar pauta</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)medCerrarModal();});
+}
+
+function medToggleCamposTipo(){
+  var tipo=document.getElementById('mp-tipo').value;
+  var cr=document.getElementById('mp-condicion-row');
+  if(cr) cr.style.display=tipo==='demanda'?'block':'none';
+}
+
+function medCerrarModal(){
+  var ov=document.getElementById('med-modal-overlay');
+  if(ov) ov.remove();
+  var ov2=document.getElementById('med-reg-overlay');
+  if(ov2) ov2.remove();
+}
+
+function medGuardarPauta(bid, pid){
+  var nombre=document.getElementById('mp-nombre').value.trim();
+  var dosis=document.getElementById('mp-dosis').value.trim();
+  var tipo=document.getElementById('mp-tipo').value;
+  var condicion=document.getElementById('mp-condicion').value.trim();
+  if(!nombre||!dosis){alert('El nombre y la dosis son obligatorios.');return;}
+  if(tipo==='demanda'&&!condicion){alert('Indica la condici\xf3n para medicación a demanda.');return;}
+  var data=_medGetPautas(bid);
+  if(pid){
+    var p=data.pautas.find(function(x){return x.id===pid;});
+    if(p){
+      p.nombre=nombre; p.principio_activo=document.getElementById('mp-principio').value.trim();
+      p.dosis=dosis; p.via=document.getElementById('mp-via').value;
+      p.frecuencia=document.getElementById('mp-frecuencia').value;
+      p.horarios=document.getElementById('mp-horarios').value.trim();
+      p.tipo=tipo; p.condicion=condicion;
+      p.fecha_inicio=document.getElementById('mp-finicio').value;
+      p.fecha_fin=document.getElementById('mp-ffin').value;
+      p.prescrita_por=document.getElementById('mp-prescrita').value.trim();
+      p.observaciones=document.getElementById('mp-obs').value.trim();
+      p.activa=document.getElementById('mp-activa').value==='1';
+    }
+  } else {
+    data.pautas.push({
+      id:'med_'+Date.now(),
+      nombre:nombre,
+      principio_activo:document.getElementById('mp-principio').value.trim(),
+      dosis:dosis,
+      via:document.getElementById('mp-via').value,
+      frecuencia:document.getElementById('mp-frecuencia').value,
+      horarios:document.getElementById('mp-horarios').value.trim(),
+      tipo:tipo, condicion:condicion,
+      fecha_inicio:document.getElementById('mp-finicio').value,
+      fecha_fin:document.getElementById('mp-ffin').value,
+      prescrita_por:document.getElementById('mp-prescrita').value.trim(),
+      observaciones:document.getElementById('mp-obs').value.trim(),
+      activa:true
+    });
+  }
+  medCerrarModal();
+  tabActual='medicacion';
+  var b=BD.find(function(x){return x.id===bid;});
+  if(b) pintarDet(b);
+}
+
+function medEditarPauta(bid,pid){medNuevaPauta(bid,pid);}
+
+function medToggleActiva(bid,pid){
+  var data=_medGetPautas(bid);
+  var p=data.pautas.find(function(x){return x.id===pid;});
+  if(p){
+    p.activa=!p.activa;
+    medVerDetalle(bid,pid);
+  }
+}
+
+/* ── MODAL REGISTRAR ADMINISTRACIÓN ── */
+function medRegistrar(bid, pid){
+  var data=_medGetPautas(bid);
+  var p=data.pautas.find(function(x){return x.id===pid;});
+  if(!p) return;
+  var now=new Date();
+  var fechaHora=now.toLocaleDateString('es-ES')+' '+now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  var overlay=document.createElement('div');
+  overlay.className='med-modal-overlay';
+  overlay.id='med-reg-overlay';
+  overlay.innerHTML='<div class="med-modal" style="width:420px">'
+    +'<div class="med-modal-title">\u2713 Registrar administraci\xf3n</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:16px">'
+    +'<div style="font-size:14px;font-weight:700;color:#1e293b">'+esc(p.nombre)+'</div>'
+    +'<div style="font-size:12px;color:#64748b;margin-top:3px">'+esc(p.dosis)+' \u00b7 '+esc(p.via)+'</div>'
+    +(p.tipo==='demanda'?'<div class="med-condicion-box" style="margin-top:8px">\u26a0\ufe0f Solo si: '+esc(p.condicion)+'</div>':'')
+    +'</div>'
+    +'<div class="med-form-row full" style="margin-bottom:12px">'
+    +'<label class="med-label">Estado *</label>'
+    +'<select id="mr-estado" class="med-select">'
+    +'<option value="ok">\u2714 Administrada correctamente</option>'
+    +'<option value="rechazo">\u274c Rechazada por el usuario</option>'
+    +'<option value="no">&#9888; No administrada (otro motivo)</option>'
+    +'</select></div>'
+    +'<div class="med-form-row full" style="margin-bottom:12px">'
+    +'<label class="med-label">Fecha y hora</label>'
+    +'<input id="mr-fechahora" class="med-input" value="'+fechaHora+'" /></div>'
+    +'<div class="med-form-row full" style="margin-bottom:12px">'
+    +'<label class="med-label">Profesional que administra</label>'
+    +'<input id="mr-prof" class="med-input" placeholder="Tu nombre" /></div>'
+    +'<div class="med-form-row full" style="margin-bottom:16px">'
+    +'<label class="med-label">Observaciones</label>'
+    +'<textarea id="mr-obs" class="med-input" rows="2" style="resize:vertical" placeholder="Opcional..."></textarea></div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end">'
+    +'<button class="btn-secondary" onclick="medCerrarModal()">Cancelar</button>'
+    +'<button class="btn-primary" onclick="medGuardarRegistro('+bid+',\''+pid+'\')">Guardar registro</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)medCerrarModal();});
+}
+
+function medGuardarRegistro(bid,pid){
+  var data=_medGetPautas(bid);
+  data.registros.push({
+    id:'reg_'+Date.now(),
+    pauta_id:pid,
+    fecha_hora:document.getElementById('mr-fechahora').value,
+    estado:document.getElementById('mr-estado').value,
+    profesional:document.getElementById('mr-prof').value.trim(),
+    observaciones:document.getElementById('mr-obs').value.trim()
+  });
+  medCerrarModal();
+  tabActual='medicacion';
+  var b=BD.find(function(x){return x.id===bid;});
+  if(b) pintarDet(b);
+}
+
 function _tabBlank(lbl){
   return '<div class="card" style="text-align:center;padding:60px 20px;color:#94a3b8">'+
     '<div style="font-size:40px;margin-bottom:14px">\ud83d\udee0\ufe0f</div>'+
