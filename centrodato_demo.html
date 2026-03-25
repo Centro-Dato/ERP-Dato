@@ -87,10 +87,20 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
 .detail-avatar{width:64px;height:64px;border-radius:50%;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;flex-shrink:0}
 .detail-name{font-size:22px;font-weight:800;color:#1e293b}
 .detail-meta{display:flex;align-items:center;gap:18px;margin-top:6px;font-size:13px;color:#64748b;flex-wrap:wrap}
-.tabs-bar{display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:24px}
-.tab-btn{background:none;border:none;border-bottom:3px solid transparent;padding:12px 18px;font-size:14px;font-weight:600;color:#64748b;cursor:pointer;margin-bottom:-2px;white-space:nowrap}
-.tab-btn:hover{color:#1e293b}
-.tab-btn.active{color:#0270c4;border-bottom-color:#0270c4}
+.det-layout{display:flex;gap:0;align-items:flex-start}
+.det-sidenav{width:210px;min-width:190px;background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:10px 0;margin-right:20px;position:sticky;top:20px;flex-shrink:0}
+.det-sidenav-group{margin-bottom:2px}
+.det-sidenav-group-title{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 8px;font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;user-select:none;border-radius:8px;margin:0 6px}
+.det-sidenav-group-title:hover{background:#f1f5f9;color:#475569}
+.det-sidenav-group-title.open{color:#0270c4}
+.det-sidenav-group-title .arrow{font-size:10px;transition:transform .2s}
+.det-sidenav-group-title.open .arrow{transform:rotate(90deg)}
+.det-sidenav-items{overflow:hidden;transition:max-height .25s ease}
+.det-sidenav-item{display:block;padding:8px 18px 8px 30px;font-size:13px;font-weight:500;color:#475569;cursor:pointer;border-radius:8px;margin:1px 6px;border:none;background:none;width:calc(100% - 12px);text-align:left}
+.det-sidenav-item:hover{background:#f1f5f9;color:#1e293b}
+.det-sidenav-item.active{background:#e0f0ff;color:#0270c4;font-weight:700}
+.det-sidenav-divider{height:1px;background:#e2e8f0;margin:8px 12px}
+.det-content{flex:1;min-width:0}
 .card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:24px;margin-bottom:16px}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .card-title{font-size:16px;font-weight:700}
@@ -522,7 +532,7 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
     <div class="sb-logo"><div class="sb-logo-title">Centro Dato</div><div class="sb-logo-sub">Gesti&#xF3;n del Centro de D&#xED;a</div></div>
     <div class="sb-nav">
       <div class="sb-nav-item active" id="nav-inicio" onclick="navTo('inicio')">&#x1F3E0;&nbsp; Inicio</div>
-      <div class="sb-nav-item" id="nav-benef" onclick="navTo('benef')">&#x1F465;&nbsp; Beneficiarios</div>
+      <div class="sb-nav-item" id="nav-benef" onclick="navTo('benef')">&#x1F465;&nbsp; Usuarios</div>
       <div class="sb-nav-item" id="nav-ocio" onclick="navTo('ocio')">&#x1F3A8;&nbsp; Ocio y Tiempo Libre</div>
       <div class="sb-nav-item" id="nav-comuni" onclick="navTo('comuni')">&#x1F4DE;&nbsp; Comunicaciones</div>
       <div class="sb-nav-item" id="nav-profes" onclick="navTo('profes')">&#x1F468;&#x200D;&#x1F4BC;&nbsp; Profesionales</div>
@@ -578,12 +588,12 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
       </div>
     </div>
     <div id="view-lista" class="page hidden">
-      <div class="page-header"><div><div class="page-title">Beneficiarios</div><div class="page-subtitle" id="lista-sub">25 personas activas</div></div><button class="btn-primary" onclick="abrirModalUsuario()">+ Nuevo beneficiario</button></div>
+      <div class="page-header"><div><div class="page-title">Usuarios</div><div class="page-subtitle" id="lista-sub">25 personas activas</div></div><button class="btn-primary" onclick="abrirModalUsuario()">+ Nuevo usuario</button></div>
       <div class="filters-row">
         <input class="search-box" id="inp-search" placeholder="Buscar por nombre, apellidos o DNI..."/>
         <div class="seg-control"><button class="active" id="f-activo">Activos</button><button id="f-baja">Bajas</button><button id="f-todos">Todos</button></div>
       </div>
-      <div class="table-card"><table><thead><tr><th>Nombre</th><th>DNI</th><th>Edad</th><th>Discapacidad</th><th>Dependencia</th><th>Ingreso</th><th>Estado</th></tr></thead><tbody id="t-body"></tbody></table><div id="t-empty" class="empty-state hidden">No se encontraron beneficiarios</div></div>
+      <div class="table-card"><table><thead><tr><th>Nombre</th><th>DNI</th><th>Edad</th><th>Discapacidad</th><th>Dependencia</th><th>Ingreso</th><th>Estado</th></tr></thead><tbody id="t-body"></tbody></table><div id="t-empty" class="empty-state hidden">No se encontraron usuarios</div></div>
     </div>
     <!-- BENEFICIARIO DETALLE -->
     <div id="view-detalle" class="page hidden"></div>
@@ -685,7 +695,7 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
     <div class="modal-title">Nueva comunicaci&#xF3;n</div>
     <div class="modal-sub">Registra el contacto con la familia o tutor</div>
     <div class="grid2" style="gap:12px;margin-bottom:16px">
-      <div class="modal-field" style="margin:0"><label>Beneficiario</label>
+      <div class="modal-field" style="margin:0"><label>Usuario</label>
         <select id="mc-benef" style="width:100%;border:1.5px solid #d1d5db;border-radius:9px;padding:10px 13px;font-size:14px;outline:none"></select></div>
       <div class="modal-field" style="margin:0"><label>Fecha</label>
         <input type="date" id="mc-fecha"/></div>
@@ -834,7 +844,7 @@ var MOTIVO_INFO={
 function getAusenciasPorFecha(fecha){
   return COMUNICACIONES.filter(function(c){
     return c.fechaAus===fecha&&MOTIVO_INFO[c.motivo]&&MOTIVO_INFO[c.motivo].tipo==="ausencia";
-  }).map(function(c){return{comunicacion:c,beneficiario:BD.find(function(x){return x.id===c.bid;})};});
+  }).map(function(c){return{comunicacion:c,usuario:BD.find(function(x){return x.id===c.bid;})};});
 }
 
 /* HELPERS */
@@ -931,7 +941,30 @@ document.getElementById("btn-logout").addEventListener("click",function(){
 });
 
 /* BENEFICIARIOS */
-var filtro="activo",tabActual="dadmin";
+var filtro="activo",tabActual="dadmin",sideGroupOpen={datos:true,pautas:false};
+var TABS_DATOS=[
+  {id:'dadmin',lbl:'Datos administrativos'},
+  {id:'dasist',lbl:'Datos asistenciales'},
+  {id:'contacto',lbl:'Personas contacto'},
+  {id:'obs',lbl:'Observaciones'},
+  {id:'adjdoc',lbl:'Adjuntar doc.'},
+  {id:'receta',lbl:'Control receta'},
+  {id:'contratos',lbl:'Contratos'},
+  {id:'autorizaciones',lbl:'Autorizaciones'},
+  {id:'ausencias',lbl:'Ausencias'}
+];
+var TABS_PAUTAS=[
+  {id:'dieta',lbl:'Dieta especial'},
+  {id:'supervision',lbl:'Supervisi\xf3n horaria'},
+  {id:'medicacion',lbl:'Medicaci\xf3n'},
+  {id:'paniales',lbl:'Pa\xf1ales'},
+  {id:'curas',lbl:'Curas'},
+  {id:'contenciones',lbl:'Contenciones'},
+  {id:'postural',lbl:'Cambio postural'},
+  {id:'otros_reg',lbl:'Otros registros'},
+  {id:'enteral',lbl:'Nutrici\xf3n enteral'}
+];
+var ALL_TABS=TABS_DATOS.concat(TABS_PAUTAS);
 document.getElementById("f-activo").addEventListener("click",function(){setF("activo",this);});
 document.getElementById("f-baja").addEventListener("click",function(){setF("baja",this);});
 document.getElementById("f-todos").addEventListener("click",function(){setF("todos",this);});
@@ -952,11 +985,16 @@ function pintarLista(){
     return "<tr onclick='verDet("+b.id+")'><td><div class='name-cell'><div class='avatar'>"+ini(b.n,b.a)+"</div><span class='name-text'>"+esc(b.n)+" "+esc(b.a)+"</span></div></td><td>"+esc(b.dni||"\u2014")+"</td><td>"+(edad(b.fnac)?edad(b.fnac)+" años":"\u2014")+"</td><td>"+disc+"</td><td>"+(b.gr?"Grado "+b.gr+(b.nv?"-Nivel "+b.nv:""):"\u2014")+"</td><td>"+fd(b.fi)+"</td><td>"+(b.est==="activo"?bdg("bg","Activo"):bdg("br","Baja"))+"</td></tr>";
   }).join("");
 }
-function verDet(id){var b=BD.find(function(x){return x.id===id;});if(!b)return;tabActual="dadmin";document.getElementById("view-lista").classList.add("hidden");document.getElementById("view-detalle").classList.remove("hidden");pintarDet(b);}
+function verDet(id){var b=BD.find(function(x){return x.id===id;});if(!b)return;tabActual="dadmin";sideGroupOpen={datos:true,pautas:false};document.getElementById("view-lista").classList.add("hidden");document.getElementById("view-detalle").classList.remove("hidden");pintarDet(b);}
 function volver(){document.getElementById("view-detalle").classList.add("hidden");document.getElementById("view-lista").classList.remove("hidden");}
 
 function setTab(t,id){
   tabActual=t;
+  // Abrir el grupo que contiene este tab
+  var enDatos=TABS_DATOS.some(function(x){return x.id===t;});
+  var enPautas=TABS_PAUTAS.some(function(x){return x.id===t;});
+  if(enDatos) sideGroupOpen.datos=true;
+  if(enPautas) sideGroupOpen.pautas=true;
   var b=BD.find(function(x){return x.id===id;});
   if(b)pintarDet(b);
 }
@@ -981,6 +1019,43 @@ function _fta(id,lbl,val,sp){
   return '<div class="'+cls+'"><label class="form-lbl">'+lbl+'</label><textarea id="'+id+'" class="form-ta">'+esc(val||'')+'</textarea></div>';
 }
 
+function toggleSideGroup(grp){
+  sideGroupOpen[grp]=!sideGroupOpen[grp];
+  var items=document.getElementById('sidegroup-items-'+grp);
+  var title=document.getElementById('sidegroup-title-'+grp);
+  if(items&&title){
+    items.style.maxHeight=sideGroupOpen[grp]?'600px':'0px';
+    title.classList.toggle('open',sideGroupOpen[grp]);
+  }
+}
+
+function _sideNav(bid){
+  function navItems(tabs){
+    return tabs.map(function(t){
+      return '<button class="det-sidenav-item'+(tabActual===t.id?' active':'')+'" onclick="setTab(\''+t.id+'\','+bid+')">'+t.lbl+'</button>';
+    }).join('');
+  }
+  var dOpen=sideGroupOpen.datos;
+  var pOpen=sideGroupOpen.pautas;
+  return '<div class="det-sidenav">'+
+    '<div class="det-sidenav-group">'+
+      '<div class="det-sidenav-group-title'+(dOpen?' open':'')+'" id="sidegroup-title-datos" onclick="toggleSideGroup(\'datos\')">'+
+        '\ud83d\udcc2 Datos <span class="arrow">&#9654;</span></div>'+
+      '<div class="det-sidenav-items" id="sidegroup-items-datos" style="max-height:'+(dOpen?'600px':'0px')+'">'+
+        navItems(TABS_DATOS)+
+      '</div>'+
+    '</div>'+
+    '<div class="det-sidenav-divider"></div>'+
+    '<div class="det-sidenav-group">'+
+      '<div class="det-sidenav-group-title'+(pOpen?' open':'')+'" id="sidegroup-title-pautas" onclick="toggleSideGroup(\'pautas\')">'+
+        '\ud83d\udcdd Pautas <span class="arrow">&#9654;</span></div>'+
+      '<div class="det-sidenav-items" id="sidegroup-items-pautas" style="max-height:'+(pOpen?'600px':'0px')+'">'+
+        navItems(TABS_PAUTAS)+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
 function pintarDet(b){
   var ei=ET[b.et];
   var estbdg=b.est==='activo'?bdg('bg','Activo'):bdg('br','Baja');
@@ -990,37 +1065,21 @@ function pintarDet(b){
   if(b.fi)heroMeta+='<span>Ingreso: <strong>'+fd(b.fi)+'</strong></span>';
   if(ei)heroMeta+=bdg(ei.c,ei.f);
 
-  var TABS=[
-    {id:'dadmin',lbl:'Datos admin.'},
-    {id:'dasist',lbl:'Datos asistenciales'},
-    {id:'contacto',lbl:'Personas contacto'},
-    {id:'obs',lbl:'Observaciones'},
-    {id:'adjdoc',lbl:'Adjuntar doc.'},
-    {id:'receta',lbl:'Control receta'},
-    {id:'contratos',lbl:'Contratos'},
-    {id:'autorizaciones',lbl:'Autorizaciones'},
-    {id:'ausencias',lbl:'Ausencias'}
-  ];
-  var tbar=TABS.map(function(t){
-    return '<button class="tab-btn'+(tabActual===t.id?' active':'')+'" onclick="setTab(\''+t.id+'\','+b.id+')">'+t.lbl+'</button>';
-  }).join('');
-
   var content='';
   if(tabActual==='dadmin') content=_tabDadmin(b);
   else if(tabActual==='dasist') content=_tabDasist(b);
   else if(tabActual==='contacto') content=_tabContacto(b);
   else if(tabActual==='obs') content=_tabObs(b);
   else if(tabActual==='adjdoc') content=_tabAdjDoc(b);
-  else{var tobj=TABS.find(function(t){return t.id===tabActual;});content=_tabBlank(tobj?tobj.lbl:'');}
+  else{var tobj=ALL_TABS.find(function(t){return t.id===tabActual;});content=_tabBlank(tobj?tobj.lbl:'');}
 
   document.getElementById('view-detalle').innerHTML=
-    '<div class="breadcrumb"><span class="breadcrumb-link" onclick="volver()">Beneficiarios</span><span> / </span><span style="color:#1e293b;font-weight:600">'+esc(b.n)+' '+esc(b.a)+'</span></div>'+
+    '<div class="breadcrumb"><span class="breadcrumb-link" onclick="volver()">Usuarios</span><span> / </span><span style="color:#1e293b;font-weight:600">'+esc(b.n)+' '+esc(b.a)+'</span></div>'+
     '<div class="detail-hero"><div class="detail-avatar">'+ini(b.n,b.a)+'</div><div style="flex:1">'+
     '<div style="display:flex;align-items:center;gap:12px"><span class="detail-name">'+esc(b.n)+' '+esc(b.a)+'</span>'+estbdg+'</div>'+
     '<div class="detail-meta">'+heroMeta+'</div></div>'+
     '<button class="btn-secondary" onclick="volver()">\u2190 Volver</button></div>'+
-    '<div class="tabs-bar">'+tbar+'</div>'+
-    '<div id="det-tc">'+content+'</div>';
+    '<div class="det-layout">'+_sideNav(b.id)+'<div class="det-content" id="det-tc">'+content+'</div></div>';
 }
 
 /* ── TAB DATOS ADMIN ── */
@@ -1506,7 +1565,7 @@ function pintarActDetalle(aid){
     +'</div>'
     +'<div class="card"><div class="card-header"><span class="card-title">Lista de asistencia</span>'
     +'<div style="display:flex;gap:8px"><button class="btn-secondary btn-sm" onclick="marcarTodos('+aid+',true)">Todos asisten</button><button class="btn-secondary btn-sm" onclick="marcarTodos('+aid+',false)">Limpiar</button></div>'
-    +'</div><table class="attend-table" style="width:100%"><thead><tr><th>Beneficiario</th><th>Asistencia</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    +'</div><table class="attend-table" style="width:100%"><thead><tr><th>Usuario</th><th>Asistencia</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   document.getElementById("ocio-act-detalle").innerHTML=html;
 }
 
@@ -1575,7 +1634,7 @@ function infActividad(){
     var aLbl=as.asiste?bdg("bg","Sí asiste"):bdg("br","No asiste");
     return "<tr><td><div class='name-cell'><div class='avatar av-sm'>"+ini(u.n,u.a)+"</div>"+esc(u.n)+" "+esc(u.a)+"</div></td><td>"+aLbl+"</td></tr>";
   }).join("");
-  return '<div class="inf-card"><div class="inf-card-title">Asistencia por actividad</div><div class="inf-filter-row"><select class="inf-select" id="inf-sel-act" onchange="renderInforme()">'+opts+'</select></div><table class="inf-table"><thead><tr><th>Beneficiario</th><th>Asistencia</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  return '<div class="inf-card"><div class="inf-card-title">Asistencia por actividad</div><div class="inf-filter-row"><select class="inf-select" id="inf-sel-act" onchange="renderInforme()">'+opts+'</select></div><table class="inf-table"><thead><tr><th>Usuario</th><th>Asistencia</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 function infUsuario(){
   var opts=activos().sort(function(a,b){return a.a.localeCompare(b.a,"es");}).map(function(u){return'<option value="'+u.id+'">'+esc(u.n)+" "+esc(u.a)+"</option>";}).join("");
@@ -1600,7 +1659,7 @@ function infPendientes(){
     return "<tr><td><div class='name-cell'><div class='avatar av-sm'>"+ini(entry.user.n,entry.user.a)+"</div>"+esc(entry.user.n)+" "+esc(entry.user.a)+"</div></td><td style='font-size:12px;color:#64748b'>"+acts+"</td><td class='pendiente' style='font-weight:800'>"+money(entry.total)+"</td></tr>";
   }).join("");
   var totalPend=pending.reduce(function(s,p){return s+p.act.precio;},0);
-  return '<div class="inf-card"><div class="inf-card-title">&#x23F0; Pagos pendientes</div><div class="inf-card-sub">'+pending.length+' pago(s) pendiente(s) de '+Object.keys(byUser).length+' usuario(s)</div><table class="inf-table"><thead><tr><th>Beneficiario</th><th>Actividades</th><th>Total pendiente</th></tr></thead><tbody>'+rows+'</tbody></table><div style="margin-top:16px;padding-top:16px;border-top:2px solid #e2e8f0"><strong class="pendiente">Total: '+money(totalPend)+'</strong></div></div>';
+  return '<div class="inf-card"><div class="inf-card-title">&#x23F0; Pagos pendientes</div><div class="inf-card-sub">'+pending.length+' pago(s) pendiente(s) de '+Object.keys(byUser).length+' usuario(s)</div><table class="inf-table"><thead><tr><th>Usuario</th><th>Actividades</th><th>Total pendiente</th></tr></thead><tbody>'+rows+'</tbody></table><div style="margin-top:16px;padding-top:16px;border-top:2px solid #e2e8f0"><strong class="pendiente">Total: '+money(totalPend)+'</strong></div></div>';
 }
 
 /* COMUNICACIONES - REGISTRO */
@@ -1627,7 +1686,7 @@ function pintarRegistro(){
   }
   var benefOpts=BD.filter(function(b){return b.est==="activo";}).sort(function(a,b){return a.a.localeCompare(b.a,"es");}).map(function(b){return'<option value="'+b.id+'"'+(filtBenef===String(b.id)?" selected":"")+'>'+esc(b.n)+" "+esc(b.a)+"</option>";}).join("");
   var filters='<div class="comun-filter-row">'
-    +'<select class="comun-select" id="cf-benef" onchange="pintarRegistro()"><option value="">Todos los beneficiarios</option>'+benefOpts+'</select>'
+    +'<select class="comun-select" id="cf-benef" onchange="pintarRegistro()"><option value="">Todos los usuarios</option>'+benefOpts+'</select>'
     +'<select class="comun-select" id="cf-canal" onchange="pintarRegistro()"><option value="">Todos los canales</option><option value="telefono">&#x1F4DE; Tel&#xe9;fono</option><option value="whatsapp">&#x1F4AC; WhatsApp</option><option value="email">&#x1F4E7; Email</option><option value="presencial">&#x1F464; Presencial</option></select>'
     +'<select class="comun-select" id="cf-motivo" onchange="pintarRegistro()"><option value="">Todos los motivos</option><option value="ausencia">&#x1F534; Ausencias</option><option value="confirmacion_paap">Confirmaci&#xF3;n PAAP</option><option value="incidencia">Incidencia</option><option value="informacion_general">Informaci&#xF3;n general</option></select>'
     +'</div>';
@@ -1666,7 +1725,7 @@ function pintarAusencias(){
   var alertHoy=getAusenciasPorFecha(hoy);
   var alertHtml="";
   if(alertHoy.length>0){
-    var noms=alertHoy.map(function(x){return x.beneficiario?esc(x.beneficiario.n)+" "+esc(x.beneficiario.a):"?";}).join(", ");
+    var noms=alertHoy.map(function(x){return x.usuario?esc(x.usuario.n)+" "+esc(x.usuario.a):"?";}).join(", ");
     alertHtml='<div class="ausencia-alert">&#x26A0; <strong>Hoy hay '+alertHoy.length+' ausencia(s) avisada(s):</strong> '+noms+'</div>';
   }
   function renderGrupo(items,titulo){
@@ -2179,7 +2238,7 @@ var _infFiltros={};
 var _infData={headers:[],rows:[],titulo:''};
 
 var INF_TIPOS=[
-  {id:'usuarios',titulo:'Listado de Usuarios',icon:'\ud83d\udc65',desc:'Beneficiarios con datos principales'},
+  {id:'usuarios',titulo:'Listado de Usuarios',icon:'\ud83d\udc65',desc:'Usuarios con datos principales'},
   {id:'profesionales',titulo:'Equipo Profesional',icon:'\ud83d\udc68\u200d\ud83d\udcbc',desc:'Directorio de profesionales del centro'},
   {id:'actividades',titulo:'Actividades de Ocio',icon:'\ud83c\udfa8',desc:'Historial de actividades de los viernes'},
   {id:'comunicaciones',titulo:'Comunicaciones Familias',icon:'\ud83d\udcde',desc:'Log de comunicaciones con familias'},
@@ -2470,7 +2529,7 @@ function getEventosDia(dateStr){
   ACTIVIDADES.filter(function(a){return a.fecha===dateStr;}).forEach(function(a){
     ev.push({tipo:"ocio",titulo:a.nombre,hora:"",sub:a.lugar||"",id:a.id});
   });
-  // Cumplea\xf1os beneficiarios
+  // Cumplea\xf1os usuarios
   var ddmm=dateStr.substring(5);
   BD.filter(function(b){return b.fnac&&b.fnac.substring(5)===ddmm&&b.est==="activo";}).forEach(function(b){
     var age=parseInt(dateStr.substring(0,4))-parseInt(b.fnac.substring(0,4));
@@ -2482,7 +2541,7 @@ function getEventosDia(dateStr){
   });
   // Ausencias usuarios
   getAusenciasPorFecha(dateStr).forEach(function(x){
-    var b=x.beneficiario;
+    var b=x.usuario;
     var mi=MOTIVO_INFO[x.comunicacion.motivo]||{label:x.comunicacion.motivo};
     ev.push({tipo:"ausencia",titulo:(b?b.n+" "+b.a:"Usuario"),hora:"",sub:mi.label});
   });
@@ -2734,7 +2793,7 @@ var CONDUCTORES=[
   {id:4,nombre:"Carmen Sotelo",tel:"634 777 888",carnet:"D",furgoneta:4}
 ];
 
-/* Asignacion fija: beneficiarioId -> furgoneta id */
+/* Asignacion fija: usuarioId -> furgoneta id */
 var ASIGNACIONES={1:1,2:2,3:1,5:4,6:2,7:1,8:2,9:3,10:1,11:3,12:1,13:2,14:4,15:1,16:3,17:3,18:2,19:3,20:3,21:2,22:2,23:1,24:3,25:4,26:4};
 
 var RUTAS=[
@@ -2828,11 +2887,11 @@ function pintarFlota(){
 function pintarHoy(){
   var hoy=new Date().toISOString().split("T")[0];
   var ausencias=getAusenciasPorFecha(hoy);
-  var ausIds=ausencias.map(function(x){return x.beneficiario?x.beneficiario.id:null;}).filter(Boolean);
+  var ausIds=ausencias.map(function(x){return x.usuario?x.usuario.id:null;}).filter(Boolean);
   var p=hoy.split("-");
   var tit='<div style="font-size:15px;font-weight:700;color:#64748b;margin-bottom:20px">'+["domingo","lunes","martes","mi\xe9rcoles","jueves","viernes","s\xe1bado"][new Date(hoy+"T12:00:00").getDay()].charAt(0).toUpperCase()+["domingo","lunes","martes","mi\xe9rcoles","jueves","viernes","s\xe1bado"][new Date(hoy+"T12:00:00").getDay()].slice(1)+", "+parseInt(p[2])+" de "+MESES[parseInt(p[1])-1].toLowerCase()+" de "+p[0]+'</div>';
   if(ausIds.length>0){
-    tit+='<div class="ausencia-alert" style="margin-bottom:20px">&#x26A0; '+ausIds.length+' ausencia(s) avisada(s) para hoy: '+ ausencias.map(function(x){return x.beneficiario?esc(x.beneficiario.n)+" "+esc(x.beneficiario.a):"?";}).join(", ")+'</div>';
+    tit+='<div class="ausencia-alert" style="margin-bottom:20px">&#x26A0; '+ausIds.length+' ausencia(s) avisada(s) para hoy: '+ ausencias.map(function(x){return x.usuario?esc(x.usuario.n)+" "+esc(x.usuario.a):"?";}).join(", ")+'</div>';
   }
   var cards=FURGONETAS.map(function(f){
     var cond=CONDUCTORES.find(function(c){return c.id===f.conductorId;})||{};
@@ -2842,7 +2901,7 @@ function pintarHoy(){
     var ausentes=users.filter(function(u){return ausIds.indexOf(u.id)>=0;});
     var rows=users.sort(function(a,b){return a.a.localeCompare(b.a,"es");}).map(function(u){
       var esAus=ausIds.indexOf(u.id)>=0;
-      var ausInfo=esAus?ausencias.find(function(x){return x.beneficiario&&x.beneficiario.id===u.id;}):null;
+      var ausInfo=esAus?ausencias.find(function(x){return x.usuario&&x.usuario.id===u.id;}):null;
       var mi=ausInfo?MOTIVO_INFO[ausInfo.comunicacion.motivo]||{label:"Ausente"}:{};
       return '<div class="hoy-user-row'+(esAus?" ausente":"")+'"><div class="avatar av-sm">'+ini(u.n,u.a)+'</div><div class="hoy-user-name">'+esc(u.n)+" "+esc(u.a)+'</div>'+(esAus?'<span class="hoy-ausente-tag">'+esc(mi.label||"Ausente")+'</span>':'<span class="hoy-asiste-tag">&#x2713;</span>')+'</div>';
     }).join("");
@@ -2937,7 +2996,7 @@ function _renderStats(){
   var profActivos = PROFESIONALES.filter(function(p){return p.est==='activo';}).length;
   var totalReg = Object.values(REGISTROS).reduce(function(s,arr){return s+arr.length;},0);
   var stats = [
-    {icon:'👥', num: activos, lbl:'Beneficiarios activos', sec:'benef'},
+    {icon:'👥', num: activos, lbl:'Usuarios activos', sec:'benef'},
     {icon:'👨‍💼', num: profActivos, lbl:'Profesionales', sec:'profes'},
     {icon:'🎨', num: ACTIVIDADES.length, lbl:'Actividades', sec:'ocio'},
     {icon:'📂', num: totalReg, lbl:'Registros totales', sec:'registros'}
@@ -2954,7 +3013,7 @@ function _renderStats(){
 
 function _renderShortcuts(){
   var shortcuts = [
-    {icon:'👥', lbl:'Beneficiarios', sec:'benef'},
+    {icon:'👥', lbl:'Usuarios', sec:'benef'},
     {icon:'📂', lbl:'Registros', sec:'registros'},
     {icon:'🎨', lbl:'Ocio', sec:'ocio'},
     {icon:'👨‍💼', lbl:'Profesionales', sec:'profes'},
@@ -3118,7 +3177,7 @@ function _renderCumples(){
 <!-- ===== MODAL NUEVO USUARIO ===== -->
 <div id="modal-usuario" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalUsuario()">
   <div class="modal-box" style="max-width:620px">
-    <div class="modal-title">Nuevo Beneficiario</div>
+    <div class="modal-title">Nuevo Usuario</div>
     <div class="modal-sub">Rellena los datos del nuevo usuario del centro</div>
     <div class="grid2" style="gap:12px;margin-bottom:0">
       <div class="modal-field"><label>Nombre *</label><input id="mu-nombre" class="form-input" type="text" placeholder="Nombre"/></div>
