@@ -1534,16 +1534,7 @@ function verDoc(bid,idx){
   var b=BD.find(function(x){return x.id===bid;});if(!b)return;
   var doc=(b.adj||[])[idx];if(!doc)return;
   var win=window.open();
-  win.document.write('<html><body style="margin:0"><img src="'+doc.data+'" style="max-width:100%" onerror="this.style.display=\'none\'"><embed src="'+doc.data+'" width="100%" height="100%" style="position:fixed;top:0;left:0">
-<!-- MODAL VISTA PREVIA INFORME -->
-<div id="modal-preview" class="hidden" onclick="if(event.target===this)cerrarPrevia()">
-  <div class="preview-box">
-    <button class="preview-close" onclick="cerrarPrevia()">&#x2715;</button>
-    <div id="preview-body"></div>
-  </div>
-</div>
-
-</body></html>');
+  win.document.write('<html><body style="margin:0"><embed src="'+doc.data+'" width="100%" height="100%"></body></html>');
 }
 
 function borrarDoc(bid,idx){
