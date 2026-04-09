@@ -925,9 +925,14 @@ function setOcioTab(tab){
 }
 
 /* LOGIN */
-document.getElementById("btn-entrar").addEventListener("click",login);
-document.getElementById("inp-pass").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
-document.getElementById("inp-email").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+document.addEventListener("DOMContentLoaded",function(){
+  var be=document.getElementById("btn-entrar");
+  if(be)be.addEventListener("click",login);
+  var ip=document.getElementById("inp-pass");
+  if(ip)ip.addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+  var ie=document.getElementById("inp-email");
+  if(ie)ie.addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+});
 function login(){
   var em=document.getElementById("inp-email").value.trim();
   var pw=document.getElementById("inp-pass").value;
