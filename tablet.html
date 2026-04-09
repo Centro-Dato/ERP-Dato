@@ -2,838 +2,484 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Centro Dato — Tablet</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Centro Dato</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --azul:#0c416d;--azul2:#0270c4;--verde:#16a34a;--rojo:#dc2626;--ambar:#d97706;
-  --bg:#f0f4f8;--card:#fff;--text:#1e293b;--sub:#64748b;--border:#e2e8f0;
-}
-html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+:root{--az:#0c416d;--az2:#0270c4;--vd:#16a34a;--rj:#dc2626;--bg:#f0f4f8;--card:#fff;--txt:#1e293b;--sub:#64748b;--brd:#e2e8f0}
+html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--txt);overflow:hidden}
 .hidden{display:none!important}
 
-/* ===== LOGIN ===== */
-#login-screen{
-  height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(160deg,#0c416d 0%,#0270c4 60%,#38bdf8 100%);
-  padding:32px;
-}
-.login-logo{width:80px;height:80px;background:rgba(255,255,255,.15);border-radius:24px;
-  display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:20px;
-  box-shadow:0 8px 32px rgba(0,0,0,.2);backdrop-filter:blur(10px)}
-.login-titulo{font-size:32px;font-weight:900;color:#fff;margin-bottom:6px;letter-spacing:-0.5px}
-.login-sub{font-size:16px;color:rgba(255,255,255,.65);margin-bottom:40px}
-.login-box{background:rgba(255,255,255,.12);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.2);
-  border-radius:24px;padding:32px;width:100%;max-width:420px}
-.login-field{margin-bottom:16px}
-.login-field label{display:block;font-size:14px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:8px}
-.login-field input{width:100%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);
-  border-radius:14px;padding:14px 18px;font-size:16px;font-family:'Nunito',sans-serif;
-  color:#fff;outline:none;transition:border .2s}
-.login-field input::placeholder{color:rgba(255,255,255,.4)}
-.login-field input:focus{border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.2)}
-.login-err{background:rgba(220,38,38,.3);border:1px solid rgba(220,38,38,.5);color:#fff;
-  border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:12px;text-align:center}
-.btn-login{width:100%;background:#fff;color:var(--azul);border:none;border-radius:14px;
-  padding:16px;font-size:17px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;
-  transition:transform .1s,box-shadow .2s;box-shadow:0 4px 20px rgba(0,0,0,.15);margin-top:8px}
-.btn-login:active{transform:scale(.98)}
+/* LOGIN */
+#ls{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#0c416d,#0270c4);padding:40px}
+#ls .logo{font-size:60px;margin-bottom:14px}
+#ls h1{font-size:36px;font-weight:900;color:#fff;margin-bottom:6px}
+#ls p{font-size:16px;color:rgba(255,255,255,.6);margin-bottom:36px}
+.lbox{background:rgba(255,255,255,.12);backdrop-filter:blur(20px);border:1.5px solid rgba(255,255,255,.2);
+  border-radius:24px;padding:36px;width:100%;max-width:400px}
+.lf{margin-bottom:18px}
+.lf label{display:block;font-size:14px;font-weight:700;color:rgba(255,255,255,.75);margin-bottom:8px}
+.lf input{width:100%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.2);
+  border-radius:14px;padding:15px 18px;font-size:17px;font-family:'Nunito',sans-serif;
+  color:#fff;outline:none}
+.lf input::placeholder{color:rgba(255,255,255,.35)}
+.lf input:focus{border-color:rgba(255,255,255,.6)}
+.lerr{background:rgba(220,38,38,.35);color:#fff;border-radius:12px;padding:11px 14px;
+  font-size:14px;margin-bottom:14px;text-align:center}
+.lbtn{width:100%;background:#fff;color:var(--az);border:none;border-radius:14px;
+  padding:17px;font-size:18px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:6px}
+.lbtn:active{transform:scale(.98)}
 
-/* ===== APP ===== */
-#app-screen{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+/* APP */
+#app{height:100vh;display:flex;flex-direction:column}
+.hdr{background:linear-gradient(135deg,var(--az),var(--az2));padding:18px 28px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.hdr-ico{font-size:28px}
+.hdr-t{font-size:20px;font-weight:900;color:#fff}
+.hdr-f{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.hdr-u{background:rgba(255,255,255,.15);border-radius:20px;padding:8px 16px;font-size:14px;font-weight:700;color:#fff}
+.salbtn{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);
+  border-radius:12px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
 
-/* Header */
-.t-header{
-  background:linear-gradient(135deg,var(--azul),var(--azul2));
-  padding:16px 24px;display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;box-shadow:0 4px 20px rgba(12,65,109,.3)
-}
-.t-header-left{display:flex;align-items:center;gap:14px}
-.t-logo{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:12px;
-  display:flex;align-items:center;justify-content:center;font-size:22px}
-.t-titulo{font-size:20px;font-weight:900;color:#fff}
-.t-fecha{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
-.t-header-right{display:flex;align-items:center;gap:12px}
-.t-user-chip{background:rgba(255,255,255,.15);border-radius:20px;padding:8px 14px;
-  display:flex;align-items:center;gap:8px}
-.t-avatar{width:32px;height:32px;border-radius:50%;background:var(--azul2);
-  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff}
-.t-user-name{font-size:13px;font-weight:700;color:#fff}
-.btn-logout-t{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
-  color:rgba(255,255,255,.7);border-radius:10px;padding:8px 14px;font-size:13px;
-  font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
-.btn-logout-t:active{background:rgba(255,255,255,.2)}
+.main{flex:1;overflow-y:auto;padding:28px;-webkit-overflow-scrolling:touch}
 
-/* Nav tabs */
-.t-nav{background:#fff;border-bottom:2px solid var(--border);display:flex;flex-shrink:0}
-.t-nav-btn{flex:1;padding:14px 8px;font-size:13px;font-weight:700;color:var(--sub);
-  border:none;background:none;cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;gap:4px;font-family:'Nunito',sans-serif;border-bottom:3px solid transparent;
-  margin-bottom:-2px;transition:color .15s}
-.t-nav-btn .t-nav-icon{font-size:22px}
-.t-nav-btn.active{color:var(--azul2);border-bottom-color:var(--azul2)}
-.t-nav-btn:active{background:#f8fafc}
-.t-badge{background:var(--rojo);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:800}
+/* HOME */
+#v-home{height:100%;display:flex;align-items:center;justify-content:center}
+.home-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;width:100%;height:58vh}
+.hbtn{border:none;border-radius:32px;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;font-family:'Nunito',sans-serif;
+  box-shadow:0 10px 40px rgba(0,0,0,.15);transition:transform .12s}
+.hbtn:active{transform:scale(.95)}
+.hbtn-ico{font-size:72px;line-height:1}
+.hbtn-lbl{font-size:24px;font-weight:900;color:#fff}
+.hbtn-sub{font-size:14px;font-weight:700;color:rgba(255,255,255,.65);margin-top:-10px}
+.hbtn.az{background:linear-gradient(145deg,#1d8cf0,#0c416d)}
+.hbtn.vd{background:linear-gradient(145deg,#22c55e,#14532d)}
+.hbtn.rj{background:linear-gradient(145deg,#f87171,#991b1b)}
 
-/* Main content area */
-.t-main{flex:1;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch}
+/* BACK / TITULO */
+.vh{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.bback{background:var(--card);border:2px solid var(--brd);border-radius:14px;
+  padding:11px 20px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.bback:active{background:#f1f5f9}
+.vtit{font-size:26px;font-weight:900}
 
-/* ===== VISTAS ===== */
+/* BUSCAR */
+.srch{width:100%;background:var(--card);border:2px solid var(--brd);border-radius:16px;
+  padding:15px 20px;font-size:17px;font-family:'Nunito',sans-serif;outline:none;margin-bottom:18px}
+.srch:focus{border-color:var(--az2)}
 
-/* INICIO */
-.t-bienvenida{font-size:22px;font-weight:800;color:var(--azul);margin-bottom:4px}
-.t-bienvenida-sub{font-size:14px;color:var(--sub);margin-bottom:20px}
-.t-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-.t-stat-card{background:var(--card);border-radius:20px;padding:20px;
-  box-shadow:0 2px 12px rgba(0,0,0,.06);display:flex;align-items:center;gap:14px;
-  border:2px solid transparent;cursor:pointer;transition:transform .1s,box-shadow .15s}
-.t-stat-card:active{transform:scale(.97)}
-.t-stat-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;
-  justify-content:center;font-size:28px;flex-shrink:0}
-.t-stat-icon.rojo{background:#fef2f2}
-.t-stat-icon.verde{background:#f0fdf4}
-.t-stat-icon.ambar{background:#fffbeb}
-.t-stat-icon.azul{background:#eff6ff}
-.t-stat-num{font-size:32px;font-weight:900;line-height:1}
-.t-stat-lbl{font-size:12px;font-weight:700;color:var(--sub);margin-top:3px}
-.t-stat-card.rojo-border{border-color:#fecaca}
-.t-stat-card.verde-border{border-color:#bbf7d0}
-.t-stat-card.ambar-border{border-color:#fde68a}
-.t-stat-card.azul-border{border-color:#bfdbfe}
+/* USUARIOS GRID */
+.ugrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.ucard{background:var(--card);border-radius:22px;padding:22px 14px;text-align:center;
+  cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.07);border:2px solid transparent;transition:transform .1s}
+.ucard:active{transform:scale(.95)}
+.uav{width:66px;height:66px;border-radius:50%;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff}
+.unm{font-size:14px;font-weight:800;line-height:1.3}
+.uap{font-size:12px;color:var(--sub);margin-top:3px}
+.uet{display:inline-block;background:#eff6ff;color:var(--az2);border-radius:8px;
+  padding:3px 9px;font-size:11px;font-weight:700;margin-top:6px}
 
-/* Accesos rápidos */
-.t-section-title{font-size:14px;font-weight:800;color:var(--sub);text-transform:uppercase;
-  letter-spacing:.08em;margin-bottom:12px}
-.t-accesos{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.t-acceso{background:var(--card);border-radius:18px;padding:16px 8px;text-align:center;
-  cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.05);transition:transform .1s;border:none;
-  font-family:'Nunito',sans-serif}
-.t-acceso:active{transform:scale(.95)}
-.t-acceso-icon{font-size:30px;display:block;margin-bottom:6px}
-.t-acceso-lbl{font-size:11px;font-weight:700;color:var(--text)}
+/* FICHA */
+.fichatop{background:linear-gradient(135deg,var(--az),var(--az2));border-radius:22px;
+  padding:24px;display:flex;align-items:center;gap:18px;margin-bottom:22px}
+.fav{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:900;color:#fff;border:3px solid rgba(255,255,255,.3);flex-shrink:0}
+.fnm{font-size:22px;font-weight:900;color:#fff}
+.fmeta{font-size:14px;color:rgba(255,255,255,.6);margin-top:4px}
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.rbtn{background:var(--card);border-radius:20px;padding:22px 12px;text-align:center;
+  cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.06);border:2px solid var(--brd);
+  transition:transform .1s;display:flex;flex-direction:column;align-items:center;gap:10px}
+.rbtn:active{transform:scale(.95)}
+.rico{font-size:40px}
+.rlbl{font-size:14px;font-weight:800}
+.rn{font-size:11px;font-weight:700;color:var(--sub);background:#f1f5f9;border-radius:8px;padding:2px 10px}
 
-/* ===== USUARIOS ===== */
-.t-search{width:100%;background:var(--card);border:2px solid var(--border);border-radius:16px;
-  padding:14px 18px;font-size:16px;font-family:'Nunito',sans-serif;color:var(--text);
-  outline:none;margin-bottom:16px}
-.t-search:focus{border-color:var(--azul2)}
-.t-user-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.t-user-card{background:var(--card);border-radius:20px;padding:18px;text-align:center;
-  cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .1s,box-shadow .15s;
-  border:2px solid transparent}
-.t-user-card:active{transform:scale(.96);box-shadow:0 4px 20px rgba(0,0,0,.1)}
-.t-user-avatar{width:60px;height:60px;border-radius:50%;margin:0 auto 10px;
-  display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;
-  color:#fff;flex-shrink:0}
-.t-user-nombre{font-size:13px;font-weight:800;line-height:1.3}
-.t-user-apellidos{font-size:11px;color:var(--sub);margin-top:2px}
-.t-user-badge{display:inline-block;background:#eff6ff;color:var(--azul2);border-radius:8px;
-  padding:3px 8px;font-size:10px;font-weight:700;margin-top:6px}
+/* REGISTROS lista */
+.rl-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rl-card{background:var(--card);border-radius:22px;padding:24px 20px;
+  display:flex;align-items:center;gap:16px;cursor:pointer;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);border:2px solid var(--brd);transition:transform .1s}
+.rl-card:active{transform:scale(.97)}
+.rl-ico{font-size:42px;flex-shrink:0}
+.rl-t{font-size:16px;font-weight:800}
+.rl-n{font-size:12px;color:var(--sub);margin-top:3px}
 
-/* ===== FICHA USUARIO (overlay) ===== */
-#ficha-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;
-  display:flex;flex-direction:column;overflow:hidden}
-.ficha-header{background:linear-gradient(135deg,var(--azul),var(--azul2));padding:20px 24px;
-  display:flex;align-items:center;gap:16px;flex-shrink:0}
-.ficha-avatar{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:26px;font-weight:800;color:#fff;flex-shrink:0;
-  border:3px solid rgba(255,255,255,.3)}
-.ficha-info{flex:1}
-.ficha-nombre{font-size:20px;font-weight:900;color:#fff}
-.ficha-meta{font-size:13px;color:rgba(255,255,255,.65);margin-top:2px}
-.btn-cerrar-ficha{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:12px;
-  padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
-.ficha-body{background:var(--bg);flex:1;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch}
-.reg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.reg-btn{background:var(--card);border-radius:20px;padding:20px 12px;text-align:center;
-  cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.06);border:2px solid transparent;
-  transition:transform .1s;display:flex;flex-direction:column;align-items:center;gap:8px}
-.reg-btn:active{transform:scale(.95)}
-.reg-btn .reg-icon{font-size:36px}
-.reg-btn .reg-lbl{font-size:12px;font-weight:800;color:var(--text);line-height:1.3}
-.reg-btn .reg-count{font-size:10px;font-weight:700;background:#f1f5f9;color:var(--sub);
-  border-radius:8px;padding:2px 8px;margin-top:2px}
-.reg-btn.tiene{border-color:#bbf7d0;background:#f0fdf4}
-.reg-btn.pendiente{border-color:#fde68a;background:#fffbeb}
+/* INCIDENCIAS */
+.incform{background:var(--card);border-radius:22px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.inf{margin-bottom:18px}
+.inf label{display:block;font-size:14px;font-weight:700;color:var(--sub);margin-bottom:8px}
+.inf select,.inf textarea{width:100%;border:2px solid var(--brd);border-radius:14px;
+  padding:14px 16px;font-size:16px;font-family:'Nunito',sans-serif;color:var(--txt);
+  outline:none;background:#fff}
+.inf select:focus,.inf textarea:focus{border-color:var(--rj)}
+.inf textarea{resize:none;height:110px}
+.optg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.obtn{border:2px solid var(--brd);border-radius:14px;padding:14px;font-size:15px;
+  font-weight:700;cursor:pointer;background:#fff;font-family:'Nunito',sans-serif;text-align:center}
+.obtn.sel{background:var(--rj);color:#fff;border-color:var(--rj)}
+.obtn:active{transform:scale(.97)}
 
-/* ===== REGISTROS (lista) ===== */
-.reg-lista-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.reg-lista-titulo{font-size:20px;font-weight:900;flex:1}
-.reg-item{background:var(--card);border-radius:16px;padding:16px 18px;margin-bottom:10px;
-  display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.reg-item-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;
-  justify-content:center;font-size:24px;flex-shrink:0}
-.reg-item-info{flex:1}
-.reg-item-titulo{font-size:14px;font-weight:800}
-.reg-item-meta{font-size:12px;color:var(--sub);margin-top:2px}
-.btn-reg{background:var(--azul2);color:#fff;border:none;border-radius:12px;padding:10px 18px;
-  font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap}
-.btn-reg:active{background:var(--azul)}
-
-/* ===== ASISTENCIA ===== */
-.asist-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.asist-card{background:var(--card);border-radius:20px;padding:16px;
-  display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer}
-.asist-card:active{background:#f8fafc}
-.asist-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0}
-.asist-info{flex:1}
-.asist-nombre{font-size:14px;font-weight:800;line-height:1.3}
-.asist-hora{font-size:11px;color:var(--sub);margin-top:2px}
-.asist-toggle{width:52px;height:30px;border-radius:15px;border:none;cursor:pointer;
-  font-size:18px;display:flex;align-items:center;justify-content:center;
-  transition:background .2s;flex-shrink:0}
-.asist-toggle.presente{background:#dcfce7}
-.asist-toggle.ausente{background:#f1f5f9}
-
-/* ===== ALERTAS ===== */
-.alerta-card{background:var(--card);border-radius:18px;padding:18px;margin-bottom:12px;
-  display:flex;gap:14px;align-items:flex-start;box-shadow:0 2px 10px rgba(0,0,0,.05);
-  border-left:4px solid transparent}
-.alerta-card.alta{border-left-color:var(--rojo)}
-.alerta-card.media{border-left-color:var(--ambar)}
-.alerta-card.baja{border-left-color:var(--verde)}
-.alerta-icon{font-size:28px;flex-shrink:0;margin-top:2px}
-.alerta-titulo{font-size:15px;font-weight:800}
-.alerta-desc{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.5}
-.alerta-hora{font-size:11px;color:var(--sub);margin-top:6px;font-weight:600}
-
-/* ===== TURNO ===== */
-.turno-hora{font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;
-  letter-spacing:.1em;margin:16px 0 8px}
-.turno-item{background:var(--card);border-radius:16px;padding:16px 18px;margin-bottom:8px;
-  display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.turno-hora-badge{width:52px;height:52px;border-radius:14px;background:#eff6ff;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
-.turno-hora-h{font-size:15px;font-weight:900;color:var(--azul2)}
-.turno-hora-m{font-size:10px;font-weight:700;color:var(--sub)}
-.turno-info{flex:1}
-.turno-titulo{font-size:14px;font-weight:800}
-.turno-meta{font-size:12px;color:var(--sub);margin-top:2px}
-.turno-check{width:36px;height:36px;border-radius:10px;border:2px solid var(--border);
-  background:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
-.turno-check.done{background:#dcfce7;border-color:#86efac}
-
-/* ===== MODAL REGISTRO ===== */
-#modal-reg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;
-  display:flex;align-items:flex-end}
-.modal-reg-box{background:var(--card);border-radius:28px 28px 0 0;width:100%;
-  padding:28px;max-height:85vh;overflow-y:auto}
-.modal-reg-titulo{font-size:20px;font-weight:900;margin-bottom:4px}
-.modal-reg-usuario{font-size:14px;color:var(--sub);margin-bottom:24px}
-.modal-field-t{margin-bottom:16px}
-.modal-field-t label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:6px}
-.modal-field-t select,.modal-field-t textarea,.modal-field-t input{
-  width:100%;border:2px solid var(--border);border-radius:14px;padding:14px 16px;
-  font-size:15px;font-family:'Nunito',sans-serif;color:var(--text);outline:none;
-  background:var(--bg);transition:border .2s}
-.modal-field-t select:focus,.modal-field-t textarea:focus,.modal-field-t input:focus{border-color:var(--azul2);background:#fff}
-.modal-field-t textarea{resize:none;height:100px}
-.modal-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.modal-opt-btn{border:2px solid var(--border);border-radius:14px;padding:14px;
-  font-size:14px;font-weight:700;cursor:pointer;background:var(--bg);
-  font-family:'Nunito',sans-serif;text-align:center;transition:all .15s}
-.modal-opt-btn.sel{background:var(--azul2);color:#fff;border-color:var(--azul2)}
-.modal-opt-btn:active{transform:scale(.97)}
-.modal-reg-actions{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:20px}
-.btn-cancelar-t{border:2px solid var(--border);background:none;border-radius:14px;
-  padding:16px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
-.btn-guardar-t{background:var(--verde);color:#fff;border:none;border-radius:14px;
-  padding:16px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif}
-.btn-guardar-t:active{background:#15803d}
-.modal-drag{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-/* Toast */
-#toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
-  background:#1e293b;color:#fff;border-radius:14px;padding:12px 24px;
-  font-size:14px;font-weight:700;z-index:300;opacity:0;transition:opacity .3s;
-  pointer-events:none;white-space:nowrap}
+/* MODAL */
+#mdreg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:flex-end}
+.mdbox{background:var(--card);border-radius:28px 28px 0 0;width:100%;padding:30px;max-height:88vh;overflow-y:auto}
+.mddrag{width:44px;height:5px;background:var(--brd);border-radius:3px;margin:0 auto 22px}
+.mdtit{font-size:22px;font-weight:900;margin-bottom:4px}
+.mdusr{font-size:14px;color:var(--sub);margin-bottom:22px}
+.mdf{margin-bottom:16px}
+.mdf label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:8px}
+.mdf select,.mdf textarea,.mdf input{width:100%;border:2px solid var(--brd);border-radius:14px;
+  padding:14px 16px;font-size:16px;font-family:'Nunito',sans-serif;color:var(--txt);outline:none;background:#fff}
+.mdf select:focus,.mdf textarea:focus,.mdf input:focus{border-color:var(--az2)}
+.mdf textarea{resize:none;height:100px}
+.mdopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.mdopt{border:2px solid var(--brd);border-radius:14px;padding:13px;font-size:14px;
+  font-weight:700;cursor:pointer;background:#fff;font-family:'Nunito',sans-serif;text-align:center}
+.mdopt.sel{background:var(--az2);color:#fff;border-color:var(--az2)}
+.mdact{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:22px}
+.bcnc{border:2px solid var(--brd);background:none;border-radius:14px;padding:16px;
+  font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.bsav{background:var(--vd);color:#fff;border:none;border-radius:14px;padding:16px;
+  font-size:17px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif}
+.bsav:active{background:#15803d}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:#1e293b;color:#fff;border-radius:16px;padding:14px 28px;font-size:15px;font-weight:700;
+  z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- ===== LOGIN ===== -->
-<div id="login-screen">
-  <div class="login-logo">🏥</div>
-  <div class="login-titulo">Centro Dato</div>
-  <div class="login-sub">Acceso para profesionales</div>
-  <div class="login-box">
-    <div id="login-err" class="login-err hidden">Usuario o contraseña incorrectos</div>
-    <div class="login-field">
-      <label>Email</label>
-      <input type="email" id="t-email" placeholder="usuario@centrodato.org" autocomplete="username"/>
-    </div>
-    <div class="login-field">
-      <label>Contraseña</label>
-      <input type="password" id="t-pass" placeholder="••••••••" autocomplete="current-password"/>
-    </div>
-    <button class="btn-login" id="btn-t-login">Entrar →</button>
+<div id="ls">
+  <div class="logo">&#127973;</div>
+  <h1>Centro Dato</h1>
+  <p>Acceso profesionales</p>
+  <div class="lbox">
+    <div id="lerr" class="lerr hidden">Usuario o contrase&#241;a incorrectos</div>
+    <div class="lf"><label>Email</label><input type="email" id="lem" placeholder="usuario@centrodato.org"/></div>
+    <div class="lf"><label>Contrase&#241;a</label><input type="password" id="lpw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"/></div>
+    <button class="lbtn" id="btnl">Entrar &#8594;</button>
   </div>
 </div>
 
-<!-- ===== APP ===== -->
-<div id="app-screen" class="hidden">
-  <div class="t-header">
-    <div class="t-header-left">
-      <div class="t-logo">🏥</div>
-      <div>
-        <div class="t-titulo">Centro Dato</div>
-        <div class="t-fecha" id="t-fecha-hoy"></div>
+<div id="app" class="hidden">
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="hdr-ico">&#127973;</div>
+      <div><div class="hdr-t">Centro Dato</div><div class="hdr-f" id="hfecha"></div></div>
+    </div>
+    <div class="hdr-r">
+      <div class="hdr-u" id="husr">&#8212;</div>
+      <button class="salbtn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  <div class="main">
+    <div id="v-home">
+      <div class="home-grid">
+        <button class="hbtn az" onclick="irA('usuarios')">
+          <div class="hbtn-ico">&#128101;</div>
+          <div class="hbtn-lbl">Usuarios</div>
+          <div class="hbtn-sub">Ver y gestionar</div>
+        </button>
+        <button class="hbtn vd" onclick="irA('registros')">
+          <div class="hbtn-ico">&#128203;</div>
+          <div class="hbtn-lbl">Registros</div>
+          <div class="hbtn-sub">A&#241;adir anotaciones</div>
+        </button>
+        <button class="hbtn rj" onclick="irA('incidencias')">
+          <div class="hbtn-ico">&#9888;&#65039;</div>
+          <div class="hbtn-lbl">Incidencias</div>
+          <div class="hbtn-sub">Ca&#237;das y alertas</div>
+        </button>
       </div>
     </div>
-    <div class="t-header-right">
-      <div class="t-user-chip">
-        <div class="t-avatar" id="t-av">C</div>
-        <div class="t-user-name" id="t-nombre">Cuidador</div>
+    <div id="v-usuarios" class="hidden">
+      <div class="vh"><button class="bback" onclick="irA('home')">&#8592; Inicio</button><div class="vtit">Usuarios</div></div>
+      <input class="srch" id="srchu" placeholder="&#128269; Buscar..." oninput="renderU()"/>
+      <div class="ugrid" id="ugrid"></div>
+    </div>
+    <div id="v-ficha" class="hidden">
+      <div class="vh"><button class="bback" onclick="irA('usuarios')">&#8592; Usuarios</button><div class="vtit" id="ftit">Usuario</div></div>
+      <div class="fichatop"><div class="fav" id="fav">A</div>
+        <div><div class="fnm" id="fnm">&#8212;</div><div class="fmeta" id="fmeta">&#8212;</div></div>
       </div>
-      <button class="btn-logout-t" onclick="tLogout()">Salir</button>
+      <div class="rgrid" id="rgrid"></div>
     </div>
-  </div>
-
-  <div class="t-nav">
-    <button class="t-nav-btn active" onclick="tNav('inicio',this)">
-      <span class="t-nav-icon">🏠</span>Inicio
-    </button>
-    <button class="t-nav-btn" onclick="tNav('usuarios',this)">
-      <span class="t-nav-icon">👥</span>Usuarios
-    </button>
-    <button class="t-nav-btn" onclick="tNav('asistencia',this)">
-      <span class="t-nav-icon">✅</span>Asistencia
-    </button>
-    <button class="t-nav-btn" onclick="tNav('alertas',this)">
-      <span class="t-nav-icon">🔔</span>Alertas
-      <span class="t-badge" id="badge-alertas">3</span>
-    </button>
-    <button class="t-nav-btn" onclick="tNav('turno',this)">
-      <span class="t-nav-icon">📋</span>Mi turno
-    </button>
-  </div>
-
-  <div class="t-main">
-    <div id="vista-inicio"></div>
-    <div id="vista-usuarios" class="hidden"></div>
-    <div id="vista-asistencia" class="hidden"></div>
-    <div id="vista-alertas" class="hidden"></div>
-    <div id="vista-turno" class="hidden"></div>
-  </div>
-</div>
-
-<!-- ===== FICHA USUARIO ===== -->
-<div id="ficha-overlay" class="hidden">
-  <div class="ficha-header">
-    <div class="ficha-avatar" id="ficha-av">A</div>
-    <div class="ficha-info">
-      <div class="ficha-nombre" id="ficha-nombre">Nombre</div>
-      <div class="ficha-meta" id="ficha-meta">—</div>
+    <div id="v-registros" class="hidden">
+      <div class="vh"><button class="bback" onclick="irA('home')">&#8592; Inicio</button><div class="vtit">Registros</div></div>
+      <div class="rl-grid" id="rlgrid"></div>
     </div>
-    <button class="btn-cerrar-ficha" onclick="cerrarFicha()">✕ Cerrar</button>
-  </div>
-  <div class="ficha-body">
-    <div class="t-section-title" style="margin-bottom:14px">Registrar acción</div>
-    <div class="reg-grid" id="ficha-reg-grid"></div>
-  </div>
-</div>
-
-<!-- ===== MODAL REGISTRO ===== -->
-<div id="modal-reg" class="hidden">
-  <div class="modal-reg-box">
-    <div class="modal-drag"></div>
-    <div class="modal-reg-titulo" id="mreg-titulo">Registro</div>
-    <div class="modal-reg-usuario" id="mreg-usuario">Usuario</div>
-    <div id="mreg-body"></div>
-    <div class="modal-reg-actions">
-      <button class="btn-cancelar-t" onclick="cerrarModalReg()">Cancelar</button>
-      <button class="btn-guardar-t" onclick="guardarReg()">✓ Guardar registro</button>
+    <div id="v-incidencias" class="hidden">
+      <div class="vh"><button class="bback" onclick="irA('home')">&#8592; Inicio</button><div class="vtit">Nueva incidencia</div></div>
+      <div class="incform">
+        <div class="inf"><label>Usuario afectado</label>
+          <select id="inu"><option value="">&#8212; Seleccionar usuario &#8212;</option></select></div>
+        <div class="inf"><label>Tipo de incidencia</label>
+          <div class="optg" id="intopts">
+            <button class="obtn" onclick="sIT(this,'Ca\xedda sin lesi\xf3n')" type="button">&#129299; Ca&#237;da sin lesi&#243;n</button>
+            <button class="obtn" onclick="sIT(this,'Ca\xedda con lesi\xf3n')" type="button">&#128680; Ca&#237;da con lesi&#243;n</button>
+            <button class="obtn" onclick="sIT(this,'Agitaci\xf3n')" type="button">&#128544; Agitaci&#243;n / Crisis</button>
+            <button class="obtn" onclick="sIT(this,'Accidente')" type="button">&#9888;&#65039; Accidente</button>
+            <button class="obtn" onclick="sIT(this,'Problema m\xe9dico')" type="button">&#127973; Problema m&#233;dico</button>
+            <button class="obtn" onclick="sIT(this,'Otra')" type="button">&#128221; Otra incidencia</button>
+          </div>
+        </div>
+        <div class="inf"><label>Descripci&#243;n</label>
+          <textarea id="indesc" placeholder="Describe lo ocurrido..."></textarea></div>
+        <div class="inf"><label>Lugar</label>
+          <select id="inlug">
+            <option value="">&#8212; Seleccionar &#8212;</option>
+            <option>Sala de actividades</option><option>Ba&#241;o</option>
+            <option>Pasillo</option><option>Comedor</option>
+            <option>Exterior / Jard&#237;n</option><option>Transporte</option><option>Otro</option>
+          </select>
+        </div>
+        <button class="bsav" style="width:100%;font-size:18px;padding:18px" onclick="gInc()" type="button">
+          &#9888;&#65039; Guardar incidencia
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
+<div id="mdreg" class="hidden">
+  <div class="mdbox">
+    <div class="mddrag"></div>
+    <div class="mdtit" id="mdtit">Registro</div>
+    <div class="mdusr" id="mdusr">&#8212;</div>
+    <div id="mdbody"></div>
+    <div class="mdact">
+      <button class="bcnc" onclick="cMd()" type="button">Cancelar</button>
+      <button class="bsav" onclick="gReg()" type="button">&#10003; Guardar</button>
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <script>
-/* ===== DATOS ===== */
 var BD=[
-{id:1,n:"Alan Javier",a:"Hermo Placeres",fnac:"1986-04-08",est:"activo",gr:"II",et:"PC"},
-{id:2,n:"Alejandra",a:"Sagüés García",fnac:"1992-11-30",est:"activo",gr:"III",et:"PC"},
-{id:3,n:"Alejandro",a:"González Arias",fnac:"1979-12-21",est:"activo",gr:"III",et:"TCE"},
-{id:5,n:"Alfonso Luis",a:"Julián Vicaria",fnac:"1976-01-28",est:"activo",et:null},
-{id:6,n:"Beatriz Elena",a:"González Martínez",fnac:"1971-02-21",est:"activo",gr:"III",et:"DCS"},
-{id:7,n:"Carlos",a:"Izaguirre Nazar",fnac:"1961-10-05",est:"activo",gr:"II",et:"DCS"},
-{id:8,n:"Carlos",a:"Velasco Martín",fnac:"1984-09-23",est:"activo",gr:"III",et:"DCS"},
-{id:9,n:"Carmen",a:"Eduarte Lendinez",fnac:"1964-01-29",est:"activo",et:"DCS"},
-{id:10,n:"Cristina",a:"Pulido Rincón",fnac:"1994-11-07",est:"activo",gr:"III",et:"LESION"},
-{id:11,n:"David",a:"Bonilla Granados",fnac:"1976-11-11",est:"activo",gr:"III",et:"DOWN"},
-{id:12,n:"Eduardo",a:"Cebrecos Rol",fnac:"1973-12-30",est:"activo",et:"PC"},
-{id:13,n:"Edurne",a:"Chunchurreta Merino",fnac:"1974-10-06",est:"activo",gr:"III",et:"DCS"},
-{id:14,n:"Mª Isabel",a:"Contreras de Blas",fnac:"1970-12-01",est:"activo",gr:"II",et:"DCS"},
-{id:15,n:"Javier",a:"Ibáñez González",fnac:"1975-03-15",est:"activo",gr:"III",et:"PC"},
-{id:16,n:"José",a:"Monsalve Cobo",fnac:"1962-04-24",est:"activo",gr:"III",et:"DCS"},
-{id:17,n:"José Antonio",a:"Brihuega Salas",fnac:"1988-05-24",est:"activo",gr:"III",et:"PC"},
-{id:18,n:"José María",a:"Rodríguez Lucas",fnac:"1968-11-06",est:"activo",gr:"II",et:"PC"},
-{id:19,n:"Juan José",a:"Legánes Algora",fnac:"1957-03-22",est:"activo",gr:"III",et:"PC"},
-{id:20,n:"María Tisca",a:"Porras Piñero",fnac:"1967-03-01",est:"activo",et:"DCS"},
-{id:21,n:"Mercedes",a:"García Martínez",fnac:"1968-08-23",est:"activo",gr:"II",et:"PC"},
-{id:22,n:"Nadezda",a:"Petrovicoba",fnac:"1964-08-21",est:"activo",gr:"III",et:"DCS"},
-{id:23,n:"Óscar",a:"Martín Pérez",fnac:"1976-11-16",est:"activo",gr:"III",et:"PC"},
-{id:24,n:"Patricia",a:"de Barrio López",fnac:"1989-01-20",est:"activo",gr:"III",et:"ATAXIA"},
-{id:25,n:"Raúl",a:"Álvarez Llamas",fnac:"1984-04-20",est:"activo",et:"DCS"},
-{id:26,n:"Santiago",a:"Patón Pascual",fnac:"1971-05-20",est:"activo",et:"POLITRAUMA"}
+  {id:1,n:"Alan Javier",a:"Hermo Placeres",gr:"II",et:"PC"},
+  {id:2,n:"Alejandra",a:"Sag\u00fcés Garc\u00eda",gr:"III",et:"PC"},
+  {id:3,n:"Alejandro",a:"Gonz\u00e1lez Arias",gr:"III",et:"TCE"},
+  {id:5,n:"Alfonso Luis",a:"Juli\u00e1n Vicaria",et:null},
+  {id:6,n:"Beatriz Elena",a:"Gonz\u00e1lez Mart\u00ednez",gr:"III",et:"DCS"},
+  {id:7,n:"Carlos",a:"Izaguirre Nazar",gr:"II",et:"DCS"},
+  {id:8,n:"Carlos",a:"Velasco Mart\u00edn",gr:"III",et:"DCS"},
+  {id:9,n:"Carmen",a:"Eduarte Lendinez",et:"DCS"},
+  {id:10,n:"Cristina",a:"Pulido Rinc\u00f3n",gr:"III",et:"LESION"},
+  {id:11,n:"David",a:"Bonilla Granados",gr:"III",et:"DOWN"},
+  {id:12,n:"Eduardo",a:"Cebrecos Rol",et:"PC"},
+  {id:13,n:"Edurne",a:"Chunchurreta Merino",gr:"III",et:"DCS"},
+  {id:14,n:"M\u00aa Isabel",a:"Contreras de Blas",gr:"II",et:"DCS"},
+  {id:15,n:"Javier",a:"Ib\u00e1\u00f1ez Gonz\u00e1lez",gr:"III",et:"PC"},
+  {id:16,n:"Jos\u00e9",a:"Monsalve Cobo",gr:"III",et:"DCS"},
+  {id:17,n:"Jos\u00e9 Antonio",a:"Brihuega Salas",gr:"III",et:"PC"},
+  {id:18,n:"Jos\u00e9 Mar\u00eda",a:"Rodr\u00edguez Lucas",gr:"II",et:"PC"},
+  {id:19,n:"Juan Jos\u00e9",a:"Leg\u00e1nes Algora",gr:"III",et:"PC"},
+  {id:20,n:"Mar\u00eda Tisca",a:"Porras Pi\u00f1ero",et:"DCS"},
+  {id:21,n:"Mercedes",a:"Garc\u00eda Mart\u00ednez",gr:"II",et:"PC"},
+  {id:22,n:"Nadezda",a:"Petrovicoba",gr:"III",et:"DCS"},
+  {id:23,n:"\u00d3scar",a:"Mart\u00edn P\u00e9rez",gr:"III",et:"PC"},
+  {id:24,n:"Patricia",a:"de Barrio L\u00f3pez",gr:"III",et:"ATAXIA"},
+  {id:25,n:"Ra\u00fal",a:"\u00c1lvarez Llamas",et:"DCS"},
+  {id:26,n:"Santiago",a:"Pat\u00f3n Pascual",et:"POLITRAUMA"}
 ];
-
-var USUARIOS_ACTIVOS = BD.filter(function(b){return b.est==='activo';});
-
-var REGISTROS = {};
-var ASISTENCIA = {}; // {id: {presente:bool, hora:string}}
-
-var _userActual = null;
-var _fichaUsuario = null;
-var _regActual = null; // {tipo, userId}
-var _regOpts = {}; // valores del formulario actual
-
-/* ===== COLORES AVATAR ===== */
-var COLORES = ['#0270c4','#16a34a','#d97706','#7c3aed','#dc2626','#0891b2','#92400e','#15803d'];
-function colorUsuario(id){ return COLORES[id % COLORES.length]; }
-function iniciales(n,a){ return (n[0]+(a?a[0]:'')).toUpperCase(); }
-
-/* ===== TIPOS DE REGISTRO ===== */
-var TIPOS_REG = [
-  {id:'medicacion', icon:'💊', label:'Medicación', color:'#fdf4ff',
-   fields:[
-    {k:'tipo', label:'Tipo', opts:['Crónica administrada','Aguda administrada','A demanda','No administrada']},
-    {k:'obs', label:'Observaciones', type:'textarea'}
-  ]},
-  {id:'posturales', icon:'🔄', label:'Cambio postural', color:'#eff6ff',
-   fields:[
-    {k:'posicion', label:'Posición', opts:['Decúbito supino','Decúbito lateral derecho','Decúbito lateral izquierdo','Sedestación','Bipedestación']},
-    {k:'obs', label:'Observaciones', type:'textarea'}
-  ]},
-  {id:'constantes', icon:'❤️', label:'Constantes', color:'#fff1f2',
-   fields:[
-    {k:'tension', label:'Tensión arterial', type:'text', placeholder:'Ej: 120/80'},
-    {k:'fc', label:'Frec. cardíaca (ppm)', type:'number', placeholder:'Ej: 72'},
-    {k:'temp', label:'Temperatura (ºC)', type:'number', placeholder:'Ej: 36.5'},
-    {k:'obs', label:'Observaciones', type:'textarea'}
-  ]},
-  {id:'higiene', icon:'🚿', label:'Higiene', color:'#f0fdfa',
-   fields:[
-    {k:'tipo', label:'Tipo de higiene', opts:['Ducha completa','Higiene parcial','Higiene bucal','Afeitado','Corte de uñas']},
-    {k:'obs', label:'Observaciones', type:'textarea'}
-  ]},
-  {id:'incontinencias', icon:'🩹', label:'Incontinencia', color:'#fffbeb',
-   fields:[
-    {k:'tipo', label:'Tipo', opts:['Cambio pañal preventivo','Cambio pañal por micción','Cambio pañal por deposición','Control de esfínteres OK']},
-    {k:'obs', label:'Observaciones', type:'textarea'}
-  ]},
-  {id:'dietas', icon:'🍽️', label:'Alimentación', color:'#f0fdf4',
-   fields:[
-    {k:'comida', label:'Comida', opts:['Desayuno','Almuerzo','Comida','Merienda','Cena']},
-    {k:'ingesta', label:'Ingesta', opts:['Completa','3/4','1/2','1/4','Rechazó']},
-    {k:'liquidos', label:'Líquidos (ml)', type:'number', placeholder:'Ej: 250'},
-    {k:'obs', label:'Observaciones', type:'textarea'}
-  ]},
-  {id:'caidas', icon:'⚠️', label:'Incidencia / Caída', color:'#fff1f2',
-   fields:[
-    {k:'tipo', label:'Tipo', opts:['Caída sin lesión','Caída con lesión leve','Caída con lesión grave','Otra incidencia']},
-    {k:'lugar', label:'Lugar', opts:['Sala de actividades','Baño','Pasillo','Comedor','Exterior','Otro']},
-    {k:'obs', label:'Descripción del incidente', type:'textarea'}
-  ]},
-  {id:'actividades', icon:'🎯', label:'Actividad', color:'#fdf4ff',
-   fields:[
-    {k:'tipo', label:'Actividad', opts:['Fisioterapia','Terapia ocupacional','Logopedia','Actividad grupal','Programa autonomía','Ocio / Tiempo libre','Otra']},
-    {k:'participacion', label:'Participación', opts:['Activa','Parcial','Pasiva','No participó']},
-    {k:'obs', label:'Observaciones', type:'textarea'}
-  ]},
-  {id:'comunicacion', icon:'📞', label:'Comunicación familia', color:'#eff6ff',
-   fields:[
-    {k:'canal', label:'Canal', opts:['Teléfono','WhatsApp','Email','Presencial','Sin novedad']},
-    {k:'motivo', label:'Motivo', opts:['Información general','Incidencia','Ausencia','Cambio de turno','Documentación']},
-    {k:'obs', label:'Notas', type:'textarea'}
-  ]}
+var REG={};var _iT="";var _rA=null;var _rO={};var _uA=null;var _fId=null;
+var CL=["#0270c4","#16a34a","#d97706","#7c3aed","#dc2626","#0891b2","#92400e","#15803d"];
+function cl(id){return CL[id%CL.length];}
+function ini(n,a){return((n||"")[0]+(a||"")[0]).toUpperCase();}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+var TR=[
+  {id:"medicacion",icon:"&#128138;",label:"Medicaci\u00f3n",
+   fields:[{k:"tipo",opts:["Cr\u00f3nica administrada","Aguda","A demanda","No administrada"]},{k:"obs",label:"Observaciones",type:"textarea"}]},
+  {id:"posturales",icon:"&#128260;",label:"Cambio postural",
+   fields:[{k:"pos",opts:["Dec\u00fabito supino","Lateral derecho","Lateral izquierdo","Sedestaci\u00f3n"]},{k:"obs",label:"Observaciones",type:"textarea"}]},
+  {id:"constantes",icon:"&#10084;&#65039;",label:"Constantes",
+   fields:[{k:"tension",label:"Tensi\u00f3n",type:"text",placeholder:"Ej: 120/80"},{k:"fc",label:"Frec. card\u00edaca",type:"number",placeholder:"ppm"},{k:"obs",label:"Notas",type:"textarea"}]},
+  {id:"higiene",icon:"&#128703;",label:"Higiene",
+   fields:[{k:"tipo",opts:["Ducha completa","Higiene parcial","Higiene bucal","Afeitado"]},{k:"obs",label:"Observaciones",type:"textarea"}]},
+  {id:"incontinencias",icon:"&#129657;",label:"Incontinencia",
+   fields:[{k:"tipo",opts:["Cambio preventivo","Cambio por micci\u00f3n","Por deposici\u00f3n","Control OK"]},{k:"obs",label:"Observaciones",type:"textarea"}]},
+  {id:"dietas",icon:"&#127869;&#65039;",label:"Alimentaci\u00f3n",
+   fields:[{k:"comida",opts:["Desayuno","Almuerzo","Comida","Merienda","Cena"]},{k:"ingesta",opts:["Completa","3/4","1/2","1/4","Rechaz\u00f3"]},{k:"obs",label:"Observaciones",type:"textarea"}]},
+  {id:"actividades",icon:"&#127919;",label:"Actividad",
+   fields:[{k:"tipo",opts:["Fisioterapia","Terapia ocupacional","Logopedia","Actividad grupal","Ocio"]},{k:"part",opts:["Activa","Parcial","Pasiva","No particip\u00f3"]},{k:"obs",label:"Observaciones",type:"textarea"}]},
+  {id:"comunicacion",icon:"&#128222;",label:"Comunicaci\u00f3n",
+   fields:[{k:"canal",opts:["Tel\u00e9fono","WhatsApp","Email","Presencial"]},{k:"motivo",opts:["Info general","Incidencia","Ausencia","Documentaci\u00f3n"]},{k:"obs",label:"Notas",type:"textarea"}]}
 ];
-
-/* ===== LOGIN ===== */
-var USUARIOS_SISTEMA = [
-  {email:'coordinador@centrodato.org', pass:'centrodato2025', nombre:'Coordinador', rol:'Coordinador'},
-  {email:'patricia@centrodato.org', pass:'profesional2025', nombre:'Patricia Mateo', rol:'Logopeda'},
-  {email:'cuidador@centrodato.org', pass:'cuidador2025', nombre:'Cuidador 1', rol:'Auxiliar'}
+var US=[
+  {email:"coordinador@centrodato.org",pass:"centrodato2025",nombre:"Coordinador"},
+  {email:"patricia@centrodato.org",pass:"profesional2025",nombre:"Patricia Mateo"},
+  {email:"cuidador@centrodato.org",pass:"cuidador2025",nombre:"Cuidador 1"}
 ];
-
-document.getElementById('btn-t-login').addEventListener('click', tLogin);
-document.getElementById('t-pass').addEventListener('keydown', function(e){if(e.key==='Enter')tLogin();});
-
-function tLogin(){
-  var em = document.getElementById('t-email').value.trim().toLowerCase();
-  var pw = document.getElementById('t-pass').value;
-  var u = USUARIOS_SISTEMA.find(function(x){return x.email===em && x.pass===pw;});
-  if(!u){
-    document.getElementById('login-err').classList.remove('hidden');
-    return;
-  }
-  document.getElementById('login-err').classList.add('hidden');
-  _userActual = u;
-  document.getElementById('t-av').textContent = u.nombre[0];
-  document.getElementById('t-nombre').textContent = u.nombre;
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app-screen').classList.remove('hidden');
-  actualizarFecha();
-  tNav('inicio', document.querySelector('.t-nav-btn'));
+document.getElementById("btnl").addEventListener("click",doL);
+document.getElementById("lpw").addEventListener("keydown",function(e){if(e.key==="Enter")doL();});
+function doL(){
+  var em=document.getElementById("lem").value.trim().toLowerCase();
+  var pw=document.getElementById("lpw").value;
+  var u=US.find(function(x){return x.email===em&&x.pass===pw;});
+  if(!u){document.getElementById("lerr").classList.remove("hidden");return;}
+  document.getElementById("lerr").classList.add("hidden");
+  _uA=u;
+  document.getElementById("husr").textContent="\uD83D\uDC64 "+u.nombre;
+  document.getElementById("ls").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  updF();pobS();irA("home");
 }
-
-function tLogout(){
-  _userActual = null;
-  document.getElementById('app-screen').classList.add('hidden');
-  document.getElementById('login-screen').classList.remove('hidden');
-  document.getElementById('t-email').value='';
-  document.getElementById('t-pass').value='';
+function logout(){
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("ls").classList.remove("hidden");
+  document.getElementById("lem").value="";document.getElementById("lpw").value="";
 }
-
-/* ===== FECHA ===== */
-function actualizarFecha(){
-  var d = new Date();
-  var dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  document.getElementById('t-fecha-hoy').textContent =
-    dias[d.getDay()]+', '+d.getDate()+' de '+meses[d.getMonth()]+' · '+
-    d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+function updF(){
+  var d=new Date();
+  var ds=["Dom","Lun","Mar","Mi\u00e9","Jue","Vie","S\u00e1b"];
+  var ms=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  document.getElementById("hfecha").textContent=ds[d.getDay()]+" "+d.getDate()+" "+ms[d.getMonth()]+
+    " \u00b7 "+d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0");
 }
-
-/* ===== NAVEGACIÓN ===== */
-var _vistaActual = 'inicio';
-function tNav(vista, btn){
-  document.querySelectorAll('.t-nav-btn').forEach(function(b){b.classList.remove('active');});
-  if(btn) btn.classList.add('active');
-  ['inicio','usuarios','asistencia','alertas','turno'].forEach(function(v){
-    document.getElementById('vista-'+v).classList.toggle('hidden', v!==vista);
-  });
-  _vistaActual = vista;
-  if(vista==='inicio') renderInicio();
-  else if(vista==='usuarios') renderUsuarios();
-  else if(vista==='asistencia') renderAsistencia();
-  else if(vista==='alertas') renderAlertas();
-  else if(vista==='turno') renderTurno();
+setInterval(updF,60000);
+function pobS(){
+  var s=document.getElementById("inu");
+  BD.forEach(function(u){var o=document.createElement("option");o.value=u.id;o.textContent=u.n+" "+u.a;s.appendChild(o);});
 }
-
-/* ===== INICIO ===== */
-function renderInicio(){
-  var d = new Date();
-  var h=d.getHours();
-  var saludo=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
-
-  var presentes = Object.keys(ASISTENCIA).filter(function(k){return ASISTENCIA[k].presente;}).length;
-  var totalReg = Object.keys(REGISTROS).reduce(function(s,k){return s+(REGISTROS[k]||[]).length;},0);
-  var pendientes = Math.max(0, USUARIOS_ACTIVOS.length * 2 - totalReg);
-
-  var html = '<div class="t-bienvenida">'+saludo+', '+(_userActual?_userActual.nombre.split(' ')[0]:'')+'! 👋</div>';
-  html += '<div class="t-bienvenida-sub">Turno activo · '+USUARIOS_ACTIVOS.length+' usuarios en el centro hoy</div>';
-
-  html += '<div class="t-stats-grid">';
-  html += tarjetaStat('🔴','rojo','rojo-border',pendientes,'Pendientes','Ver registros pendientes','alertas');
-  html += tarjetaStat('✅','verde','verde-border',presentes,'Presentes hoy','Ver asistencia','asistencia');
-  html += tarjetaStat('⚠️','ambar','ambar-border',3,'Alertas activas','Ver alertas','alertas');
-  html += tarjetaStat('📋','azul','azul-border',totalReg,'Registros hoy','Ver registros','usuarios');
-  html += '</div>';
-
-  html += '<div class="t-section-title">Acceso rápido</div>';
-  html += '<div class="t-accesos">';
-  TIPOS_REG.slice(0,8).forEach(function(t){
-    html += '<button class="t-acceso" onclick="abrirRegRapido(\''+t.id+'\')">';
-    html += '<span class="t-acceso-icon">'+t.icon+'</span>';
-    html += '<span class="t-acceso-lbl">'+t.label+'</span>';
-    html += '</button>';
-  });
-  html += '</div>';
-
-  document.getElementById('vista-inicio').innerHTML = html;
+var VS=["home","usuarios","ficha","registros","incidencias"];
+function irA(v){
+  VS.forEach(function(x){document.getElementById("v-"+x).classList.toggle("hidden",x!==v);});
+  if(v==="usuarios")rU();
+  if(v==="registros")rRL();
+  if(v==="incidencias")rInc();
 }
-
-function tarjetaStat(icon, color, border, num, lbl, title, nav){
-  return '<div class="t-stat-card '+border+'" onclick="tNav(\''+nav+'\',document.querySelectorAll(\'.t-nav-btn\')['+['inicio','usuarios','asistencia','alertas','turno'].indexOf(nav)+'])" title="'+title+'">' +
-    '<div class="t-stat-icon '+color+'">'+icon+'</div>' +
-    '<div><div class="t-stat-num">'+num+'</div><div class="t-stat-lbl">'+lbl+'</div></div>' +
-    '</div>';
-}
-
-/* ===== USUARIOS ===== */
-var _busqueda = '';
-function renderUsuarios(){
-  var q = _busqueda.toLowerCase();
-  var lista = USUARIOS_ACTIVOS.filter(function(u){
-    return (u.n+' '+u.a).toLowerCase().indexOf(q)>=0;
-  });
-
-  var html = '<input class="t-search" placeholder="🔍  Buscar usuario..." value="'+esc(_busqueda)+'" oninput="_busqueda=this.value;renderUsuarios()">';
-  html += '<div class="t-user-grid">';
+function rU(){
+  var q=(document.getElementById("srchu").value||"").toLowerCase();
+  var lista=BD.filter(function(u){return(u.n+" "+u.a).toLowerCase().indexOf(q)>=0;});
+  var h="";
   lista.forEach(function(u){
-    var color = colorUsuario(u.id);
-    var ini = iniciales(u.n, u.a);
-    var regs = Object.keys(REGISTROS).reduce(function(s,k){
-      return s+(REGISTROS[k]||[]).filter(function(r){return r.userId===u.id;}).length;
-    },0);
-    html += '<div class="t-user-card" onclick="abrirFicha('+u.id+')">';
-    html += '<div class="t-user-avatar" style="background:'+color+'">'+ini+'</div>';
-    html += '<div class="t-user-nombre">'+esc(u.n)+'</div>';
-    html += '<div class="t-user-apellidos">'+esc(u.a)+'</div>';
-    if(u.et) html += '<span class="t-user-badge">'+u.et+'</span>';
-    if(regs>0) html += '<div style="font-size:11px;color:var(--verde);font-weight:700;margin-top:4px">'+regs+' registro'+(regs!==1?'s':'')+'</div>';
-    html += '</div>';
+    h+='<div class="ucard" onclick="aF('+u.id+')">';
+    h+='<div class="uav" style="background:'+cl(u.id)+'">'+ini(u.n,u.a)+'</div>';
+    h+='<div class="unm">'+esc(u.n)+'</div><div class="uap">'+esc(u.a)+'</div>';
+    if(u.et)h+='<span class="uet">'+u.et+'</span>';
+    h+='</div>';
   });
-  html += '</div>';
-  document.getElementById('vista-usuarios').innerHTML = html;
+  document.getElementById("ugrid").innerHTML=h;
 }
-
-/* ===== FICHA USUARIO ===== */
-function abrirFicha(id){
-  var u = USUARIOS_ACTIVOS.find(function(x){return x.id===id;});
-  if(!u) return;
-  _fichaUsuario = u;
-  var color = colorUsuario(u.id);
-  document.getElementById('ficha-av').textContent = iniciales(u.n, u.a);
-  document.getElementById('ficha-av').style.background = color;
-  document.getElementById('ficha-nombre').textContent = u.n+' '+u.a;
-  document.getElementById('ficha-meta').textContent = (u.et||'')+' · Grupo '+(u.gr||'—');
-
-  var html = '';
-  TIPOS_REG.forEach(function(t){
-    var regs = (REGISTROS[t.id]||[]).filter(function(r){return r.userId===id;}).length;
-    html += '<div class="reg-btn '+(regs>0?'tiene':'pendiente')+'" onclick="abrirModalReg(\''+t.id+'\','+id+')">';
-    html += '<span class="reg-icon">'+t.icon+'</span>';
-    html += '<span class="reg-lbl">'+t.label+'</span>';
-    html += '<span class="reg-count">'+(regs>0?regs+' hoy':'Pendiente')+'</span>';
-    html += '</div>';
+function aF(id){
+  var u=BD.find(function(x){return x.id===id;});if(!u)return;
+  _fId=id;
+  document.getElementById("fav").textContent=ini(u.n,u.a);
+  document.getElementById("fav").style.background=cl(id);
+  document.getElementById("fnm").textContent=u.n+" "+u.a;
+  document.getElementById("fmeta").textContent=(u.et||"")+(u.gr?" \u00b7 Grupo "+u.gr:"");
+  document.getElementById("ftit").textContent=u.n;
+  var h="";
+  TR.forEach(function(t){
+    var n=(REG[t.id]||[]).filter(function(r){return r.userId===id;}).length;
+    h+='<div class="rbtn" onclick="aMd(\''+t.id+'\','+id+')">';
+    h+='<span class="rico">'+t.icon+'</span>';
+    h+='<span class="rlbl">'+t.label+'</span>';
+    h+='<span class="rn">'+(n>0?n+" hoy":"\u2014")+'</span></div>';
   });
-  document.getElementById('ficha-reg-grid').innerHTML = html;
-  document.getElementById('ficha-overlay').classList.remove('hidden');
+  document.getElementById("rgrid").innerHTML=h;irA("ficha");
 }
-
-function cerrarFicha(){
-  document.getElementById('ficha-overlay').classList.add('hidden');
-  _fichaUsuario = null;
-}
-
-/* ===== ACCESO RÁPIDO (sin usuario específico) ===== */
-function abrirRegRapido(tipoId){
-  // Abrir selector de usuario primero
-  var tipo = TIPOS_REG.find(function(t){return t.id===tipoId;});
-  if(!tipo) return;
-  _regActual = {tipo: tipoId, userId: null};
-
-  var html = '<div class="modal-field-t"><label>Seleccionar usuario</label>';
-  html += '<select id="mreg-sel-usuario">';
-  html += '<option value="">— Selecciona usuario —</option>';
-  USUARIOS_ACTIVOS.forEach(function(u){
-    html += '<option value="'+u.id+'">'+u.n+' '+u.a+'</option>';
+function rRL(){
+  var h="";
+  TR.forEach(function(t){
+    var n=Object.values(REG).reduce(function(s,a){return s+(a||[]).filter(function(r){return r&&r.tipo===t.id;}).length;},0);
+    h+='<div class="rl-card" onclick="aMdS(\''+t.id+'\')">';
+    h+='<div class="rl-ico">'+t.icon+'</div>';
+    h+='<div><div class="rl-t">'+t.label+'</div><div class="rl-n">'+(n>0?n+" registros hoy":"Sin registros")+'</div></div></div>';
   });
-  html += '</select></div>';
-  html += buildRegFields(tipo);
-
-  document.getElementById('mreg-titulo').textContent = tipo.icon+' '+tipo.label;
-  document.getElementById('mreg-usuario').textContent = 'Selecciona el usuario';
-  document.getElementById('mreg-body').innerHTML = html;
-  document.getElementById('modal-reg').classList.remove('hidden');
+  document.getElementById("rlgrid").innerHTML=h;
 }
-
-function abrirModalReg(tipoId, userId){
-  var tipo = TIPOS_REG.find(function(t){return t.id===tipoId;});
-  var u = USUARIOS_ACTIVOS.find(function(x){return x.id===userId;});
-  if(!tipo||!u) return;
-  _regActual = {tipo: tipoId, userId: userId};
-  _regOpts = {};
-
-  document.getElementById('mreg-titulo').textContent = tipo.icon+' '+tipo.label;
-  document.getElementById('mreg-usuario').textContent = '👤 '+u.n+' '+u.a;
-  document.getElementById('mreg-body').innerHTML = buildRegFields(tipo);
-  document.getElementById('modal-reg').classList.remove('hidden');
+function aMdS(tid){
+  var t=TR.find(function(x){return x.id===tid;});
+  _rA={tipo:tid,userId:null};_rO={};
+  var h='<div class="mdf"><label>Usuario</label><select id="mduid"><option value="">&#8212; Seleccionar &#8212;</option>';
+  BD.forEach(function(u){h+='<option value="'+u.id+'">'+esc(u.n+" "+u.a)+'</option>';});
+  h+='</select></div>'+bF(t);
+  document.getElementById("mdtit").innerHTML=t.icon+" "+t.label;
+  document.getElementById("mdusr").textContent="Selecciona el usuario";
+  document.getElementById("mdbody").innerHTML=h;
+  document.getElementById("mdreg").classList.remove("hidden");
 }
-
-function buildRegFields(tipo){
-  var html = '';
-  tipo.fields.forEach(function(f){
-    html += '<div class="modal-field-t"><label>'+f.label+'</label>';
+function aMd(tid,uid){
+  var t=TR.find(function(x){return x.id===tid;});
+  var u=BD.find(function(x){return x.id===uid;});
+  _rA={tipo:tid,userId:uid};_rO={};
+  document.getElementById("mdtit").innerHTML=t.icon+" "+t.label;
+  document.getElementById("mdusr").textContent="\uD83D\uDC64 "+u.n+" "+u.a;
+  document.getElementById("mdbody").innerHTML=bF(t);
+  document.getElementById("mdreg").classList.remove("hidden");
+}
+function bF(t){
+  var h="";
+  t.fields.forEach(function(f){
+    h+='<div class="mdf"><label>'+(f.label||f.k)+'</label>';
     if(f.opts){
-      html += '<div class="modal-opts">';
-      f.opts.forEach(function(opt){
-        html += '<button class="modal-opt-btn" onclick="selOpt(this,\''+f.k+'\',\''+opt.replace(/'/g,"\\'")+'\')">' +opt+'</button>';
-      });
-      html += '</div>';
-    } else if(f.type==='textarea'){
-      html += '<textarea id="mreg-'+f.k+'" placeholder="'+(f.placeholder||'Escribe aquí...')+'"></textarea>';
+      h+='<div class="mdopts">';
+      f.opts.forEach(function(o){h+='<button class="mdopt" onclick="sO(this,\''+f.k+'\',\''+o.replace(/'/g,"\\'")+'\''+')" type="button">'+o+'</button>';});
+      h+='</div>';
+    } else if(f.type==="textarea"){
+      h+='<textarea id="mf-'+f.k+'" placeholder="'+(f.placeholder||'')+'"></textarea>';
     } else {
-      html += '<input id="mreg-'+f.k+'" type="'+(f.type||'text')+'" placeholder="'+(f.placeholder||'')+'">';
+      h+='<input id="mf-'+f.k+'" type="'+(f.type||"text")+'" placeholder="'+(f.placeholder||'')+'">';
     }
-    html += '</div>';
+    h+='</div>';
   });
-  return html;
+  return h;
 }
-
-function selOpt(btn, key, val){
-  // Deselect siblings
-  var parent = btn.parentElement;
-  parent.querySelectorAll('.modal-opt-btn').forEach(function(b){b.classList.remove('sel');});
-  btn.classList.add('sel');
-  _regOpts[key] = val;
+function sO(btn,k,v){
+  btn.parentElement.querySelectorAll(".mdopt").forEach(function(b){b.classList.remove("sel");});
+  btn.classList.add("sel");_rO[k]=v;
 }
-
-function guardarReg(){
-  if(!_regActual) return;
-  var uid = _regActual.userId;
-  if(!uid){
-    var sel = document.getElementById('mreg-sel-usuario');
-    if(sel) uid = parseInt(sel.value);
-    if(!uid){showToast('Selecciona un usuario'); return;}
-  }
-
-  // Collect textarea/input values
-  var tipo = TIPOS_REG.find(function(t){return t.id===_regActual.tipo;});
-  tipo.fields.forEach(function(f){
-    var el = document.getElementById('mreg-'+f.k);
-    if(el) _regOpts[f.k] = el.value;
-  });
-
-  var reg = Object.assign({}, _regOpts, {
-    userId: uid,
-    fecha: new Date().toISOString(),
-    prof: _userActual ? _userActual.nombre : 'Cuidador'
-  });
-
-  if(!REGISTROS[_regActual.tipo]) REGISTROS[_regActual.tipo] = [];
-  REGISTROS[_regActual.tipo].push(reg);
-
-  cerrarModalReg();
-  showToast('✓ Registro guardado');
-
-  // Refresh views
-  if(_fichaUsuario) abrirFicha(_fichaUsuario.id);
-  if(_vistaActual==='inicio') renderInicio();
-  if(_vistaActual==='usuarios') renderUsuarios();
+function gReg(){
+  var uid=_rA.userId;
+  if(!uid){var s=document.getElementById("mduid");if(s)uid=parseInt(s.value);}
+  if(!uid){sT("Selecciona un usuario");return;}
+  var t=TR.find(function(x){return x.id===_rA.tipo;});
+  t.fields.forEach(function(f){var el=document.getElementById("mf-"+f.k);if(el)_rO[f.k]=el.value;});
+  var r=Object.assign({},_rO,{userId:uid,tipo:_rA.tipo,fecha:new Date().toISOString(),prof:_uA?_uA.nombre:"-"});
+  if(!REG[_rA.tipo])REG[_rA.tipo]=[];
+  REG[_rA.tipo].push(r);
+  cMd();sT("\u2713 Registro guardado");
+  if(_fId)aF(_fId);
 }
-
-function cerrarModalReg(){
-  document.getElementById('modal-reg').classList.add('hidden');
-  _regActual = null;
-  _regOpts = {};
+function cMd(){document.getElementById("mdreg").classList.add("hidden");_rA=null;_rO={};}
+function sIT(btn,t){
+  document.querySelectorAll("#intopts .obtn").forEach(function(b){b.classList.remove("sel");});
+  btn.classList.add("sel");_iT=t;
 }
-
-/* ===== ASISTENCIA ===== */
-function renderAsistencia(){
-  var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
-  html += '<div style="font-size:20px;font-weight:900">Asistencia hoy</div>';
-  var presentes = Object.keys(ASISTENCIA).filter(function(k){return ASISTENCIA[k].presente;}).length;
-  html += '<div style="font-size:14px;font-weight:700;color:var(--verde)">'+presentes+' / '+USUARIOS_ACTIVOS.length+' presentes</div>';
-  html += '</div>';
-  html += '<div class="asist-grid">';
-  USUARIOS_ACTIVOS.forEach(function(u){
-    var color = colorUsuario(u.id);
-    var asist = ASISTENCIA[u.id] || {presente:false, hora:null};
-    html += '<div class="asist-card">';
-    html += '<div class="asist-av" style="background:'+color+'">'+iniciales(u.n,u.a)+'</div>';
-    html += '<div class="asist-info">';
-    html += '<div class="asist-nombre">'+esc(u.n)+' '+esc(u.a.split(' ')[0])+'</div>';
-    html += '<div class="asist-hora">'+(asist.presente?'Entró: '+(asist.hora||'—'):'Sin registrar')+'</div>';
-    html += '</div>';
-    html += '<button class="asist-toggle '+(asist.presente?'presente':'ausente')+'" onclick="toggleAsistencia('+u.id+')">';
-    html += asist.presente?'✅':'⬜';
-    html += '</button>';
-    html += '</div>';
-  });
-  html += '</div>';
-  document.getElementById('vista-asistencia').innerHTML = html;
+function gInc(){
+  var uid=document.getElementById("inu").value;
+  var desc=document.getElementById("indesc").value.trim();
+  var lugar=document.getElementById("inlug").value;
+  if(!uid){sT("Selecciona un usuario");return;}
+  if(!_iT){sT("Selecciona el tipo");return;}
+  if(!desc){sT("Describe la incidencia");return;}
+  if(!REG.caidas)REG.caidas=[];
+  REG.caidas.push({userId:parseInt(uid),tipo:_iT,desc:desc,lugar:lugar,
+    fecha:new Date().toISOString(),prof:_uA?_uA.nombre:"-"});
+  sT("\u26A0\uFE0F Incidencia registrada");rInc();irA("home");
 }
-
-function toggleAsistencia(id){
-  var ahora = new Date();
-  var hora = ahora.getHours().toString().padStart(2,'0')+':'+ahora.getMinutes().toString().padStart(2,'0');
-  if(ASISTENCIA[id] && ASISTENCIA[id].presente){
-    ASISTENCIA[id].presente = false;
-  } else {
-    ASISTENCIA[id] = {presente: true, hora: hora};
-  }
-  renderAsistencia();
-  if(_vistaActual==='inicio') renderInicio();
+function rInc(){
+  document.getElementById("inu").value="";
+  document.getElementById("indesc").value="";
+  document.getElementById("inlug").value="";
+  document.querySelectorAll("#intopts .obtn").forEach(function(b){b.classList.remove("sel");});
+  _iT="";
 }
-
-/* ===== ALERTAS ===== */
-var ALERTAS_DATA = [
-  {nivel:'alta', icon:'💊', titulo:'Medicación pendiente', desc:'Alan Javier Hermo — Pauta crónica no administrada esta mañana', hora:'09:00'},
-  {nivel:'alta', icon:'🔄', titulo:'Cambio postural vencido', desc:'Cristina Pulido — Último cambio hace más de 3 horas', hora:'08:30'},
-  {nivel:'media', icon:'📋', titulo:'Valoración pendiente', desc:'David Bonilla — Revisión mensual de escalas Barthel pendiente', hora:'—'},
-  {nivel:'media', icon:'📄', titulo:'Documento por caducar', desc:'Alejandro González — DNI caduca en 15 días', hora:'—'},
-  {nivel:'baja', icon:'🎂', titulo:'Cumpleaños hoy', desc:'Ningún cumpleaños hoy', hora:'—'}
-];
-
-function renderAlertas(){
-  var html = '<div style="font-size:20px;font-weight:900;margin-bottom:16px">Alertas activas</div>';
-  ALERTAS_DATA.forEach(function(a){
-    html += '<div class="alerta-card '+a.nivel+'">';
-    html += '<div class="alerta-icon">'+a.icon+'</div>';
-    html += '<div>';
-    html += '<div class="alerta-titulo">'+a.titulo+'</div>';
-    html += '<div class="alerta-desc">'+a.desc+'</div>';
-    if(a.hora!=='—') html += '<div class="alerta-hora">⏰ '+a.hora+'</div>';
-    html += '</div>';
-    html += '</div>';
-  });
-  document.getElementById('vista-alertas').innerHTML = html;
+function sT(m){
+  var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
+  setTimeout(function(){t.classList.remove("show");},2500);
 }
-
-/* ===== TURNO ===== */
-var TURNO_DATA = [
-  {hora:'09:00', min:'00', titulo:'Recepción y asistencia', desc:'Control de llegadas', done:false, icon:'✅'},
-  {hora:'09:15', min:'15', titulo:'Administración medicación', desc:'Pauta crónica matutina', done:false, icon:'💊'},
-  {hora:'09:30', min:'30', titulo:'Desayuno', desc:'Supervisión y registro ingesta', done:false, icon:'🍽️'},
-  {hora:'10:00', min:'00', titulo:'Higiene personal', desc:'Aseo y cuidados matutinos', done:false, icon:'🚿'},
-  {hora:'10:30', min:'30', titulo:'Cambios posturales', desc:'Revisión usuarios encamados', done:false, icon:'🔄'},
-  {hora:'11:00', min:'00', titulo:'Actividades terapéuticas', desc:'Fisioterapia / Logopedia / TO', done:false, icon:'🎯'},
-  {hora:'13:00', min:'00', titulo:'Comida', desc:'Supervisión y registro ingesta', done:false, icon:'🍽️'},
-  {hora:'14:00', min:'00', titulo:'Descanso / Siesta', desc:'Supervisión y cambios posturales', done:false, icon:'😴'},
-  {hora:'16:00', min:'00', titulo:'Merienda', desc:'Supervisión y registro ingesta', done:false, icon:'🥤'},
-  {hora:'16:30', min:'30', titulo:'Actividades de ocio', desc:'Programa de tarde', done:false, icon:'🎭'},
-  {hora:'17:00', min:'00', titulo:'Salidas / Transporte', desc:'Preparación y acompañamiento', done:false, icon:'🚌'}
-];
-
-function renderTurno(){
-  var d = new Date();
-  var horaActual = d.getHours()*60 + d.getMinutes();
-  var html = '<div style="font-size:20px;font-weight:900;margin-bottom:16px">Programa del turno</div>';
-  TURNO_DATA.forEach(function(t, i){
-    var hm = parseInt(t.hora)*60+parseInt(t.min);
-    var pasado = hm < horaActual;
-    html += '<div class="turno-item" style="'+(pasado?'opacity:.55':'')+'"><div class="turno-hora-badge"><div class="turno-hora-h">'+t.hora+'</div></div>';
-    html += '<div class="turno-info"><div class="turno-titulo">'+t.icon+' '+t.titulo+'</div>';
-    html += '<div class="turno-meta">'+t.desc+'</div></div>';
-    html += '<button class="turno-check '+(t.done?'done':'')+'" onclick="toggleTurno('+i+')">'+(t.done?'✅':'')+'</button>';
-    html += '</div>';
-  });
-  document.getElementById('vista-turno').innerHTML = html;
-}
-
-function toggleTurno(i){
-  TURNO_DATA[i].done = !TURNO_DATA[i].done;
-  renderTurno();
-}
-
-/* ===== UTILS ===== */
-function esc(s){
-  if(!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function showToast(msg){
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');}, 2500);
-}
-
-// Actualizar hora cada minuto
-setInterval(actualizarFecha, 60000);
 </script>
 </body>
 </html>
