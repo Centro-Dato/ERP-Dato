@@ -769,6 +769,99 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
   </div>
 </div>
 
+
+
+<!-- ===== MODAL NUEVO USUARIO ===== -->
+<div id="modal-usuario" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalUsuario()">
+  <div class="modal-box" style="max-width:620px">
+    <div class="modal-title">Nuevo Beneficiario</div>
+    <div class="modal-sub">Rellena los datos del nuevo usuario del centro</div>
+    <div class="grid2" style="gap:12px;margin-bottom:0">
+      <div class="modal-field"><label>Nombre *</label><input id="mu-nombre" class="form-input" type="text" placeholder="Nombre"/></div>
+      <div class="modal-field"><label>Apellidos *</label><input id="mu-apellidos" class="form-input" type="text" placeholder="Apellidos"/></div>
+      <div class="modal-field"><label>DNI/NIE</label><input id="mu-dni" class="form-input" type="text" placeholder="00000000-X"/></div>
+      <div class="modal-field"><label>F. Nacimiento</label><input id="mu-fnac" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>F. Incorporación</label><input id="mu-fi" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>Estado</label>
+        <select id="mu-est" class="form-input"><option value="activo">Activo</option><option value="baja">Baja</option></select></div>
+      <div class="modal-field"><label>Grupo</label>
+        <select id="mu-gr" class="form-input"><option value="I">Grupo I</option><option value="II">Grupo II</option><option value="III">Grupo III</option></select></div>
+      <div class="modal-field"><label>Teléfono</label><input id="mu-tel" class="form-input" type="text" placeholder="Teléfonos de contacto"/></div>
+    </div>
+    <div class="modal-field"><label>Domicilio</label><input id="mu-dom" class="form-input" type="text" placeholder="Dirección completa"/></div>
+    <div class="modal-field"><label>Tutor / Contacto</label><input id="mu-cnt" class="form-input" type="text" placeholder="Nombre del tutor y parentesco"/></div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="cerrarModalUsuario()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarNuevoUsuario()">\u2713 Guardar Usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL NUEVO PROFESIONAL ===== -->
+<div id="modal-profesional" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalProfesional()">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-title">Nuevo Profesional</div>
+    <div class="modal-sub">Añade un nuevo miembro al equipo del centro</div>
+    <div class="grid2" style="gap:12px;margin-bottom:0">
+      <div class="modal-field" style="grid-column:1/-1"><label>Nombre completo *</label><input id="mp-nombre" class="form-input" type="text" placeholder="Nombre y apellidos"/></div>
+      <div class="modal-field"><label>Cargo</label>
+        <select id="mp-cargo" class="form-input">
+          <option value="">— Seleccionar cargo —</option>
+          <option value="Auxiliar">Auxiliar de atención directa</option>
+          <option value="Conductor">Conductor/a</option>
+          <option value="Directora">Directora / Coordinadora</option>
+          <option value="Educador">Educador/a</option>
+          <option value="Enfermera">Enfermero/a</option>
+          <option value="Fisioterapeuta">Fisioterapeuta</option>
+          <option value="Logopeda">Logopeda</option>
+          <option value="Profesor">Profesor/a</option>
+          <option value="Psicólogo">Psicólogo/a</option>
+          <option value="Psiquiatra">Psiquiatra</option>
+          <option value="Terapeuta Ocupacional">Terapeuta Ocupacional</option>
+          <option value="Trabajadora Social">Trabajador/a Social</option>
+          <option value="Administrativo">Administrativo/a</option>
+          <option value="Estudiante prácticas">Estudiante en prácticas</option>
+        </select></div>
+      <div class="modal-field"><label>Categoría</label>
+        <select id="mp-cat" class="form-input">
+          <option value="interdisciplinario">Interdisciplinario</option>
+          <option value="cuidado">Cuidado</option>
+          <option value="administracion">Administración</option>
+          <option value="coordinacion">Coordinación</option>
+        </select></div>
+      <div class="modal-field"><label>Horas/semana</label><input id="mp-horas" class="form-input" type="number" step="0.5" value="38.5"/></div>
+      <div class="modal-field"><label>Tipo contrato</label>
+        <select id="mp-contrato" class="form-input">
+          <option value="indefinido">Indefinido</option>
+          <option value="temporal">Temporal</option>
+          <option value="sustitución">Sustitución</option>
+          <option value="prácticas">Prácticas</option>
+        </select></div>
+      <div class="modal-field"><label>Fecha Alta</label><input id="mp-alta" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>F. Nacimiento</label><input id="mp-fnac" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>Teléfono</label><input id="mp-tel" class="form-input" type="text" placeholder="Teléfono de contacto"/></div>
+      <div class="modal-field"><label>Estado</label>
+        <select id="mp-est" class="form-input">
+          <option value="activo">Activo</option>
+          <option value="excedencia">Excedencia</option>
+          <option value="finalizado">Finalizado</option>
+        </select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="cerrarModalProfesional()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarNuevoProfesional()">\u2713 Guardar Profesional</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VISTA PREVIA INFORME -->
+<div id="modal-preview" class="hidden" onclick="if(event.target===this)cerrarPrevia()">
+  <div class="preview-box">
+    <button class="preview-close" onclick="cerrarPrevia()">&#x2715;</button>
+    <div id="preview-body"></div>
+  </div>
+</div>
+
 <script>
 /* DATA BENEFICIARIOS */
 var BD=[
@@ -925,14 +1018,9 @@ function setOcioTab(tab){
 }
 
 /* LOGIN */
-document.addEventListener("DOMContentLoaded",function(){
-  var be=document.getElementById("btn-entrar");
-  if(be)be.addEventListener("click",login);
-  var ip=document.getElementById("inp-pass");
-  if(ip)ip.addEventListener("keydown",function(e){if(e.key==="Enter")login();});
-  var ie=document.getElementById("inp-email");
-  if(ie)ie.addEventListener("keydown",function(e){if(e.key==="Enter")login();});
-});
+document.getElementById("btn-entrar").addEventListener("click",login);
+document.getElementById("inp-pass").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+document.getElementById("inp-email").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
 function login(){
   var em=document.getElementById("inp-email").value.trim();
   var pw=document.getElementById("inp-pass").value;
@@ -3198,97 +3286,5 @@ function _renderCumples(){
 }
 
 </script>
-
-<!-- ===== MODAL NUEVO USUARIO ===== -->
-<div id="modal-usuario" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalUsuario()">
-  <div class="modal-box" style="max-width:620px">
-    <div class="modal-title">Nuevo Beneficiario</div>
-    <div class="modal-sub">Rellena los datos del nuevo usuario del centro</div>
-    <div class="grid2" style="gap:12px;margin-bottom:0">
-      <div class="modal-field"><label>Nombre *</label><input id="mu-nombre" class="form-input" type="text" placeholder="Nombre"/></div>
-      <div class="modal-field"><label>Apellidos *</label><input id="mu-apellidos" class="form-input" type="text" placeholder="Apellidos"/></div>
-      <div class="modal-field"><label>DNI/NIE</label><input id="mu-dni" class="form-input" type="text" placeholder="00000000-X"/></div>
-      <div class="modal-field"><label>F. Nacimiento</label><input id="mu-fnac" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>F. Incorporación</label><input id="mu-fi" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>Estado</label>
-        <select id="mu-est" class="form-input"><option value="activo">Activo</option><option value="baja">Baja</option></select></div>
-      <div class="modal-field"><label>Grupo</label>
-        <select id="mu-gr" class="form-input"><option value="I">Grupo I</option><option value="II">Grupo II</option><option value="III">Grupo III</option></select></div>
-      <div class="modal-field"><label>Teléfono</label><input id="mu-tel" class="form-input" type="text" placeholder="Teléfonos de contacto"/></div>
-    </div>
-    <div class="modal-field"><label>Domicilio</label><input id="mu-dom" class="form-input" type="text" placeholder="Dirección completa"/></div>
-    <div class="modal-field"><label>Tutor / Contacto</label><input id="mu-cnt" class="form-input" type="text" placeholder="Nombre del tutor y parentesco"/></div>
-    <div class="modal-actions">
-      <button class="btn-sec" onclick="cerrarModalUsuario()">Cancelar</button>
-      <button class="btn-primary" onclick="guardarNuevoUsuario()">\u2713 Guardar Usuario</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== MODAL NUEVO PROFESIONAL ===== -->
-<div id="modal-profesional" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalProfesional()">
-  <div class="modal-box" style="max-width:580px">
-    <div class="modal-title">Nuevo Profesional</div>
-    <div class="modal-sub">Añade un nuevo miembro al equipo del centro</div>
-    <div class="grid2" style="gap:12px;margin-bottom:0">
-      <div class="modal-field" style="grid-column:1/-1"><label>Nombre completo *</label><input id="mp-nombre" class="form-input" type="text" placeholder="Nombre y apellidos"/></div>
-      <div class="modal-field"><label>Cargo</label>
-        <select id="mp-cargo" class="form-input">
-          <option value="">— Seleccionar cargo —</option>
-          <option value="Auxiliar">Auxiliar de atención directa</option>
-          <option value="Conductor">Conductor/a</option>
-          <option value="Directora">Directora / Coordinadora</option>
-          <option value="Educador">Educador/a</option>
-          <option value="Enfermera">Enfermero/a</option>
-          <option value="Fisioterapeuta">Fisioterapeuta</option>
-          <option value="Logopeda">Logopeda</option>
-          <option value="Profesor">Profesor/a</option>
-          <option value="Psicólogo">Psicólogo/a</option>
-          <option value="Psiquiatra">Psiquiatra</option>
-          <option value="Terapeuta Ocupacional">Terapeuta Ocupacional</option>
-          <option value="Trabajadora Social">Trabajador/a Social</option>
-          <option value="Administrativo">Administrativo/a</option>
-          <option value="Estudiante prácticas">Estudiante en prácticas</option>
-        </select></div>
-      <div class="modal-field"><label>Categoría</label>
-        <select id="mp-cat" class="form-input">
-          <option value="interdisciplinario">Interdisciplinario</option>
-          <option value="cuidado">Cuidado</option>
-          <option value="administracion">Administración</option>
-          <option value="coordinacion">Coordinación</option>
-        </select></div>
-      <div class="modal-field"><label>Horas/semana</label><input id="mp-horas" class="form-input" type="number" step="0.5" value="38.5"/></div>
-      <div class="modal-field"><label>Tipo contrato</label>
-        <select id="mp-contrato" class="form-input">
-          <option value="indefinido">Indefinido</option>
-          <option value="temporal">Temporal</option>
-          <option value="sustitución">Sustitución</option>
-          <option value="prácticas">Prácticas</option>
-        </select></div>
-      <div class="modal-field"><label>Fecha Alta</label><input id="mp-alta" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>F. Nacimiento</label><input id="mp-fnac" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>Teléfono</label><input id="mp-tel" class="form-input" type="text" placeholder="Teléfono de contacto"/></div>
-      <div class="modal-field"><label>Estado</label>
-        <select id="mp-est" class="form-input">
-          <option value="activo">Activo</option>
-          <option value="excedencia">Excedencia</option>
-          <option value="finalizado">Finalizado</option>
-        </select></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-sec" onclick="cerrarModalProfesional()">Cancelar</button>
-      <button class="btn-primary" onclick="guardarNuevoProfesional()">\u2713 Guardar Profesional</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL VISTA PREVIA INFORME -->
-<div id="modal-preview" class="hidden" onclick="if(event.target===this)cerrarPrevia()">
-  <div class="preview-box">
-    <button class="preview-close" onclick="cerrarPrevia()">&#x2715;</button>
-    <div id="preview-body"></div>
-  </div>
-</div>
-
 </body>
 </html>
