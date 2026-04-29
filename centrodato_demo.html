@@ -565,7 +565,7 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
     <div id="login-error" class="login-err hidden"></div>
     <div class="form-field"><label>Email</label><input type="email" id="inp-email" placeholder="usuario@centrodato.org"/></div>
     <div class="form-field"><label>Contrase&#xF1;a</label><input type="password" id="inp-pass" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;"/></div>
-    <button class="btn-login" id="btn-entrar">Entrar</button>
+    <button class="btn-login" id="btn-entrar" onclick="login()">Entrar</button>
     <div class="login-hint"><strong>Coordinador:</strong> coordinador@centrodato.org / centrodato2025<br><strong>Profesional:</strong> patricia@centrodato.org / profesional2025</div>
   </div>
 </div>
@@ -960,9 +960,6 @@ function setOcioTab(tab){
 }
 
 /* LOGIN */
-document.getElementById("btn-entrar").addEventListener("click",login);
-document.getElementById("inp-pass").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
-document.getElementById("inp-email").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
 function login(){
   var em=document.getElementById("inp-email").value.trim();
   var pw=document.getElementById("inp-pass").value;
@@ -979,11 +976,19 @@ function login(){
   document.getElementById("app-screen").classList.remove("hidden");
   navTo("inicio");
 }
-document.getElementById("btn-logout").addEventListener("click",function(){
-  document.getElementById("app-screen").classList.add("hidden");
-  document.getElementById("login-screen").classList.remove("hidden");
+document.addEventListener("DOMContentLoaded",function(){
+  var btn=document.getElementById("btn-entrar");
+  if(btn)btn.addEventListener("click",login);
+  var pass=document.getElementById("inp-pass");
+  if(pass)pass.addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+  var email=document.getElementById("inp-email");
+  if(email)email.addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+  var logout=document.getElementById("btn-logout");
+  if(logout)logout.addEventListener("click",function(){
+    document.getElementById("app-screen").classList.add("hidden");
+    document.getElementById("login-screen").classList.remove("hidden");
+  });
 });
-
 /* BENEFICIARIOS */
 var filtro="activo",tabActual="dadmin";
 document.getElementById("f-activo").addEventListener("click",function(){setF("activo",this);});
