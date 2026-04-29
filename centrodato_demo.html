@@ -38,8 +38,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sb-user-name{font-size:13px;font-weight:600}.sb-user-role{font-size:11px;color:rgba(255,255,255,.4);text-transform:capitalize}
 .sb-logout{background:none;border:none;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;padding:0;text-align:left;width:100%}
 .sb-logout:hover{color:rgba(255,255,255,.8)}
-.main-content{flex:1;overflow-y:auto;min-height:0}
-.page{padding:24px 32px}
+.main-content{flex:1;overflow-y:auto}
+.page{padding:36px 40px}
 /* BUTTONS */
 .btn-primary{background:#0270c4;color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s}
 .btn-primary:hover{background:#035a9f}
@@ -324,6 +324,60 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
 .ev-cumple{background:#fef3c7;color:#92400e}
 .agenda-filter-btn.active-cumple{background:#fef3c7;border-color:#f59e0b;color:#92400e}
 .agenda-detail-item.ev-cumple-bg{background:#fefce8;border:1px solid #fde68a}
+/* EXPEDIENTE MODAL */
+.btn-expediente{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn-expediente:hover{background:#dbeafe}
+.exp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto}
+.exp-modal{background:#fff;border-radius:18px;width:700px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.exp-header{padding:18px 22px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.exp-avatar{width:46px;height:46px;border-radius:50%;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0}
+.exp-title{font-size:16px;font-weight:700;color:#1e293b}
+.exp-sub{font-size:12px;color:#64748b;margin-top:2px}
+.exp-close{margin-left:auto;background:none;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;color:#64748b}
+.exp-close:hover{background:#f1f5f9}
+.exp-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:2px solid #e2e8f0;overflow-x:auto;flex-shrink:0;background:#f8fafc}
+.exp-tab{padding:8px 13px;border:none;background:none;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;border-radius:6px 6px 0 0}
+.exp-tab:hover{background:#e2e8f0;color:#1e293b}
+.exp-tab.active{color:#0270c4;border-bottom-color:#0270c4;background:#fff}
+.exp-body{padding:20px 22px;overflow-y:auto;flex:1}
+.exp-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.exp-field{background:#f8fafc;border-radius:8px;padding:10px 12px}
+.exp-field.full{grid-column:1/-1}
+.exp-flbl{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.exp-fval{font-size:13px;color:#1e293b;font-weight:500}
+.exp-fval.empty{color:#cbd5e1;font-style:italic;font-weight:400}
+.exp-sep{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;padding-top:12px;border-top:1px solid #e2e8f0}
+.exp-docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:8px;margin-bottom:10px}
+.exp-doc{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;overflow:hidden;transition:border-color .15s}
+.exp-doc:hover{border-color:#93c5fd}
+.exp-doc.sel{border-color:#0270c4;background:#eff6ff}
+.exp-doc-top{height:72px;display:flex;align-items:center;justify-content:center;background:#fff;position:relative}
+.exp-doc-badge{position:absolute;top:5px;right:5px;font-size:9px;padding:1px 5px;border-radius:3px;background:#dbeafe;color:#1d4ed8;font-weight:700}
+.exp-doc-icon{width:30px;height:38px;border:1px solid #e2e8f0;border-radius:3px;background:#f8fafc;position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:4px}
+.exp-doc-fold{position:absolute;top:0;right:0;width:9px;height:9px;background:#e2e8f0;border-left:1px solid #cbd5e1;border-bottom:1px solid #cbd5e1}
+.exp-doc-line{height:2px;border-radius:1px;background:#e2e8f0;margin-bottom:2px}
+.exp-doc-line.b{background:#93c5fd}
+.exp-doc-name{font-size:10px;font-weight:600;color:#1e293b;padding:5px 7px 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-doc-date{font-size:9px;color:#94a3b8;padding:0 7px 5px}
+.exp-viewer-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px 8px 0 0;margin-top:8px}
+.exp-viewer-title{flex:1;font-size:11px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-viewer-btn{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;color:#374151}
+.exp-viewer-btn:hover{background:#f8fafc}
+.exp-viewer-btn.dl{background:#0270c4;color:#fff;border-color:#0270c4}
+.exp-viewer-btn.dl:hover{background:#035a9f}
+.exp-viewer-pane{background:#e8ecf0;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px;display:flex;justify-content:center}
+.exp-pdf{background:#fff;border:1px solid #d1d5db;width:100%;max-width:330px;padding:16px 18px}
+.exp-pdf-top{border-bottom:2px solid #1a3a5c;padding-bottom:8px;margin-bottom:10px;display:flex;gap:8px;align-items:center}
+.exp-pdf-logo{width:26px;height:26px;background:#0270c4;border-radius:3px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700;flex-shrink:0}
+.exp-pdf-title{font-size:10px;font-weight:700;color:#1e293b}
+.exp-pdf-org{font-size:8px;color:#94a3b8}
+.exp-pdf-row{display:flex;gap:8px;margin-bottom:7px}
+.exp-pdf-f{flex:1}
+.exp-pdf-lbl{font-size:8px;color:#94a3b8;text-transform:uppercase;margin-bottom:2px}
+.exp-pdf-val{font-size:9px;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9;padding-bottom:2px}
+.exp-pdf-sec{font-size:8px;font-weight:700;color:#1a3a5c;text-transform:uppercase;margin:8px 0 5px;border-top:1px solid #e8f0f8;padding-top:6px}
+.exp-pdf-stamp{display:inline-block;border:2px solid #15803d;color:#15803d;font-size:8px;font-weight:700;padding:3px 8px;border-radius:2px;margin-top:8px;transform:rotate(-6deg);opacity:.75}
+.exp-footer{padding:14px 22px;border-top:1px solid #e2e8f0;display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:#f8fafc}
 /* PROFESIONALES MODULE */
 .prof-subnav{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
 .prof-subnav button{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid #d1d5db;background:#fff;color:#64748b;cursor:pointer;transition:all .15s}
@@ -383,25 +437,6 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
 .btn-excel:hover{background:#15803d}
 .btn-pdf{background:#dc2626;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600}
 .btn-pdf:hover{background:#b91c1c}
-.btn-preview{background:#0270c4;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600}
-.btn-preview:hover{background:#035a9f}
-/* PREVIEW MODAL */
-#modal-preview{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
-.preview-box{background:#fff;border-radius:16px;width:100%;max-width:900px;box-shadow:0 24px 64px rgba(0,0,0,.25);padding:36px 40px;position:relative}
-.preview-title{font-size:20px;font-weight:800;color:#0c416d;margin-bottom:4px}
-.preview-date{font-size:12px;color:#94a3b8;margin-bottom:20px}
-.preview-close{position:absolute;top:16px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:#64748b}
-.preview-close:hover{color:#1e293b}
-.preview-stats{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.preview-stat{background:#f1f5f9;border-radius:8px;padding:8px 14px;font-size:12px;color:#475569}
-.preview-stat strong{color:#0c416d;font-size:15px;display:block}
-.preview-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0}
-.preview-table{width:100%;border-collapse:collapse;font-size:13px}
-.preview-table th{background:#0c416d;color:#fff;padding:10px 12px;text-align:left;font-weight:600;font-size:12px}
-.preview-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;color:#374151}
-.preview-table tr:last-child td{border-bottom:none}
-.preview-table tr:hover td{background:#f8fafc}
-.preview-footer{margin-top:16px;display:flex;gap:8px;justify-content:flex-end}
 /* PRINT STYLES */
 @media print{
   .sidebar,.view-header button,.btn-back,.inf-toolbar,.inf-filters,.btn-primary,.btn-sec,
@@ -531,7 +566,7 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
     <div class="form-field"><label>Email</label><input type="email" id="inp-email" placeholder="usuario@centrodato.org"/></div>
     <div class="form-field"><label>Contrase&#xF1;a</label><input type="password" id="inp-pass" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;"/></div>
     <button class="btn-login" id="btn-entrar">Entrar</button>
-
+    <div class="login-hint"><strong>Coordinador:</strong> coordinador@centrodato.org / centrodato2025<br><strong>Profesional:</strong> patricia@centrodato.org / profesional2025</div>
   </div>
 </div>
 
@@ -602,7 +637,7 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
         <input class="search-box" id="inp-search" placeholder="Buscar por nombre, apellidos o DNI..."/>
         <div class="seg-control"><button class="active" id="f-activo">Activos</button><button id="f-baja">Bajas</button><button id="f-todos">Todos</button></div>
       </div>
-      <div class="table-card"><table><thead><tr><th>Nombre</th><th>DNI</th><th>Edad</th><th>Discapacidad</th><th>Dependencia</th><th>Ingreso</th><th>Estado</th></tr></thead><tbody id="t-body"></tbody></table><div id="t-empty" class="empty-state hidden">No se encontraron beneficiarios</div></div>
+      <div class="table-card"><table><thead><tr><th>Nombre y apellidos</th><th>F. nacimiento</th><th>Teléfono contacto</th><th>F. ingreso</th><th>Domicilio</th><th>Estado</th><th>Expediente</th></tr></thead><tbody id="t-body"></tbody></table><div id="t-empty" class="empty-state hidden">No se encontraron beneficiarios</div></div>
     </div>
     <!-- BENEFICIARIO DETALLE -->
     <div id="view-detalle" class="page hidden"></div>
@@ -662,6 +697,8 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
       <div id="ocio-act-detalle" class="hidden"></div>
       <div id="ocio-informes" class="hidden"></div>
     </div>
+  </div>
+</div>
 
 <!-- PROFESIONALES -->
 <div id="view-registros" class="page hidden"></div>
@@ -679,9 +716,6 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
   </div>
   <div id="profes-lista"></div>
   <div id="profes-detalle" class="hidden"></div>
-</div>
-
-  </div>
 </div>
 
 <!-- MODAL NUEVA ACTIVIDAD -->
@@ -767,99 +801,6 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
       <button class="btn-secondary" onclick="cerrarModalIncidencia()">Cancelar</button>
       <button class="btn-primary" onclick="guardarIncidencia()">Guardar</button>
     </div>
-  </div>
-</div>
-
-
-
-<!-- ===== MODAL NUEVO USUARIO ===== -->
-<div id="modal-usuario" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalUsuario()">
-  <div class="modal-box" style="max-width:620px">
-    <div class="modal-title">Nuevo Beneficiario</div>
-    <div class="modal-sub">Rellena los datos del nuevo usuario del centro</div>
-    <div class="grid2" style="gap:12px;margin-bottom:0">
-      <div class="modal-field"><label>Nombre *</label><input id="mu-nombre" class="form-input" type="text" placeholder="Nombre"/></div>
-      <div class="modal-field"><label>Apellidos *</label><input id="mu-apellidos" class="form-input" type="text" placeholder="Apellidos"/></div>
-      <div class="modal-field"><label>DNI/NIE</label><input id="mu-dni" class="form-input" type="text" placeholder="00000000-X"/></div>
-      <div class="modal-field"><label>F. Nacimiento</label><input id="mu-fnac" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>F. Incorporación</label><input id="mu-fi" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>Estado</label>
-        <select id="mu-est" class="form-input"><option value="activo">Activo</option><option value="baja">Baja</option></select></div>
-      <div class="modal-field"><label>Grupo</label>
-        <select id="mu-gr" class="form-input"><option value="I">Grupo I</option><option value="II">Grupo II</option><option value="III">Grupo III</option></select></div>
-      <div class="modal-field"><label>Teléfono</label><input id="mu-tel" class="form-input" type="text" placeholder="Teléfonos de contacto"/></div>
-    </div>
-    <div class="modal-field"><label>Domicilio</label><input id="mu-dom" class="form-input" type="text" placeholder="Dirección completa"/></div>
-    <div class="modal-field"><label>Tutor / Contacto</label><input id="mu-cnt" class="form-input" type="text" placeholder="Nombre del tutor y parentesco"/></div>
-    <div class="modal-actions">
-      <button class="btn-sec" onclick="cerrarModalUsuario()">Cancelar</button>
-      <button class="btn-primary" onclick="guardarNuevoUsuario()">\u2713 Guardar Usuario</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== MODAL NUEVO PROFESIONAL ===== -->
-<div id="modal-profesional" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalProfesional()">
-  <div class="modal-box" style="max-width:580px">
-    <div class="modal-title">Nuevo Profesional</div>
-    <div class="modal-sub">Añade un nuevo miembro al equipo del centro</div>
-    <div class="grid2" style="gap:12px;margin-bottom:0">
-      <div class="modal-field" style="grid-column:1/-1"><label>Nombre completo *</label><input id="mp-nombre" class="form-input" type="text" placeholder="Nombre y apellidos"/></div>
-      <div class="modal-field"><label>Cargo</label>
-        <select id="mp-cargo" class="form-input">
-          <option value="">— Seleccionar cargo —</option>
-          <option value="Auxiliar">Auxiliar de atención directa</option>
-          <option value="Conductor">Conductor/a</option>
-          <option value="Directora">Directora / Coordinadora</option>
-          <option value="Educador">Educador/a</option>
-          <option value="Enfermera">Enfermero/a</option>
-          <option value="Fisioterapeuta">Fisioterapeuta</option>
-          <option value="Logopeda">Logopeda</option>
-          <option value="Profesor">Profesor/a</option>
-          <option value="Psicólogo">Psicólogo/a</option>
-          <option value="Psiquiatra">Psiquiatra</option>
-          <option value="Terapeuta Ocupacional">Terapeuta Ocupacional</option>
-          <option value="Trabajadora Social">Trabajador/a Social</option>
-          <option value="Administrativo">Administrativo/a</option>
-          <option value="Estudiante prácticas">Estudiante en prácticas</option>
-        </select></div>
-      <div class="modal-field"><label>Categoría</label>
-        <select id="mp-cat" class="form-input">
-          <option value="interdisciplinario">Interdisciplinario</option>
-          <option value="cuidado">Cuidado</option>
-          <option value="administracion">Administración</option>
-          <option value="coordinacion">Coordinación</option>
-        </select></div>
-      <div class="modal-field"><label>Horas/semana</label><input id="mp-horas" class="form-input" type="number" step="0.5" value="38.5"/></div>
-      <div class="modal-field"><label>Tipo contrato</label>
-        <select id="mp-contrato" class="form-input">
-          <option value="indefinido">Indefinido</option>
-          <option value="temporal">Temporal</option>
-          <option value="sustitución">Sustitución</option>
-          <option value="prácticas">Prácticas</option>
-        </select></div>
-      <div class="modal-field"><label>Fecha Alta</label><input id="mp-alta" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>F. Nacimiento</label><input id="mp-fnac" class="form-input" type="date"/></div>
-      <div class="modal-field"><label>Teléfono</label><input id="mp-tel" class="form-input" type="text" placeholder="Teléfono de contacto"/></div>
-      <div class="modal-field"><label>Estado</label>
-        <select id="mp-est" class="form-input">
-          <option value="activo">Activo</option>
-          <option value="excedencia">Excedencia</option>
-          <option value="finalizado">Finalizado</option>
-        </select></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-sec" onclick="cerrarModalProfesional()">Cancelar</button>
-      <button class="btn-primary" onclick="guardarNuevoProfesional()">\u2713 Guardar Profesional</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL VISTA PREVIA INFORME -->
-<div id="modal-preview" class="hidden" onclick="if(event.target===this)cerrarPrevia()">
-  <div class="preview-box">
-    <button class="preview-close" onclick="cerrarPrevia()">&#x2715;</button>
-    <div id="preview-body"></div>
   </div>
 </div>
 
@@ -1059,10 +1000,9 @@ function pintarLista(){
   if(rows.length===0){tbody.innerHTML="";empty.classList.remove("hidden");return;}
   empty.classList.add("hidden");
   tbody.innerHTML=rows.map(function(b){
-    var ei=ET[b.et];
-    var disc=(b.pct?"<b>"+b.pct+"%</b> ":"")+(ei?bdg(ei.c,ei.l):"");
-    if(!disc)disc="\u2014";
-    return "<tr onclick='verDet("+b.id+")'><td><div class='name-cell'><div class='avatar'>"+ini(b.n,b.a)+"</div><span class='name-text'>"+esc(b.n)+" "+esc(b.a)+"</span></div></td><td>"+esc(b.dni||"\u2014")+"</td><td>"+(edad(b.fnac)?edad(b.fnac)+" años":"\u2014")+"</td><td>"+disc+"</td><td>"+(b.gr?"Grado "+b.gr+(b.nv?"-Nivel "+b.nv:""):"\u2014")+"</td><td>"+fd(b.fi)+"</td><td>"+(b.est==="activo"?bdg("bg","Activo"):bdg("br","Baja"))+"</td></tr>";
+    var telM=b.tel?b.tel.split('/')[0].trim():'—';
+    var domM=b.dom?(b.dom.length>30?b.dom.substring(0,30)+'…':b.dom):'—';
+    return "<tr><td onclick='verDet("+b.id+")'><div class='name-cell'><div class='avatar'>"+ini(b.n,b.a)+"</div><span class='name-text'>"+esc(b.n)+" "+esc(b.a)+"</span></div></td><td onclick='verDet("+b.id+")'>"+fd(b.fnac)+"</td><td onclick='verDet("+b.id+")' style='font-size:12px'>"+esc(telM)+"</td><td onclick='verDet("+b.id+")'>"+fd(b.fi)+"</td><td onclick='verDet("+b.id+")' style='font-size:12px;color:#475569' title='"+esc(b.dom||'')+"'>"+esc(domM)+"</td><td onclick='verDet("+b.id+")'>"+(b.est==="activo"?bdg("bg","Activo"):bdg("br","Baja"))+"</td><td><button class='btn-expediente' onclick='abrirExpediente("+b.id+")'>📋 Expediente</button></td></tr>";
   }).join("");
 }
 function verDet(id){var b=BD.find(function(x){return x.id===id;});if(!b)return;tabActual="dadmin";document.getElementById("view-lista").classList.add("hidden");document.getElementById("view-detalle").classList.remove("hidden");pintarDet(b);}
@@ -1535,7 +1475,7 @@ function verDoc(bid,idx){
   var b=BD.find(function(x){return x.id===bid;});if(!b)return;
   var doc=(b.adj||[])[idx];if(!doc)return;
   var win=window.open();
-  win.document.write('<html><body style="margin:0"><embed src="'+doc.data+'" width="100%" height="100%"></body></html>');
+  win.document.write('<html><body style="margin:0"><img src="'+doc.data+'" style="max-width:100%" onerror="this.style.display=\'none\'"><embed src="'+doc.data+'" width="100%" height="100%" style="position:fixed;top:0;left:0"></body></html>');
 }
 
 function borrarDoc(bid,idx){
@@ -1910,21 +1850,12 @@ function renderProfesionales(){
     return;
   }
   var CARGO_COLORS={
-    "Directora":"#7c3aed","Directora/Coordinadora":"#7c3aed",
-    "Educadora":"#0270c4","Educador":"#0270c4",
-    "Profesor":"#1d4ed8","Profesora":"#1d4ed8",
-    "Fisioterapeuta":"#16a34a",
-    "Psicólogo":"#d97706","Psicóloga":"#d97706",
-    "Enfermera":"#dc2626","Enfermero":"#dc2626",
-    "Auxiliar":"#475569","Auxiliar de atención directa":"#475569",
-    "Cuidador":"#475569","Cuidadora":"#475569",
-    "Trabajadora Social":"#0891b2","Trabajador Social":"#0891b2",
-    "Conductor":"#92400e","Conductora":"#92400e",
-    "Logopeda":"#7c3aed",
-    "Terapeuta Ocupacional":"#15803d",
-    "Psiquiatra":"#b45309",
-    "Administrativo":"#0891b2","Administrativa":"#0891b2",
-    "Estudiante prácticas":"#94a3b8"
+    "Directora":"#7c3aed","Educadora":"#0270c4","Educador":"#0270c4",
+    "Fisioterapeuta":"#16a34a","Psi\xf3logo":"#d97706","Psi\xf3loga":"#d97706",
+    "Enfermera":"#dc2626","Cuidador":"#475569","Cuidadora":"#475569",
+    "Trabajadora Social":"#0891b2","Conductor":"#92400e",
+    "Logopeda":"#7c3aed","Terapeuta Ocupacional":"#15803d",
+    "Estudiante pr\xe1cticas":"#94a3b8"
   };
   var html=lista.map(function(p){
     var color=CARGO_COLORS[p.cargo]||"#0270c4";
@@ -1950,21 +1881,12 @@ function verProfDetalle(id){
   document.getElementById("profes-lista").classList.add("hidden");
   document.getElementById("profes-detalle").classList.remove("hidden");
   var CARGO_COLORS={
-    "Directora":"#7c3aed","Directora/Coordinadora":"#7c3aed",
-    "Educadora":"#0270c4","Educador":"#0270c4",
-    "Profesor":"#1d4ed8","Profesora":"#1d4ed8",
-    "Fisioterapeuta":"#16a34a",
-    "Psicólogo":"#d97706","Psicóloga":"#d97706",
-    "Enfermera":"#dc2626","Enfermero":"#dc2626",
-    "Auxiliar":"#475569","Auxiliar de atención directa":"#475569",
-    "Cuidador":"#475569","Cuidadora":"#475569",
-    "Trabajadora Social":"#0891b2","Trabajador Social":"#0891b2",
-    "Conductor":"#92400e","Conductora":"#92400e",
-    "Logopeda":"#7c3aed",
-    "Terapeuta Ocupacional":"#15803d",
-    "Psiquiatra":"#b45309",
-    "Administrativo":"#0891b2","Administrativa":"#0891b2",
-    "Estudiante prácticas":"#94a3b8"
+    "Directora":"#7c3aed","Educadora":"#0270c4","Educador":"#0270c4",
+    "Fisioterapeuta":"#16a34a","Psi\xf3logo":"#d97706","Psi\xf3loga":"#d97706",
+    "Enfermera":"#dc2626","Cuidador":"#475569","Cuidadora":"#475569",
+    "Trabajadora Social":"#0891b2","Conductor":"#92400e",
+    "Logopeda":"#7c3aed","Terapeuta Ocupacional":"#15803d",
+    "Estudiante pr\xe1cticas":"#94a3b8"
   };
   var color=CARGO_COLORS[p.cargo]||"#0270c4";
   var estBadge=p.est==="excedencia"?'<span class="badge by">Excedencia</span>':p.est==="finalizado"?'<span class="badge br">Finalizado</span>':'<span class="badge bg">Activo</span>';
@@ -1979,7 +1901,7 @@ function verProfDetalle(id){
     '<span>'+esc(p.cargo)+'</span>'+
     '<span>'+catLabel+'</span>'+
     (p.tel?'<span>&#x1F4F1; '+esc(p.tel)+'</span>':"")+
-    '</div></div><button class="btn-secondary" onclick="volverProfesionales()">&larr; Volver</button></div>'+
+    '</div></div><div style="display:flex;gap:8px"><button class="btn-secondary" onclick="editarProfesional('+p.id+')">✏️ Editar</button><button class="btn-secondary" onclick="volverProfesionales()">&larr; Volver</button></div></div>'+
     '<div class="grid2" style="gap:20px;margin-top:4px">'+
     '<div class="card"><div class="card-header"><span class="card-title">Datos profesionales</span></div>'+
     '<div class="grid2">'+
@@ -2363,7 +2285,6 @@ function mostrarTipoInforme(id){
   html+='<div class="inf-toolbar">';
   html+='<button class="btn-excel" onclick="exportarExcel()">\ud83d\udce5 Exportar Excel/CSV</button>';
   html+='<button class="btn-pdf" onclick="exportarPDF()">\ud83d\udda8\ufe0f Imprimir / PDF</button>';
-  html+='<button class="btn-preview" onclick="vistaPrevia()">\ud83d\udc41\ufe0f Vista previa</button>';
   html+='</div>';
 
   // Table
@@ -2494,37 +2415,6 @@ function exportarPDF(){
   window.print();
   if(ph)ph.innerHTML=orig;
 }
-function vistaPrevia(){
-  if(!_infData||!_infData.rows)return;
-  var titulo=_infData.titulo||'Informe';
-  var fechaStr=new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'});
-  var html='<div class="preview-title">'+esc(titulo)+'</div>';
-  html+='<div class="preview-date">Generado el '+esc(fechaStr)+'</div>';
-  html+='<div class="preview-stats">';
-  html+='<div class="preview-stat"><strong>'+_infData.rows.length+'</strong>registros</div>';
-  html+='<div class="preview-stat"><strong>'+_infData.headers.length+'</strong>columnas</div>';
-  html+='</div>';
-  html+='<div class="preview-table-wrap"><table class="preview-table"><thead><tr>';
-  _infData.headers.forEach(function(h){html+='<th>'+esc(h)+'</th>';});
-  html+='</tr></thead><tbody>';
-  if(!_infData.rows.length){
-    html+='<tr><td colspan="'+_infData.headers.length+'" style="text-align:center;padding:24px;color:#9ca3af">Sin datos</td></tr>';
-  } else {
-    _infData.rows.forEach(function(row){
-      html+='<tr>';
-      row.forEach(function(cell){html+='<td>'+esc((cell!=null?cell:'').toString())+'</td>';});
-      html+='</tr>';
-    });
-  }
-  html+='</tbody></table></div>';
-  html+='<div class="preview-footer">';
-  html+='<button class="btn-excel" onclick="exportarExcel()">&#128229; Exportar Excel/CSV</button>';
-  html+='<button class="btn-pdf" onclick="exportarPDF()">&#128424;&#65039; Imprimir / PDF</button>';
-  html+='</div>';
-  document.getElementById('preview-body').innerHTML=html;
-  document.getElementById('modal-preview').classList.remove('hidden');
-}
-function cerrarPrevia(){document.getElementById('modal-preview').classList.add('hidden');}
 
 // ========== CREATE MODALS: USUARIO ==========
 function abrirModalUsuario(){
@@ -2564,8 +2454,7 @@ function guardarNuevoUsuario(){
 function abrirModalProfesional(){
   var hoy=new Date().toISOString().split('T')[0];
   document.getElementById('mp-alta').value=hoy;
-  ['mp-nombre','mp-tel'].forEach(function(id){document.getElementById(id).value='';})
-  document.getElementById('mp-cargo').value='';
+  ['mp-nombre','mp-cargo','mp-tel'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('mp-fnac').value='';
   document.getElementById('mp-horas').value='38.5';
   document.getElementById('mp-cat').value='interdisciplinario';
@@ -3256,7 +3145,21 @@ function _renderCumples(){
     var diff = Math.round((proxCumple - hoy) / (1000*60*60*24));
     if(diff <= proximosDias){
       var edad = proxCumple.getFullYear() - anno;
-      cumples.push({nombre: b.n + ' ' + b.a, diff: diff, edad: edad, mes: mes, dia: dia});
+      cumples.push({nombre: b.n + ' ' + b.a, diff: diff, edad: edad, mes: mes, dia: dia, tipo: 'beneficiario'});
+    }
+  });
+  PROFESIONALES.forEach(function(p){
+    if(!p.fnac || p.est === 'finalizado') return;
+    var parts = p.fnac.split('-');
+    var mes = parseInt(parts[1])-1;
+    var dia = parseInt(parts[2]);
+    var anno = parseInt(parts[0]);
+    var proxCumple = new Date(hoy.getFullYear(), mes, dia);
+    if(proxCumple < hoy) proxCumple = new Date(hoy.getFullYear()+1, mes, dia);
+    var diff = Math.round((proxCumple - hoy) / (1000*60*60*24));
+    if(diff <= proximosDias){
+      var edadP = proxCumple.getFullYear() - anno;
+      cumples.push({nombre: p.nombre, diff: diff, edad: edadP, mes: mes, dia: dia, tipo: 'profesional', cargo: p.cargo});
     }
   });
   cumples.sort(function(a,b){return a.diff-b.diff;});
@@ -3265,18 +3168,301 @@ function _renderCumples(){
   if(cumples.length === 0){
     h += '<div style="font-size:12px;color:#94a3b8;padding:8px 0">Sin cumpleaños en los próximos 30 días</div>';
   } else {
-    cumples.slice(0,6).forEach(function(c){
+    cumples.slice(0,8).forEach(function(c){
       var badge = c.diff === 0 ? '¡Hoy! 🎉' : (c.diff === 1 ? 'Mañana' : 'En ' + c.diff + ' días');
+      var avBg = c.tipo === 'profesional' ? '#e0e7ff' : '#fef9c3';
+      var avColor = c.tipo === 'profesional' ? '#4338ca' : '#92400e';
+      var etiqueta = c.tipo === 'profesional' ? '<span style="font-size:10px;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;margin-left:4px">'+esc(c.cargo||'Profesional')+'</span>' : '';
       h += '<div class="cumple-item">';
-      h += '<div class="cumple-av">' + c.nombre[0] + '</div>';
-      h += '<div><div class="cumple-nombre">' + c.nombre + '</div>';
-      h += '<div class="cumple-fecha">' + c.dia + ' ' + meses[c.mes] + ' · ' + c.edad + ' años</div></div>';
-      h += '<div class="cumple-badge">' + badge + '</div></div>';
+      h += '<div class="cumple-av" style="background:'+avBg+';color:'+avColor+'">'+c.nombre[0]+'</div>';
+      h += '<div><div class="cumple-nombre">'+esc(c.nombre)+etiqueta+'</div>';
+      h += '<div class="cumple-fecha">'+c.dia+' '+meses[c.mes]+' · '+c.edad+' años</div></div>';
+      h += '<div class="cumple-badge">'+badge+'</div></div>';
     });
   }
   document.getElementById('inicio-cumples').innerHTML = h;
 }
 
-</script>
+/* ===== EXPEDIENTE MODAL ===== */
+function abrirExpediente(bid){
+  var b=BD.find(function(x){return x.id===bid;});
+  if(!b)return;
+  var av=ini(b.n,b.a);
+  var nombre=esc(b.n)+' '+esc(b.a);
+  var sub=(b.est==='activo'?'Activo':'Baja')+(b.gr?' · Grado '+b.gr:'')+(b.fi?' · Ingreso '+fd(b.fi):'');
+  var TABS_EXP=[
+    {id:'id',label:'Identificación'},
+    {id:'ingreso_baja',label:'Ingreso / baja'},
+    {id:'referencia',label:'Datos personales'},
+    {id:'discapacidad',label:'Discapacidad'},
+    {id:'docs_ingreso',label:'Docs. ingreso'},
+    {id:'sujeciones',label:'Sujeciones'},
+    {id:'programa',label:'Prog. personal'},
+    {id:'informes_adj',label:'Informes adj.'},
+    {id:'medicacion',label:'Medicación'},
+    {id:'otros',label:'Otros'},
+    {id:'autorizaciones',label:'Autorizaciones'}
+  ];
+  var tabsHtml=TABS_EXP.map(function(t,i){
+    return '<button class="exp-tab'+(i===0?' active':'')+'" onclick="expSetTab(\''+t.id+'\',this)">'+t.label+'</button>';
+  }).join('');
+
+  function docViewer(docName, docTitle, stamp){
+    return '<div class="exp-docs-grid">'+
+      '<div class="exp-doc sel" onclick="expSelDoc(this,\''+docName+'\')"><div class="exp-doc-top"><span class="exp-doc-badge">PDF</span><div class="exp-doc-icon"><div class="exp-doc-fold"></div><div class="exp-doc-line b"></div><div class="exp-doc-line"></div></div></div><div class="exp-doc-name">'+docName+'</div><div class="exp-doc-date">Adjunto</div></div>'+
+      '</div>'+
+      '<div class="exp-viewer-bar"><span class="exp-viewer-title" id="exp-vt">'+docName+'</span>'+
+      '<button class="exp-viewer-btn">◀</button><span style="font-size:10px;color:#64748b">1/1</span><button class="exp-viewer-btn">▶</button>'+
+      '<button class="exp-viewer-btn dl">⬇ Descargar</button>'+
+      '<button class="exp-viewer-btn">🖨 Imprimir</button>'+
+      '</div>'+
+      '<div class="exp-viewer-pane"><div class="exp-pdf">'+
+      '<div class="exp-pdf-top"><div class="exp-pdf-logo">CD</div><div><div class="exp-pdf-title">'+docTitle+'</div><div class="exp-pdf-org">Centro Dato</div></div></div>'+
+      '<div class="exp-pdf-row"><div class="exp-pdf-f"><div class="exp-pdf-lbl">Beneficiario</div><div class="exp-pdf-val">'+nombre+'</div></div><div class="exp-pdf-f"><div class="exp-pdf-lbl">Fecha</div><div class="exp-pdf-val">'+fd(b.fi)+'</div></div></div>'+
+      '<div class="exp-pdf-sec">Documento</div>'+
+      '<div class="exp-pdf-row"><div class="exp-pdf-f" style="flex:unset;width:100%"><div class="exp-pdf-lbl">Contenido</div><div class="exp-pdf-val">Documento adjunto al expediente de '+nombre+'</div></div></div>'+
+      '<span class="exp-pdf-stamp">'+stamp+'</span>'+
+      '</div></div>';
+  }
+
+  var TAB_CONTENT_EXP={
+    id:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">DNI / NIE</div><div class="exp-fval">'+esc(b.dni||'—')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Fecha de nacimiento</div><div class="exp-fval">'+fd(b.fnac)+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Lugar de nacimiento</div><div class="exp-fval">'+esc(b.lugar||'—')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">N.º Seg. Social</div><div class="exp-fval '+(b.ss?'':'empty')+'">'+(b.ss||'Sin registrar')+'</div></div>'+
+      '</div>'+
+      '<div class="exp-sep">Documentos — DNI</div>'+
+      docViewer('DNI_'+esc(b.a).replace(/\s/g,'_')+'.pdf','Documento Nacional de Identidad','VALIDADO'),
+
+    ingreso_baja:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">Adjudicación</div><div class="exp-fval '+(b.fadj?'':'empty')+'">'+(b.fadj?fd(b.fadj):'Sin registrar')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Aceptación</div><div class="exp-fval '+(b.fi?'':'empty')+'">'+(b.fi?fd(b.fi):'Sin registrar')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Adaptación</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Baja</div><div class="exp-fval '+(b.fb?'':'empty')+'">'+(b.fb?fd(b.fb):'Sin registrar')+'</div></div>'+
+      '<div class="exp-field full"><div class="exp-flbl">Motivo de baja</div><div class="exp-fval '+(b.mot?'':'empty')+'">'+(b.mot?esc(b.mot):'Sin registrar')+'</div></div>'+
+      '</div>',
+
+    referencia:'<div class="exp-fields">'+
+      '<div class="exp-field full"><div class="exp-flbl">Tutor / representante</div><div class="exp-fval '+(b.cnt?'':'empty')+'">'+(b.cnt?esc(b.cnt):'Sin registrar')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Teléfono contacto</div><div class="exp-fval">'+esc(b.tel||'—')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Estado civil</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '<div class="exp-field full"><div class="exp-flbl">Domicilio</div><div class="exp-fval">'+esc(b.dom||'—')+'</div></div>'+
+      '</div>',
+
+    discapacidad:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">Dependencia</div><div class="exp-fval">'+(b.gr?'Grado '+b.gr+(b.nv?' - Nivel '+b.nv:''):'—')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">% Discapacidad</div><div class="exp-fval">'+(b.pct?b.pct+'%':'—')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Etiología</div><div class="exp-fval">'+esc(b.et||'—')+'</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Curatela / incapacidad</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '</div>',
+
+    docs_ingreso:'<div class="exp-fields">'+
+      ['Expediente personal','Reglamento régimen interno','Derechos y deberes','Consentimiento explícito','Tratamiento de datos','Toma de imágenes','Política de calidad','Ocio'].map(function(label,i){
+        var ok=b.docs&&b.docs[i];
+        return '<div class="exp-field"><div class="exp-flbl">'+label+'</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:'+(ok?'#dcfce7':'#fef3c7')+';color:'+(ok?'#15803d':'#92400e')+'">'+(ok?'Firmado':'Pendiente')+'</span></div></div>';
+      }).join('')+
+      '</div>'+
+      '<div class="exp-sep">Documentos — Contrato de ingreso</div>'+
+      docViewer('Contrato_ingreso_'+esc(b.a).replace(/\s/g,'_')+'.pdf','Contrato de ingreso','FIRMADO'),
+
+    sujeciones:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">Autorización sujeciones</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Tipo</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '<div class="exp-field full"><div class="exp-flbl">Observaciones</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '</div>',
+
+    programa:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">Informe de evaluación</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Adjunto</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">PAAP</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Adjunto</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Seguimiento</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#fef3c7;color:#92400e">Pendiente</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Ficha de usuario</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Completa</span></div></div>'+
+      '</div>'+
+      '<div class="exp-sep">Documentos — PAAP</div>'+
+      '<div class="exp-docs-grid">'+
+      '<div class="exp-doc sel"><div class="exp-doc-top"><span class="exp-doc-badge">PDF</span><div class="exp-doc-icon"><div class="exp-doc-fold"></div><div class="exp-doc-line b"></div><div class="exp-doc-line b"></div></div></div><div class="exp-doc-name">PAAP_2025.pdf</div><div class="exp-doc-date">12/01/2025</div></div>'+
+      '<div class="exp-doc"><div class="exp-doc-top"><span class="exp-doc-badge">PDF</span><div class="exp-doc-icon"><div class="exp-doc-fold"></div><div class="exp-doc-line b"></div><div class="exp-doc-line"></div></div></div><div class="exp-doc-name">PAAP_2024.pdf</div><div class="exp-doc-date">08/01/2024</div></div>'+
+      '<div class="exp-doc"><div class="exp-doc-top"><span class="exp-doc-badge">PDF</span><div class="exp-doc-icon"><div class="exp-doc-fold"></div><div class="exp-doc-line"></div><div class="exp-doc-line b"></div></div></div><div class="exp-doc-name">Evaluacion_ini.pdf</div><div class="exp-doc-date">'+fd(b.fi)+'</div></div>'+
+      '</div>'+
+      '<div class="exp-viewer-bar"><span class="exp-viewer-title">PAAP_2025.pdf</span>'+
+      '<button class="exp-viewer-btn">◀</button><span style="font-size:10px;color:#64748b">1/2</span><button class="exp-viewer-btn">▶</button>'+
+      '<button class="exp-viewer-btn dl">⬇ Descargar</button><button class="exp-viewer-btn">🖨 Imprimir</button></div>'+
+      '<div class="exp-viewer-pane"><div class="exp-pdf">'+
+      '<div class="exp-pdf-top"><div class="exp-pdf-logo">CD</div><div><div class="exp-pdf-title">Plan de Apoyo Activo — 2025</div><div class="exp-pdf-org">Centro Dato</div></div></div>'+
+      '<div class="exp-pdf-row"><div class="exp-pdf-f"><div class="exp-pdf-lbl">Beneficiario</div><div class="exp-pdf-val">'+nombre+'</div></div><div class="exp-pdf-f"><div class="exp-pdf-lbl">Vigencia</div><div class="exp-pdf-val">2025</div></div></div>'+
+      '<div class="exp-pdf-sec">Objetivos del plan</div>'+
+      '<div class="exp-pdf-row"><div class="exp-pdf-f" style="flex:unset;width:100%"><div class="exp-pdf-lbl">Área cognitiva</div><div class="exp-pdf-val">Mantenimiento de memoria y orientación temporal</div></div></div>'+
+      '<span class="exp-pdf-stamp">VIGENTE</span>'+
+      '</div></div>',
+
+    informes_adj:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">Informe médico</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Adjunto</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Informe social</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Adjunto</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Informe psicológico</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#fef3c7;color:#92400e">Pendiente</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Último adjunto</div><div class="exp-fval">Informe médico · 14/02/2025</div></div>'+
+      '</div>'+
+      '<div class="exp-sep">Documentos adjuntos</div>'+
+      docViewer('Informe_medico_'+esc(b.a).replace(/\s/g,'_')+'.pdf','Informe médico','VALIDADO'),
+
+    medicacion:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">Administración centro</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Sí</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Administración propia</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#fee2e2;color:#b91c1c">No</span></div></div>'+
+      '<div class="exp-field full"><div class="exp-flbl">Medicación crónica</div><div class="exp-fval empty">Pendiente de registrar</div></div>'+
+      '<div class="exp-field full"><div class="exp-flbl">Medicación temporal</div><div class="exp-fval empty">Ninguna</div></div>'+
+      '</div>',
+
+    otros:'<div class="exp-fields">'+
+      '<div class="exp-field full"><div class="exp-flbl">Observaciones generales</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '<div class="exp-field full"><div class="exp-flbl">Anotaciones internas</div><div class="exp-fval empty">Sin registrar</div></div>'+
+      '</div>',
+
+    autorizaciones:'<div class="exp-fields">'+
+      '<div class="exp-field"><div class="exp-flbl">Salidas solo</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#fee2e2;color:#b91c1c">No autorizado</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Actividades externas</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Autorizado</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Fotografías</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#fef3c7;color:#92400e">Pendiente</span></div></div>'+
+      '<div class="exp-field"><div class="exp-flbl">Tratamientos médicos</div><div class="exp-fval"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d">Autorizado</span></div></div>'+
+      '</div>'
+  };
+
+  var existing=document.getElementById('exp-overlay-wrap');
+  if(existing)existing.remove();
+  var overlay=document.createElement('div');
+  overlay.id='exp-overlay-wrap';
+  overlay.className='exp-overlay';
+  overlay.innerHTML=
+    '<div class="exp-modal">'+
+    '<div class="exp-header">'+
+    '<div class="exp-avatar">'+av+'</div>'+
+    '<div><div class="exp-title">'+nombre+'</div><div class="exp-sub">'+sub+'</div></div>'+
+    '<button class="exp-close" onclick="document.getElementById(\'exp-overlay-wrap\').remove()">✕ Cerrar</button>'+
+    '</div>'+
+    '<div class="exp-tabs" id="exp-tabs-row">'+tabsHtml+'</div>'+
+    '<div class="exp-body" id="exp-tab-body">'+TAB_CONTENT_EXP['id']+'</div>'+
+    '<div class="exp-footer">'+
+    '<button class="btn-secondary btn-sm" onclick="verDet('+b.id+');document.getElementById(\'exp-overlay-wrap\').remove()">📄 Ver ficha completa</button>'+
+    '<button class="btn-primary btn-sm">⬇ Descargar expediente</button>'+
+    '</div>'+
+    '</div>';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+
+  window._expTabContent=TAB_CONTENT_EXP;
+}
+
+function expSetTab(tabId, btn){
+  document.getElementById('exp-tab-body').innerHTML=window._expTabContent[tabId]||'<p style="color:#94a3b8;font-size:13px">Sin contenido registrado</p>';
+  document.querySelectorAll('.exp-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+}
+
+function expSelDoc(el,name){
+  var grid=el.closest('.exp-docs-grid');
+  if(grid)grid.querySelectorAll('.exp-doc').forEach(function(d){d.classList.remove('sel');});
+  el.classList.add('sel');
+  var vt=el.closest('.exp-body')?el.closest('.exp-body').querySelector('#exp-vt'):null;
+  if(vt)vt.textContent=name;
+}
+
+function editarProfesional(pid){
+  var p=PROFESIONALES.find(function(x){return x.id===pid;});
+  if(!p)return;
+  var d=document.getElementById('profes-detalle');
+  var formHtml='<div class="breadcrumb"><span class="breadcrumb-link" onclick="volverProfesionales()">Profesionales</span><span> / </span><span style="color:#1e293b;font-weight:600">'+esc(p.nombre)+'</span></div>'+
+    '<div class="card"><div class="card-header"><span class="card-title">✏️ Editar profesional</span></div>'+
+    '<div class="grid2" style="gap:16px">'+
+    '<div class="span2">'+_fi('ep-nombre','Nombre completo',p.nombre)+'</div>'+
+    _fs('ep-cargo','Cargo',p.cargo,['Directora','Educadora','Educador','Fisioterapeuta','Psiólogo','Psióloga','Enfermera','Cuidador','Cuidadora','Trabajadora Social','Conductor','Logopeda','Terapeuta Ocupacional','Estudiante prácticas'])+
+    _fi('ep-tel','Teléfono',p.tel)+
+    _fi('ep-fnac','Fecha nacimiento',p.fnac,'date')+
+    _fi('ep-horas','Horas semanales',p.horas?p.horas.toString():'')+
+    _fs('ep-contrato','Tipo contrato',p.contrato,['indefinido','temporal','excedencia','prácticas'])+
+    _fs('ep-est','Estado',p.est,['activo','excedencia','finalizado'])+
+    '</div>'+
+    '<div style="display:flex;gap:10px;margin-top:16px">'+
+    '<button class="btn-primary" onclick="guardarProfesional('+p.id+')">💾 Guardar</button>'+
+    '<button class="btn-secondary" onclick="verProfDetalle('+p.id+')">✕ Cancelar</button>'+
+    '</div></div>';
+  d.innerHTML=formHtml;
+}
+
+function guardarProfesional(pid){
+  var p=PROFESIONALES.find(function(x){return x.id===pid;});
+  if(!p)return;
+  p.nombre=document.getElementById('ep-nombre').value||p.nombre;
+  p.cargo=document.getElementById('ep-cargo').value||p.cargo;
+  p.tel=document.getElementById('ep-tel').value;
+  p.fnac=document.getElementById('ep-fnac').value||p.fnac;
+  var h=parseFloat(document.getElementById('ep-horas').value);
+  if(!isNaN(h))p.horas=h;
+  p.contrato=document.getElementById('ep-contrato').value||p.contrato;
+  p.est=document.getElementById('ep-est').value||p.est;
+  verProfDetalle(pid);
+}
+
+
+<div id="modal-usuario" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalUsuario()">
+  <div class="modal-box" style="max-width:620px">
+    <div class="modal-title">Nuevo Beneficiario</div>
+    <div class="modal-sub">Rellena los datos del nuevo usuario del centro</div>
+    <div class="grid2" style="gap:12px;margin-bottom:0">
+      <div class="modal-field"><label>Nombre *</label><input id="mu-nombre" class="form-input" type="text" placeholder="Nombre"/></div>
+      <div class="modal-field"><label>Apellidos *</label><input id="mu-apellidos" class="form-input" type="text" placeholder="Apellidos"/></div>
+      <div class="modal-field"><label>DNI/NIE</label><input id="mu-dni" class="form-input" type="text" placeholder="00000000-X"/></div>
+      <div class="modal-field"><label>F. Nacimiento</label><input id="mu-fnac" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>F. Incorporación</label><input id="mu-fi" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>Estado</label>
+        <select id="mu-est" class="form-input"><option value="activo">Activo</option><option value="baja">Baja</option></select></div>
+      <div class="modal-field"><label>Grupo</label>
+        <select id="mu-gr" class="form-input"><option value="I">Grupo I</option><option value="II">Grupo II</option><option value="III">Grupo III</option></select></div>
+      <div class="modal-field"><label>Teléfono</label><input id="mu-tel" class="form-input" type="text" placeholder="Teléfonos de contacto"/></div>
+    </div>
+    <div class="modal-field"><label>Domicilio</label><input id="mu-dom" class="form-input" type="text" placeholder="Dirección completa"/></div>
+    <div class="modal-field"><label>Tutor / Contacto</label><input id="mu-cnt" class="form-input" type="text" placeholder="Nombre del tutor y parentesco"/></div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="cerrarModalUsuario()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarNuevoUsuario()">\u2713 Guardar Usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL NUEVO PROFESIONAL ===== -->
+<div id="modal-profesional" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalProfesional()">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-title">Nuevo Profesional</div>
+    <div class="modal-sub">Añade un nuevo miembro al equipo del centro</div>
+    <div class="grid2" style="gap:12px;margin-bottom:0">
+      <div class="modal-field" style="grid-column:1/-1"><label>Nombre completo *</label><input id="mp-nombre" class="form-input" type="text" placeholder="Nombre y apellidos"/></div>
+      <div class="modal-field"><label>Cargo</label><input id="mp-cargo" class="form-input" type="text" placeholder="Ej: Educadora, Fisioterapeuta..."/></div>
+      <div class="modal-field"><label>Categoría</label>
+        <select id="mp-cat" class="form-input">
+          <option value="interdisciplinario">Interdisciplinario</option>
+          <option value="cuidado">Cuidado</option>
+          <option value="administracion">Administración</option>
+          <option value="coordinacion">Coordinación</option>
+        </select></div>
+      <div class="modal-field"><label>Horas/semana</label><input id="mp-horas" class="form-input" type="number" step="0.5" value="38.5"/></div>
+      <div class="modal-field"><label>Tipo contrato</label>
+        <select id="mp-contrato" class="form-input">
+          <option value="indefinido">Indefinido</option>
+          <option value="temporal">Temporal</option>
+          <option value="sustitución">Sustitución</option>
+          <option value="prácticas">Prácticas</option>
+        </select></div>
+      <div class="modal-field"><label>Fecha Alta</label><input id="mp-alta" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>F. Nacimiento</label><input id="mp-fnac" class="form-input" type="date"/></div>
+      <div class="modal-field"><label>Teléfono</label><input id="mp-tel" class="form-input" type="text" placeholder="Teléfono de contacto"/></div>
+      <div class="modal-field"><label>Estado</label>
+        <select id="mp-est" class="form-input">
+          <option value="activo">Activo</option>
+          <option value="excedencia">Excedencia</option>
+          <option value="finalizado">Finalizado</option>
+        </select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="cerrarModalProfesional()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarNuevoProfesional()">\u2713 Guardar Profesional</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
