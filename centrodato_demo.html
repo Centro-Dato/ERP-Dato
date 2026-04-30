@@ -1590,7 +1590,7 @@ function guardarActividad(){
   ACTIVIDADES.push({id:nextActId++,nombre:nom,fecha:fec,precio:0,lugar:lug,desc:desc});
   cerrarModal();pintarActividades();
 }
-document.getElementById("modal-act").addEventListener("click",function(e){if(e.target===this)cerrarModal();});
+(function(){var ma=document.getElementById("modal-act");if(ma)ma.addEventListener("click",function(e){if(e.target===this)cerrarModal();});})();
 
 /* OCIO - INFORMES */
 function setInforme(tipo){
@@ -1786,7 +1786,7 @@ function guardarComuni(){
   COMUNICACIONES.push({id:nextComuniId++,bid:bid,fecha:fecha,canal:canal,motivo:motivo,fechaAus:esAus?fechaAus:null,desc:desc,prof:document.getElementById("sb-nm").textContent});
   cerrarModalComuni();pintarRegistro();
 }
-document.getElementById("modal-comun").addEventListener("click",function(e){if(e.target===this)cerrarModalComuni();});
+(function(){var mc=document.getElementById("modal-comun");if(mc)mc.addEventListener("click",function(e){if(e.target===this)cerrarModalComuni();});})();
 
 /* PROFESIONALES DATA */
 var PROFESIONALES=[
@@ -2974,7 +2974,7 @@ function guardarIncidencia(){
   INCIDENCIAS.push({id:nextIncidId++,furgId:furgId,fecha:fecha,tipo:tipo,desc:desc,prof:document.getElementById("sb-nm").textContent});
   cerrarModalIncidencia();pintarIncidencias();
 }
-document.getElementById("modal-incid").addEventListener("click",function(e){if(e.target===this)cerrarModalIncidencia();});
+(function(){var mi=document.getElementById("modal-incid");if(mi)mi.addEventListener("click",function(e){if(e.target===this)cerrarModalIncidencia();});})();
 
 /* ===== MÓDULO INICIO ===== */
 var _calVista = 'dia';
