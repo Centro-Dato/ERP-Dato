@@ -3356,6 +3356,7 @@ function abrirExpediente(bid){
       '<button class="exp-viewer-btn dl">⬇ Descargar</button>'+
       '<button class="exp-viewer-btn" onclick="expVistaPrevia(this)">🔍 Vista previa</button>'+
       '<button class="exp-viewer-btn">🖨 Imprimir</button>'+
+      '<label class="exp-viewer-btn" style="cursor:pointer" title="Subir archivo">📎 Subir<input type="file" accept=".pdf,.doc,.docx,.jpg,.png" style="display:none" onchange="expSubirArchivo(this)"/></label>'+
       '</div>'+
       '<div class="exp-viewer-pane"><div class="exp-pdf">'+
       '<div class="exp-pdf-top"><div class="exp-pdf-logo">CD</div><div><div class="exp-pdf-title">'+docTitle+'</div><div class="exp-pdf-org">Centro Dato</div></div></div>'+
@@ -3427,7 +3428,7 @@ function abrirExpediente(bid){
       '</div>'+
       '<div class="exp-viewer-bar"><span class="exp-viewer-title">PAAP_2025.pdf</span>'+
       '<button class="exp-viewer-btn">◀</button><span style="font-size:10px;color:#64748b">1/2</span><button class="exp-viewer-btn">▶</button>'+
-      '<button class="exp-viewer-btn dl">⬇ Descargar</button><button class="exp-viewer-btn" onclick="expVistaPrevia(this)">🔍 Vista previa</button><button class="exp-viewer-btn">🖨 Imprimir</button></div>'+
+      '<button class="exp-viewer-btn dl">⬇ Descargar</button><button class="exp-viewer-btn" onclick="expVistaPrevia(this)">🔍 Vista previa</button><button class="exp-viewer-btn">🖨 Imprimir</button><label class="exp-viewer-btn" style="cursor:pointer" title="Subir archivo">📎 Subir<input type="file" accept=".pdf,.doc,.docx,.jpg,.png" style="display:none" onchange="expSubirArchivo(this)"/></label></div>'+
       '<div class="exp-viewer-pane"><div class="exp-pdf">'+
       '<div class="exp-pdf-top"><div class="exp-pdf-logo">CD</div><div><div class="exp-pdf-title">Plan de Apoyo Activo — 2025</div><div class="exp-pdf-org">Centro Dato</div></div></div>'+
       '<div class="exp-pdf-row"><div class="exp-pdf-f"><div class="exp-pdf-lbl">Beneficiario</div><div class="exp-pdf-val">'+nombre+'</div></div><div class="exp-pdf-f"><div class="exp-pdf-lbl">Vigencia</div><div class="exp-pdf-val">2025</div></div></div>'+
@@ -3494,6 +3495,45 @@ function expSetTab(tabId, btn){
   document.getElementById('exp-tab-body').innerHTML=window._expTabContent[tabId]||'<p style="color:#94a3b8;font-size:13px">Sin contenido registrado</p>';
   document.querySelectorAll('.exp-tab').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
+}
+
+function expSubirArchivo(input){
+  var file=input.files[0];
+  if(!file)return;
+  var bar=input.closest('.exp-viewer-bar');
+  var titleEl=bar?bar.querySelector('.exp-viewer-title'):null;
+  // Actualizar el título del visor con el nuevo archivo
+  if(titleEl)titleEl.textContent=file.name;
+  // Mostrar la previsualización en el panel
+  var pane=bar?bar.nextElementSibling:null;
+  if(!pane)return;
+  if(file.type==='application/pdf'||file.name.endsWith('.pdf')){
+    var url=URL.createObjectURL(file);
+    pane.innerHTML='<iframe src="'+url+'" style="width:100%;height:400px;border:none;border-radius:8px"></iframe>';
+  } else if(file.type.startsWith('image/')){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      pane.innerHTML='<img src="'+e.target.result+'" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15)"/>';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    pane.innerHTML='<div style="padding:24px;text-align:center;color:#475569"><div style="font-size:40px;margin-bottom:8px">📄</div><div style="font-weight:600">'+file.name+'</div><div style="font-size:12px;margin-top:4px;color:#94a3b8">Archivo subido correctamente · '+(file.size/1024).toFixed(1)+' KB</div></div>';
+  }
+  // Actualizar miniatura en la galería
+  var grid=bar?bar.closest('.exp-body')?bar.closest('.exp-body').querySelector('.exp-docs-grid'):null:null;
+  if(grid){
+    var newDoc=document.createElement('div');
+    newDoc.className='exp-doc sel';
+    newDoc.innerHTML='<div class="exp-doc-top"><span class="exp-doc-badge">'+file.name.split('.').pop().toUpperCase()+'</span><div class="exp-doc-icon"><div class="exp-doc-fold"></div><div class="exp-doc-line b"></div><div class="exp-doc-line b"></div></div></div><div class="exp-doc-name">'+file.name+'</div><div class="exp-doc-date">Hoy</div>';
+    grid.querySelectorAll('.exp-doc').forEach(function(d){d.classList.remove('sel');});
+    grid.appendChild(newDoc);
+  }
+  // Notificación
+  var notif=document.createElement('div');
+  notif.style.cssText='position:fixed;bottom:24px;right:24px;background:#15803d;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2)';
+  notif.textContent='✅ '+file.name+' subido correctamente';
+  document.body.appendChild(notif);
+  setTimeout(function(){notif.remove();},3000);
 }
 
 function expVistaPrevia(btn){
