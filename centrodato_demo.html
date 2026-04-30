@@ -407,7 +407,27 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
 .reg-list-actions{display:flex;gap:6px}
 .btn-del{background:none;border:none;cursor:pointer;font-size:1rem;opacity:.45;transition:opacity .15s;padding:2px 6px;border-radius:4px}
 .btn-del:hover{opacity:1;background:#fee2e2}
-.reg-form{max-width:660px;background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.reg-form{max-width:680px;background:transparent}
+.gf-header{background:#1e40af;border-radius:12px 12px 0 0;padding:24px 28px;margin-bottom:0;border-top:8px solid #3b82f6}
+.gf-header-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.gf-header-sub{font-size:13px;color:#bfdbfe}
+.gf-card{background:#fff;border-radius:0 0 0 0;padding:20px 28px;border:1px solid #e5e7eb;border-top:none;margin-bottom:0}
+.gf-card:last-of-type{border-radius:0 0 12px 12px}
+.gf-question{background:#fff;border-radius:12px;padding:20px 24px;border:1px solid #e5e7eb;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.gf-question:focus-within{border-left:4px solid #3b82f6;padding-left:20px}
+.gf-label{font-size:14px;font-weight:500;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.gf-req{color:#ef4444;font-size:16px;line-height:1}
+.gf-input{width:100%;border:none;border-bottom:2px solid #e2e8f0;background:transparent;padding:8px 4px;font-size:14px;color:#1e293b;outline:none;transition:border-color .2s;border-radius:0}
+.gf-input:focus{border-bottom-color:#3b82f6}
+.gf-select{width:100%;border:none;border-bottom:2px solid #e2e8f0;background:transparent;padding:8px 4px;font-size:14px;color:#1e293b;outline:none;appearance:none;cursor:pointer;transition:border-color .2s}
+.gf-select:focus{border-bottom-color:#3b82f6}
+.gf-textarea{width:100%;border:none;border-bottom:2px solid #e2e8f0;background:transparent;padding:8px 4px;font-size:14px;color:#1e293b;outline:none;resize:vertical;min-height:80px;transition:border-color .2s}
+.gf-textarea:focus{border-bottom-color:#3b82f6}
+.gf-check-group{display:flex;flex-direction:column;gap:8px}
+.gf-check-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:background .15s;font-size:14px;color:#374151}
+.gf-check-item:hover{background:#f1f5f9}
+.gf-check-item input[type=checkbox],.gf-check-item input[type=radio]{width:18px;height:18px;accent-color:#3b82f6;cursor:pointer;flex-shrink:0}
+.gf-actions{background:#fff;border-radius:12px;padding:20px 24px;border:1px solid #e5e7eb;display:flex;gap:12px;align-items:center;margin-top:8px}
 .check-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .check-item{display:flex;align-items:center;gap:5px;font-size:.82rem;background:#f3f4f6;padding:5px 12px;border-radius:20px;cursor:pointer;transition:background .1s}
 .check-item:hover{background:#e5e7eb}
@@ -2144,9 +2164,17 @@ function abrirRegistro(id){
   var tipo=REG_TIPOS.find(function(t){return t.id===id;});
   var lista=REGISTROS[id]||[];
   var html='<div class="view-header">';
-  html+='<button class="btn-back" onclick="renderRegistros()">\u2190 Registros</button>';
+  html+='<button class="btn-back" onclick="renderRegistros()">← Registros</button>';
   html+='<h2>'+tipo.icon+' '+tipo.titulo+'</h2></div>';
-  html+='<div style="margin-bottom:16px"><button class="btn-primary" onclick="abrirFormRegistro(\''+id+'\',null)">+ Nuevo Registro</button></div>';
+  html+='<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">';
+  html+='<button class="btn-primary" onclick="abrirFormRegistro(\''+id+'\',null)">+ Nuevo Registro</button>';
+  if(lista.length){
+    html+='<button class="btn-secondary" onclick="exportarExcel(\''+id+'\')" style="display:flex;align-items:center;gap:6px">📊 Exportar Excel</button>';
+  }
+  if(id==='actividades'){
+    html+='<button class="btn-secondary" onclick="abrirActividadesAlumno()" style="display:flex;align-items:center;gap:6px">👤 Historial por alumno</button>';
+  }
+  html+='</div>';
   if(!lista.length){
     html+='<div class="empty-state">No hay registros aún.<br>Pulsa <strong>+ Nuevo Registro</strong> para empezar.</div>';
   } else {
@@ -2158,7 +2186,7 @@ function abrirRegistro(id){
       html+='<div><span class="reg-list-fecha">'+fechaDisp+'</span>';
       if(sub)html+='<span class="reg-list-sub">'+esc(sub)+'</span>';
       html+='</div>';
-      html+='<div class="reg-list-actions"><button class="btn-del" onclick="event.stopPropagation();borrarRegistro(\''+id+'\','+rec._id+')" title="Eliminar">\ud83d\uddd1</button></div>';
+      html+='<div class="reg-list-actions"><button class="btn-del" onclick="event.stopPropagation();borrarRegistro(\''+id+'\','+rec._id+')" title="Eliminar">🗑</button></div>';
       html+='</div>';
     });
     html+='</div>';
@@ -2170,39 +2198,54 @@ function abrirFormRegistro(id,recId){
   _regActivo=id;
   var tipo=REG_TIPOS.find(function(t){return t.id===id;});
   var rec=recId!=null?(REGISTROS[id]||[]).find(function(r){return r._id===recId;}):null;
-  var html='<div class="view-header">';
-  html+='<button class="btn-back" onclick="abrirRegistro(\''+id+'\')">\u2190 '+tipo.titulo+'</button>';
-  html+='<h2>'+(rec?'Editar':'Nuevo')+' Registro</h2></div>';
-  html+='<form id="regForm" class="reg-form" onsubmit="event.preventDefault();guardarRegistro(\''+id+'\','+(recId!=null?recId:'null')+')">';
+  var colorT=tipo.colorT||'#1e40af';
+  var colorB=tipo.color||'#dbeafe';
+
+  var html='<div style="max-width:680px">';
+  // Botón volver
+  html+='<button class="btn-back" onclick="abrirRegistro(\''+id+'\')" style="margin-bottom:16px">← '+tipo.titulo+'</button>';
+  // Cabecera estilo Google Forms
+  html+='<div style="background:'+colorT+';border-radius:12px 12px 0 0;padding:24px 28px;border-top:8px solid '+colorB+'">';
+  html+='<div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">'+(rec?'Editar':'Nuevo registro')+'</div>';
+  html+='<div style="font-size:13px;color:rgba(255,255,255,.75)">'+tipo.titulo+' · Centro Dato</div>';
+  html+='</div>';
+
+  html+='<form id="regForm" onsubmit="event.preventDefault();guardarRegistro(\''+id+'\','+(recId!=null?recId:'null')+')">';
+
   tipo.fields.forEach(function(f){
     var val=rec?rec[f.k]:'';
     var opts=_regOpts(f);
-    html+='<div class="form-group"><label class="form-label">'+f.label+(f.req?' <span style="color:#ef4444">*</span>':'')+'</label>';
+    html+='<div class="gf-question">';
+    html+='<div class="gf-label">'+f.label+(f.req?'<span class="gf-req">*</span>':'')+'</div>';
     if(f.type==='text'){
-      html+='<input class="form-input" type="text" name="'+f.k+'" value="'+esc(val||'')+'"'+(f.req?' required':'')+'/>';
+      html+='<input class="gf-input" type="text" name="'+f.k+'" value="'+esc(val||'')+'" placeholder="Respuesta corta"'+(f.req?' required':'')+'/>';
     } else if(f.type==='textarea'){
-      html+='<textarea class="form-input" name="'+f.k+'" rows="3"'+(f.req?' required':'')+'>'+esc(val||'')+'</textarea>';
+      html+='<textarea class="gf-textarea" name="'+f.k+'" placeholder="Escribe aquí..."'+(f.req?' required':'')+'>'+esc(val||'')+'</textarea>';
     } else if(f.type==='date'){
-      html+='<input class="form-input" type="date" name="'+f.k+'" value="'+(val||_regTodayStr())+'"'+(f.req?' required':'')+'/>';
+      html+='<input class="gf-input" type="date" name="'+f.k+'" value="'+(val||_regTodayStr())+'"'+(f.req?' required':'')+'/>';
     } else if(f.type==='time'){
-      html+='<input class="form-input" type="time" name="'+f.k+'" value="'+(val||'')+'"'+(f.req?' required':'')+'/>';
+      html+='<input class="gf-input" type="time" name="'+f.k+'" value="'+(val||'')+'"'+(f.req?' required':'')+'/>';
     } else if(f.type==='select'){
-      html+='<select class="form-input" name="'+f.k+'"'+(f.req?' required':'')+'>';
-      if(!f.req)html+='<option value="">\u2014 seleccionar \u2014</option>';
+      html+='<select class="gf-select" name="'+f.k+'"'+(f.req?' required':'')+'>';
+      if(!f.req)html+='<option value="">— seleccionar —</option>';
       opts.forEach(function(o){html+='<option value="'+esc(o)+'"'+(val===o?' selected':'')+'>'+esc(o)+'</option>';});
       html+='</select>';
     } else if(f.type==='checkboxes'){
       var sel=Array.isArray(val)?val:(val?[val]:[]);
-      html+='<div class="check-group">';
+      html+='<div class="gf-check-group">';
       opts.forEach(function(o){
-        html+='<label class="check-item"><input type="checkbox" name="'+f.k+'" value="'+esc(o)+'"'+(sel.indexOf(o)>=0?' checked':'')+'/> '+esc(o)+'</label>';
+        html+='<label class="gf-check-item"><input type="checkbox" name="'+f.k+'" value="'+esc(o)+'"'+(sel.indexOf(o)>=0?' checked':'')+'/> '+esc(o)+'</label>';
       });
       html+='</div>';
     }
     html+='</div>';
   });
-  html+='<div class="form-actions"><button type="submit" class="btn-primary">\ud83d\udcbe Guardar</button> <button type="button" class="btn-sec" onclick="abrirRegistro(\''+id+'\')">Cancelar</button></div>';
-  html+='</form>';
+
+  html+='<div class="gf-actions">';
+  html+='<button type="submit" class="btn-primary">💾 Guardar registro</button>';
+  html+='<button type="button" class="btn-secondary" onclick="abrirRegistro(\''+id+'\')">Cancelar</button>';
+  html+='</div>';
+  html+='</form></div>';
   document.getElementById('view-registros').innerHTML=html;
 }
 
@@ -2234,6 +2277,93 @@ function borrarRegistro(id,recId){
   REGISTROS[id]=(REGISTROS[id]||[]).filter(function(r){return r._id!==recId;});
   abrirRegistro(id);
 }
+
+/* ===== ACTIVIDADES POR ALUMNO ===== */
+function abrirActividadesAlumno(){
+  var activos=BD.filter(function(b){return b.est==='activo';});
+  if(!activos.length){document.getElementById('view-registros').innerHTML='<div class="empty-state">No hay beneficiarios activos</div>';return;}
+  var primerAlumno=activos[0].id;
+  _renderTabsAlumnos(activos, primerAlumno);
+}
+
+function _renderTabsAlumnos(activos, alumnoId){
+  var html='<button class="btn-back" onclick="abrirRegistro(\'actividades\')" style="margin-bottom:16px">← Actividades</button>';
+  html+='<h2 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px">📊 Historial por alumno</h2>';
+  // Tabs
+  html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">';
+  activos.forEach(function(b){
+    var active=b.id===alumnoId;
+    html+='<button onclick="_renderTabsAlumnos(BD.filter(function(x){return x.est===\'activo\';}),'+b.id+')" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(active?'#1e40af':'#e2e8f0')+';background:'+(active?'#1e40af':'#fff')+';color:'+(active?'#fff':'#374151')+';font-size:12px;font-weight:600;cursor:pointer">'+esc(b.n+' '+b.a.split(' ')[0])+'</button>';
+  });
+  html+='</div>';
+
+  // Tabla del alumno seleccionado
+  var nombreAlumno='';
+  var registrosAlumno=[];
+  var todosActiv=REGISTROS['actividades']||[];
+  activos.forEach(function(b){
+    if(b.id===alumnoId) nombreAlumno=b.n+' '+b.a;
+  });
+
+  // Para actividades, el alumno participa si está en el campo usuario o en participantes
+  // Como el registro de actividades no filtra por alumno individualmente,
+  // mostramos todos los registros de la actividad ordenados por fecha
+  registrosAlumno=todosActiv.slice().sort(function(a,b){
+    return (b.fecha||'').localeCompare(a.fecha||'');
+  });
+
+  html+='<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">';
+  html+='<div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#1e293b">'+esc(nombreAlumno)+' — Registro de actividades</div>';
+  if(!registrosAlumno.length){
+    html+='<div class="empty-state">Sin registros aún</div>';
+  } else {
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html+='<thead><tr style="background:#f1f5f9"><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Fecha</th><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Actividad</th><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Aspectos trabajados</th></tr></thead><tbody>';
+    registrosAlumno.forEach(function(r,i){
+      var aspectos=Array.isArray(r.tratamientos)?r.tratamientos.join(', '):(r.tratamientos||'—');
+      html+='<tr style="border-bottom:1px solid #f1f5f9;'+(i%2===0?'':'background:#fafafa')+'">';
+      html+='<td style="padding:10px 16px;color:#475569;white-space:nowrap">'+fd(r.fecha)+'</td>';
+      html+='<td style="padding:10px 16px;font-weight:500;color:#1e293b">'+esc(r.actividad||'—')+'</td>';
+      html+='<td style="padding:10px 16px;color:#64748b;font-size:12px">'+esc(aspectos)+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+  }
+  html+='</div>';
+  document.getElementById('view-registros').innerHTML=html;
+}
+
+/* ===== EXPORTAR EXCEL (CSV descargable) ===== */
+function exportarExcel(id){
+  var tipo=REG_TIPOS.find(function(t){return t.id===id;});
+  var lista=REGISTROS[id]||[];
+  if(!lista.length){alert('No hay registros para exportar.');return;}
+
+  // Cabecera CSV
+  var headers=tipo.fields.map(function(f){return '"'+f.label+'"';});
+  var rows=[headers.join(',')];
+
+  lista.slice().sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).forEach(function(rec){
+    var cols=tipo.fields.map(function(f){
+      var v=rec[f.k]||'';
+      if(Array.isArray(v))v=v.join(' | ');
+      return '"'+String(v).replace(/"/g,'""')+'"';
+    });
+    rows.push(cols.join(','));
+  });
+
+  var csv='\uFEFF'+rows.join('\r\n'); // BOM para Excel en español
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='Respuestas_Registros_'+tipo.titulo.replace(/\s/g,'_')+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 
 
 // ========== INFORMES MODULE ==========
@@ -3224,6 +3354,7 @@ function abrirExpediente(bid){
       '<div class="exp-viewer-bar"><span class="exp-viewer-title" id="exp-vt">'+docName+'</span>'+
       '<button class="exp-viewer-btn">◀</button><span style="font-size:10px;color:#64748b">1/1</span><button class="exp-viewer-btn">▶</button>'+
       '<button class="exp-viewer-btn dl">⬇ Descargar</button>'+
+      '<button class="exp-viewer-btn" onclick="expVistaPrevia(this)">🔍 Vista previa</button>'+
       '<button class="exp-viewer-btn">🖨 Imprimir</button>'+
       '</div>'+
       '<div class="exp-viewer-pane"><div class="exp-pdf">'+
@@ -3296,7 +3427,7 @@ function abrirExpediente(bid){
       '</div>'+
       '<div class="exp-viewer-bar"><span class="exp-viewer-title">PAAP_2025.pdf</span>'+
       '<button class="exp-viewer-btn">◀</button><span style="font-size:10px;color:#64748b">1/2</span><button class="exp-viewer-btn">▶</button>'+
-      '<button class="exp-viewer-btn dl">⬇ Descargar</button><button class="exp-viewer-btn">🖨 Imprimir</button></div>'+
+      '<button class="exp-viewer-btn dl">⬇ Descargar</button><button class="exp-viewer-btn" onclick="expVistaPrevia(this)">🔍 Vista previa</button><button class="exp-viewer-btn">🖨 Imprimir</button></div>'+
       '<div class="exp-viewer-pane"><div class="exp-pdf">'+
       '<div class="exp-pdf-top"><div class="exp-pdf-logo">CD</div><div><div class="exp-pdf-title">Plan de Apoyo Activo — 2025</div><div class="exp-pdf-org">Centro Dato</div></div></div>'+
       '<div class="exp-pdf-row"><div class="exp-pdf-f"><div class="exp-pdf-lbl">Beneficiario</div><div class="exp-pdf-val">'+nombre+'</div></div><div class="exp-pdf-f"><div class="exp-pdf-lbl">Vigencia</div><div class="exp-pdf-val">2025</div></div></div>'+
@@ -3363,6 +3494,32 @@ function expSetTab(tabId, btn){
   document.getElementById('exp-tab-body').innerHTML=window._expTabContent[tabId]||'<p style="color:#94a3b8;font-size:13px">Sin contenido registrado</p>';
   document.querySelectorAll('.exp-tab').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
+}
+
+function expVistaPrevia(btn){
+  var bar=btn.closest('.exp-viewer-bar');
+  var titleEl=bar?bar.querySelector('.exp-viewer-title'):null;
+  var docName=titleEl?titleEl.textContent:'Documento';
+  var pane=bar?bar.nextElementSibling:null;
+  if(!pane)return;
+  // Crear overlay de vista previa a pantalla completa
+  var existing=document.getElementById('exp-preview-overlay');
+  if(existing)existing.remove();
+  var overlay=document.createElement('div');
+  overlay.id='exp-preview-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;overflow-y:auto';
+  var toolbar=document.createElement('div');
+  toolbar.style.cssText='width:100%;max-width:800px;display:flex;align-items:center;gap:10px;margin-bottom:12px';
+  toolbar.innerHTML='<span style="flex:1;color:#fff;font-size:14px;font-weight:600">'+docName+'</span>'+
+    '<button onclick="window.print()" style="background:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨 Imprimir</button>'+
+    '<button onclick="document.getElementById(\'exp-preview-overlay\').remove()" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">✕ Cerrar</button>';
+  var content=document.createElement('div');
+  content.style.cssText='background:#fff;border-radius:12px;width:100%;max-width:800px;padding:40px 48px;box-shadow:0 20px 60px rgba(0,0,0,.4);min-height:400px';
+  content.innerHTML=pane.innerHTML;
+  overlay.appendChild(toolbar);
+  overlay.appendChild(content);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
 }
 
 function expSelDoc(el,name){
