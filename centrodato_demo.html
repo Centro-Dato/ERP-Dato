@@ -990,14 +990,14 @@ document.addEventListener("DOMContentLoaded",function(){
     document.getElementById("app-screen").classList.add("hidden");
     document.getElementById("login-screen").classList.remove("hidden");
   });
+  var fa=document.getElementById("f-activo");if(fa)fa.addEventListener("click",function(){setF("activo",this);});
+  var fb=document.getElementById("f-baja");if(fb)fb.addEventListener("click",function(){setF("baja",this);});
+  var ft=document.getElementById("f-todos");if(ft)ft.addEventListener("click",function(){setF("todos",this);});
+  var is=document.getElementById("inp-search");if(is)is.addEventListener("input",pintarLista);
 });
 /* BENEFICIARIOS */
 var filtro="activo",tabActual="dadmin";
-document.getElementById("f-activo").addEventListener("click",function(){setF("activo",this);});
-document.getElementById("f-baja").addEventListener("click",function(){setF("baja",this);});
-document.getElementById("f-todos").addEventListener("click",function(){setF("todos",this);});
 function setF(v,btn){filtro=v;document.querySelectorAll(".seg-control button").forEach(function(b){b.classList.remove("active");});btn.classList.add("active");pintarLista();}
-document.getElementById("inp-search").addEventListener("input",pintarLista);
 function pintarLista(){
   var q=document.getElementById("inp-search").value.toLowerCase();
   var rows=BD.filter(function(b){return filtro==="todos"?true:b.est===filtro;}).filter(function(b){return(b.n+" "+b.a+" "+(b.dni||"")).toLowerCase().indexOf(q)>=0;}).sort(function(a,b){return a.a.localeCompare(b.a,"es");});
