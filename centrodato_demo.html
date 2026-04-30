@@ -1988,9 +1988,9 @@ var REG_TIPOS=[
   {id:'actividades',titulo:'Actividades',icon:'\ud83d\udccc',color:'#dbeafe',colorT:'#1e40af',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'actividad',label:'Actividad',type:'select',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
-    {k:'nAlumnos',label:'Nº de alumnos',type:'text'},
-    {k:'tratamientos',label:'Tratamientos trabajados',type:'checkboxes',opts:['HABILIDADES SOCIALES','VALORACIÓN POSITIVA','RELAJACIÓN','EVALUACIÓN','MOVILIDAD','FUERZA','COORDINACIÓN','EQUILIBRIO','ATENCIÓN','MEMORIA','PERCEPCIÓN','LENGUAJE','ORIENTACIÓN','EXPRESIÓN','COMPRENSIÓN','LECTOESCRITURA','OTROS']},
+    {k:'actividad',label:'Actividad',type:'checkboxes',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
+    {k:'alumnos',label:'Alumnos participantes',type:'checkboxes',opts:'BD'},
+    {k:'tratamientos',label:'Aspectos trabajados',type:'checkboxes',opts:['HABILIDADES SOCIALES','VALORACIÓN POSITIVA','RELAJACIÓN','EVALUACIÓN','MOVILIDAD','FUERZA','COORDINACIÓN','EQUILIBRIO','ATENCIÓN','MEMORIA','PERCEPCIÓN','LENGUAJE','ORIENTACIÓN','EXPRESIÓN','COMPRENSIÓN','LECTOESCRITURA','OTROS']},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
   ]},
   {id:'posturales',titulo:'Cambios Posturales',icon:'\ud83e\udeba',color:'#d1fae5',colorT:'#065f46',
@@ -2305,10 +2305,11 @@ function _renderTabsAlumnos(activos, alumnoId){
     if(b.id===alumnoId) nombreAlumno=b.n+' '+b.a;
   });
 
-  // Para actividades, el alumno participa si está en el campo usuario o en participantes
-  // Como el registro de actividades no filtra por alumno individualmente,
-  // mostramos todos los registros de la actividad ordenados por fecha
-  registrosAlumno=todosActiv.slice().sort(function(a,b){
+  // Filtrar registros donde el alumno está en el campo alumnos
+  registrosAlumno=todosActiv.filter(function(r){
+    var lista=Array.isArray(r.alumnos)?r.alumnos:(r.alumnos?[r.alumnos]:[]);
+    return lista.indexOf(nombreAlumno)>=0;
+  }).sort(function(a,b){
     return (b.fecha||'').localeCompare(a.fecha||'');
   });
 
@@ -2321,9 +2322,10 @@ function _renderTabsAlumnos(activos, alumnoId){
     html+='<thead><tr style="background:#f1f5f9"><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Fecha</th><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Actividad</th><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Aspectos trabajados</th></tr></thead><tbody>';
     registrosAlumno.forEach(function(r,i){
       var aspectos=Array.isArray(r.tratamientos)?r.tratamientos.join(', '):(r.tratamientos||'—');
+      var activ=Array.isArray(r.actividad)?r.actividad.join(', '):(r.actividad||'—');
       html+='<tr style="border-bottom:1px solid #f1f5f9;'+(i%2===0?'':'background:#fafafa')+'">';
       html+='<td style="padding:10px 16px;color:#475569;white-space:nowrap">'+fd(r.fecha)+'</td>';
-      html+='<td style="padding:10px 16px;font-weight:500;color:#1e293b">'+esc(r.actividad||'—')+'</td>';
+      html+='<td style="padding:10px 16px;font-weight:500;color:#1e293b">'+esc(activ)+'</td>';
       html+='<td style="padding:10px 16px;color:#64748b;font-size:12px">'+esc(aspectos)+'</td>';
       html+='</tr>';
     });
