@@ -1868,7 +1868,7 @@ function renderProfesionales(){
   var html=lista.map(function(p){
     var color=CARGO_COLORS[p.cargo]||"#0270c4";
     var estBadge=p.est==="excedencia"?'<span class="badge by">Excedencia</span>':'<span class="badge bg">Activo</span>';
-    var contratoBadge='<span class="badge br">'+(p.horas?p.horas+"h":"â")+"</span>";
+    var contratoBadge='<span class="badge br">'+(p.horas?p.horas+"h":"—")+"</span>";
     var telHtml=p.tel?'<span style="font-size:11px;color:#64748b">&#x1F4F1; '+p.tel+'</span>':"";
     var fnacHtml=p.fnac?'<span style="font-size:11px;color:#94a3b8">&#x1F382; '+fd(p.fnac)+'</span>':"";
     var antHtml=p.alta?'<span style="font-size:11px;color:#94a3b8">Desde '+fd(p.alta)+'</span>':"";
@@ -1958,7 +1958,7 @@ var REG_TIPOS=[
     {k:'atendido',label:'Atendido por',type:'text',req:true},
     {k:'donde',label:'¿Dónde ocurrió?',type:'select',opts:['AULA','BAÑO','COMEDOR','JARDÍn','ASCENSOR','PASILLOS','ESCALERAS','GIMNASIO','GARAJE','OTROS']},
     {k:'descripcion',label:'Descripción de la caída',type:'textarea',req:true},
-    {k:'causas',label:'Causas',type:'select',opts:['PÉRDIDA DE EQUILIBRIO','RESBALOÌN','TROPEZOÌN','CAÍDA SILLA','FALLO MIEMBROS','OTROS']},
+    {k:'causas',label:'Causas',type:'select',opts:['PÉRDIDA DE EQUILIBRIO','RESBALÓN','TROPEZÓN','CAÍDA SILLA','FALLO MIEMBROS','OTROS']},
     {k:'parteGolpeada',label:'Parte golpeada',type:'text'},
     {k:'conQuien',label:'¿Con quién estaba?',type:'select',opts:['SOÌLO','CON COMPAÑEROS','CON PROFESIONALES']},
     {k:'estado',label:'Estado al encontrarle',type:'select',opts:['PÉRDIDA CONCIENCIA','RELAJACIÓN ESFÍNTERES','SANGRADO','CRISIS EPILÉPTICA','MOVIMIENTOS ANORMALES','OTRAS']},
