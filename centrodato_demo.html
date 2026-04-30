@@ -697,13 +697,12 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
       <div id="ocio-act-detalle" class="hidden"></div>
       <div id="ocio-informes" class="hidden"></div>
     </div>
-  </div>
-</div>
-
-<!-- PROFESIONALES -->
-<div id="view-registros" class="page hidden"></div>
-<div id="view-informes" class="page hidden"></div>
-<div id="view-profes" class="page hidden">
+    <!-- REGISTROS -->
+    <div id="view-registros" class="page hidden"></div>
+    <!-- INFORMES -->
+    <div id="view-informes" class="page hidden"></div>
+    <!-- PROFESIONALES -->
+    <div id="view-profes" class="page hidden">
   <div class="page-header"><div><div class="page-title">&#x1F468;&#x200D;&#x1F4BC; Profesionales</div><div class="page-subtitle" id="profes-sub">Directorio del equipo</div></div><button class="btn-primary" onclick="abrirModalProfesional()">+ Nuevo profesional</button></div>
   <div class="filters-row">
     <input class="search-box" id="profes-search" placeholder="Buscar por nombre o cargo..." oninput="renderProfesionales()"/>
@@ -716,7 +715,9 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
   </div>
   <div id="profes-lista"></div>
   <div id="profes-detalle" class="hidden"></div>
-</div>
+  </div><!-- fin view-profes -->
+  </div><!-- fin main-content -->
+</div><!-- fin app-screen -->
 
 <!-- MODAL NUEVA ACTIVIDAD -->
 <div id="modal-act" class="modal-overlay hidden">
