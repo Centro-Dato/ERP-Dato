@@ -936,7 +936,9 @@ function navTo(sec){
   } else if(sec==="profes"){
     document.getElementById("view-profes").classList.remove("hidden");
     document.getElementById("nav-profes").classList.add("active");
-    renderProfesionales();
+    document.getElementById("profes-lista").classList.remove("hidden");
+    document.getElementById("profes-detalle").classList.add("hidden");
+    setTimeout(function(){ renderProfesionales(); }, 10);
   } else if(sec==="registros"){
     document.getElementById("view-registros").classList.remove("hidden");
     document.getElementById("nav-registros").classList.add("active");
@@ -1837,6 +1839,7 @@ function setProfFiltro(f){
 }
 
 function renderProfesionales(){
+  try{
   var q=(document.getElementById("profes-search")||{value:""}).value.toLowerCase();
   var lista=PROFESIONALES.filter(function(p){
     if(profFiltro==="excedencia")return p.est==="excedencia";
@@ -1877,6 +1880,7 @@ function renderProfesionales(){
       '<div class="prof-card-footer">'+estBadge+contratoBadge+telHtml+fnacHtml+antHtml+'</div></div>';
   }).join("");
   document.getElementById("profes-lista").innerHTML='<div class="prof-grid">'+html+'</div>';
+  }catch(err){document.getElementById("profes-lista").innerHTML='<div class="empty-state">Error al cargar: '+err.message+'</div>';console.error(err);}
 }
 
 function verProfDetalle(id){
