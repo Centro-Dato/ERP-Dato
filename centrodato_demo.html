@@ -2163,30 +2163,63 @@ function abrirRegistro(id){
   _regActivo=id;
   var tipo=REG_TIPOS.find(function(t){return t.id===id;});
   var lista=REGISTROS[id]||[];
-  var html='<div class="view-header">';
+  var colorT=tipo.colorT||'#1e40af';
+  var colorB=tipo.color||'#dbeafe';
+
+  var html='<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">';
   html+='<button class="btn-back" onclick="renderRegistros()">← Registros</button>';
-  html+='<h2>'+tipo.icon+' '+tipo.titulo+'</h2></div>';
-  html+='<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">';
-  html+='<button class="btn-primary" onclick="abrirFormRegistro(\''+id+'\',null)">+ Nuevo Registro</button>';
+  html+='<div style="font-size:22px">'+tipo.icon+'</div>';
+  html+='<div><div style="font-size:20px;font-weight:800;color:#1e293b">'+tipo.titulo+'</div>';
+  html+='<div style="font-size:12px;color:#94a3b8">'+lista.length+' registro'+(lista.length!==1?'s':'')+' guardado'+(lista.length!==1?'s':'')+'</div></div>';
+  html+='</div>';
+
+  // Botones de acción estilo tarjeta
+  html+='<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">';
+
+  // Nuevo registro
+  html+='<div onclick="abrirFormRegistro(\''+id+'\',null)" style="display:flex;align-items:center;gap:12px;padding:14px 20px;background:'+colorT+';border-radius:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:all .15s;min-width:160px" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">';
+  html+='<div style="font-size:22px;background:rgba(255,255,255,.2);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center">➕</div>';
+  html+='<div><div style="font-size:13px;font-weight:700;color:#fff">Nuevo registro</div><div style="font-size:11px;color:rgba(255,255,255,.75)">Añadir entrada</div></div>';
+  html+='</div>';
+
+  // Exportar Excel
   if(lista.length){
-    html+='<button class="btn-secondary" onclick="exportarExcel(\''+id+'\')" style="display:flex;align-items:center;gap:6px">📊 Exportar Excel</button>';
+    html+='<div onclick="exportarExcel(\''+id+'\')" style="display:flex;align-items:center;gap:12px;padding:14px 20px;background:'+colorB+';border:2px solid '+colorT+';border-radius:12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.06);transition:all .15s;min-width:160px" onmouseover="this.style.opacity=\'.8\'" onmouseout="this.style.opacity=\'1\'">';
+    html+='<div style="font-size:22px;background:'+colorT+';border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center">📊</div>';
+    html+='<div><div style="font-size:13px;font-weight:700;color:'+colorT+'">Exportar Excel</div><div style="font-size:11px;color:#64748b">Descargar CSV</div></div>';
+    html+='</div>';
   }
+
+  // Historial por alumno
   if(tieneHistorialAlumno(id)){
-    html+='<button class="btn-secondary" onclick="abrirHistorialAlumno(\''+id+'\')" style="display:flex;align-items:center;gap:6px">👤 Historial por alumno</button>';
+    html+='<div onclick="abrirHistorialAlumno(\''+id+'\')" style="display:flex;align-items:center;gap:12px;padding:14px 20px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.06);transition:all .15s;min-width:160px" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">';
+    html+='<div style="font-size:22px;background:#e2e8f0;border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center">👤</div>';
+    html+='<div><div style="font-size:13px;font-weight:700;color:#1e293b">Historial alumno</div><div style="font-size:11px;color:#64748b">Ver por usuario</div></div>';
+    html+='</div>';
   }
   html+='</div>';
+
   if(!lista.length){
-    html+='<div class="empty-state">No hay registros aún.<br>Pulsa <strong>+ Nuevo Registro</strong> para empezar.</div>';
+    html+='<div style="text-align:center;padding:48px 24px;background:#fff;border-radius:12px;border:2px dashed #e2e8f0">';
+    html+='<div style="font-size:40px;margin-bottom:12px">'+tipo.icon+'</div>';
+    html+='<div style="font-size:15px;font-weight:600;color:#475569;margin-bottom:6px">Sin registros aún</div>';
+    html+='<div style="font-size:13px;color:#94a3b8">Pulsa <strong>Nuevo registro</strong> para empezar</div>';
+    html+='</div>';
   } else {
-    html+='<div class="reg-list">';
-    lista.slice().reverse().forEach(function(rec){
+    html+='<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">';
+    html+='<div style="padding:12px 20px;background:'+colorB+';border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px">';
+    html+='<span style="font-size:13px;font-weight:700;color:'+colorT+'">'+tipo.icon+' Últimos registros</span>';
+    html+='</div>';
+    lista.slice().reverse().forEach(function(rec,i){
       var fechaDisp=rec.fecha?fd(rec.fecha):'Sin fecha';
       var sub=rec.usuario||rec.taller||rec.actividad||rec.tipo||rec.persona||rec.furgoneta||'';
-      html+='<div class="reg-list-item" onclick="abrirFormRegistro(\''+id+'\','+rec._id+')">';
-      html+='<div><span class="reg-list-fecha">'+fechaDisp+'</span>';
-      if(sub)html+='<span class="reg-list-sub">'+esc(sub)+'</span>';
+      if(Array.isArray(sub))sub=sub.join(', ');
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #f1f5f9;cursor:pointer;'+(i%2===0?'':'background:#fafafa')+'" onclick="abrirFormRegistro(\''+id+'\','+rec._id+')" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\''+(i%2===0?'#fff':'#fafafa')+'\'">';
+      html+='<div style="display:flex;align-items:center;gap:12px">';
+      html+='<div style="background:'+colorB+';border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;color:'+colorT+';white-space:nowrap">'+fechaDisp+'</div>';
+      if(sub)html+='<span style="font-size:13px;color:#475569">'+esc(sub)+'</span>';
       html+='</div>';
-      html+='<div class="reg-list-actions"><button class="btn-del" onclick="event.stopPropagation();borrarRegistro(\''+id+'\','+rec._id+')" title="Eliminar">🗑</button></div>';
+      html+='<button onclick="event.stopPropagation();borrarRegistro(\''+id+'\','+rec._id+')" style="background:#fee2e2;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:#b91c1c" title="Eliminar">🗑</button>';
       html+='</div>';
     });
     html+='</div>';
@@ -2283,13 +2316,11 @@ function borrarRegistro(id,recId){
 // Registros que tienen campo alumno individual (select)
 var REG_CAMPO_USUARIO={
   caidas:'usuario', posturales:'usuario', comunicacion:'usuario',
-  constantes:'usuario', epilepsia:'usuario', desaparicion:'usuario',
-  entradas:'usuario', hidratacion:'usuario', higiene:'usuario',
-  incontinencias:'usuario', medicacion:'usuario', recepcionmed:'usuario'
+  constantes:'usuario', epilepsia:'usuario',
+  entradas:'usuario', incontinencias:'usuario', medicacion:'usuario'
 };
-// Registros con múltiples alumnos (checkboxes)
 var REG_CAMPO_MULTI={
-  actividades:'alumnos', autonomia:'usuarios', transporte:'usuariosRuta'
+  actividades:'alumnos', autonomia:'usuarios'
 };
 // Registros con categoría interna para sub-pestañas (actividades → por tipo de actividad)
 var REG_CAMPO_CATEGORIA={
@@ -2391,24 +2422,36 @@ function _renderHistorialAlumno(id, activos, alumnoId){
 }
 
 function _tablaHistorial(id, regs, tipo, campoC){
-  if(!regs.length) return '<div class="empty-state">Sin registros en esta categoría</div>';
-  // Columnas: fecha + campos relevantes (excluir usuario/alumnos/campo categoría)
+  if(!regs.length) return '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:13px">Sin registros en esta categoría</div>';
+  var colorT=tipo.colorT||'#1e40af';
+  var colorB=tipo.color||'#dbeafe';
   var excluir=['usuario','alumnos','usuarios','usuariosRuta'];
   if(campoC)excluir.push(campoC);
   var cols=tipo.fields.filter(function(f){return excluir.indexOf(f.k)<0;});
-  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
-  html+='<thead><tr style="background:#f1f5f9">';
+  var html='<div style="overflow-x:auto">';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr style="background:'+colorB+'">';
   cols.forEach(function(f){
-    html+='<th style="padding:9px 14px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+f.label+'</th>';
+    html+='<th style="padding:11px 16px;text-align:left;font-weight:700;color:'+colorT+';border-bottom:2px solid '+colorT+'20;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.04em">'+f.label+'</th>';
   });
   html+='</tr></thead><tbody>';
   regs.forEach(function(r,i){
-    html+='<tr style="border-bottom:1px solid #f1f5f9;'+(i%2===0?'':'background:#fafafa')+'">';
+    html+='<tr style="border-bottom:1px solid #f1f5f9;'+(i%2===0?'background:#fff':'background:#f8fafc')+'">';
     cols.forEach(function(f){
-      var v=r[f.k]||'—';
-      if(Array.isArray(v))v=v.join(', ');
-      if(f.type==='date')v=fd(v);
-      html+='<td style="padding:9px 14px;color:#374151;vertical-align:top">'+esc(String(v))+'</td>';
+      var v=r[f.k];
+      if(v===undefined||v===null||v==='')v='—';
+      if(Array.isArray(v))v=v.length?v.join(', '):'—';
+      if(f.type==='date')v=fd(String(v));
+      var isDate=f.type==='date';
+      var isNum=f.type==='text'&&(f.k==='fc'||f.k==='tension1'||f.k==='tension2'||f.k==='saturacion');
+      html+='<td style="padding:10px 16px;color:#374151;vertical-align:top;'+(isDate?'white-space:nowrap;font-weight:600;color:'+colorT+';':'')+'">';
+      if(Array.isArray(r[f.k])){
+        // Mostrar como badges
+        html+=(r[f.k].length?r[f.k].map(function(tag){return '<span style="display:inline-block;margin:2px 3px 2px 0;padding:2px 8px;background:'+colorB+';color:'+colorT+';border-radius:4px;font-size:11px;font-weight:600">'+esc(tag)+'</span>';}).join(''):'<span style="color:#cbd5e1">—</span>');
+      } else {
+        html+=esc(String(v));
+      }
+      html+='</td>';
     });
     html+='</tr>';
   });
