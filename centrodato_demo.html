@@ -1990,9 +1990,9 @@ var REG_TIPOS=[
   {id:'actividades',titulo:'Actividades',icon:'\ud83d\udccc',color:'#dbeafe',colorT:'#1e40af',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'actividad',label:'Actividad',type:'checkboxes',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
+    {k:'actividad',label:'Actividad',type:'checkboxes',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO Y TIEMPO LIBRE','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
     {k:'alumnos',label:'Alumnos participantes',type:'checkboxes',opts:'BD'},
-    {k:'tratamientos',label:'Aspectos trabajados',type:'checkboxes',opts:['HABILIDADES SOCIALES','VALORACIÓN POSITIVA','RELAJACIÓN','EVALUACIÓN','MOVILIDAD','FUERZA','COORDINACIÓN','EQUILIBRIO','ATENCIÓN','MEMORIA','PERCEPCIÓN','LENGUAJE','ORIENTACIÓN','EXPRESIÓN','COMPRENSIÓN','LECTOESCRITURA','OTROS']},
+    {k:'tratamientos',label:'Aspectos trabajados',type:'checkboxes_dinamico',opts:[]},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
   ]},
   {id:'posturales',titulo:'Cambios Posturales',icon:'\ud83e\udeba',color:'#d1fae5',colorT:'#065f46',
@@ -2133,7 +2133,45 @@ var REG_TIPOS=[
   ]}
 ];
 
-var _regActivo=null;
+var ASPECTOS_POR_ACTIVIDAD={
+  'ATENCIÓN PSICOLÓGICA':['HABILIDADES SOCIALES','VALORACIÓN POSITIVA','RELAJACIÓN','EVALUACIÓN','TERAPIA INDIVIDUALIZADA'],
+  'ESTIMULACIÓN COGNITIVA':['ATENCIÓN','MEMORIA','PERCEPCIÓN','LENGUAJE','ORIENTACIÓN ESPACIO-TEMPORAL','CÁLCULO'],
+  'FISIOTERAPIA':['MOVILIDAD','FUERZA','COORDINACIÓN','EQUILIBRIO','DESCONTRACTURANTE','RESPIRATORIO'],
+  'LOGOPEDIA':['EXPRESIÓN','COMPRENSIÓN','LECTO-ESCRITURA','PRAXIAS','ELECTROESTIMULACIÓN-DISFAGIA','FONO-RESPIRATORIO'],
+  'NEUROPSICOLOGÍA':['ATENCIÓN','MEMORIA','PERCEPCIÓN','LENGUAJE','ORIENTACIÓN ESPACIO-TEMPORAL','CÁLCULO'],
+  'OCIO Y TIEMPO LIBRE':['CINE','CHARLAS CULTURALES','FIESTAS TEMÁTICAS','EXCURSIONES','OTROS'],
+  'TECNOLOGÍA':['APPS','PLATAFORMAS ONLINE','COMUNICACIÓN','OFIMÁTICA','DISEÑO','WEB','OTROS'],
+  'TERAPIA OCUPACIONAL':['ABVD','MOTRICIDAD FINA','MOVILIDAD','SENSORIAL','FUNCIONES EJECUTIVAS','OTROS'],
+  'VIDA COMUNITARIA':['PINTURA','COCINA','LECTURA','MÚSICA','JUEGOS','OTROS']
+};
+
+function _getAspectosDinamicos(actividadesSeleccionadas){
+  var todos=[];
+  actividadesSeleccionadas.forEach(function(act){
+    var asp=ASPECTOS_POR_ACTIVIDAD[act]||[];
+    asp.forEach(function(a){if(todos.indexOf(a)<0)todos.push(a);});
+  });
+  return todos;
+}
+
+function _actualizarAspectos(){
+  var checkboxesActividad=document.querySelectorAll('input[name="actividad"]:checked');
+  var seleccionadas=Array.from(checkboxesActividad).map(function(c){return c.value;});
+  var aspectos=_getAspectosDinamicos(seleccionadas);
+  var contenedor=document.getElementById('aspectos-dinamicos');
+  if(!contenedor)return;
+  if(aspectos.length===0){
+    contenedor.innerHTML='<div style="font-size:13px;color:#94a3b8;padding:8px 4px">Selecciona una actividad para ver los aspectos trabajados</div>';
+    return;
+  }
+  var html='<div class="gf-check-group">';
+  aspectos.forEach(function(a){
+    html+='<label class="gf-check-item"><input type="checkbox" name="tratamientos" value="'+a+'"/> '+a+'</label>';
+  });
+  html+='</div>';
+  contenedor.innerHTML=html;
+}
+
 
 function _regBD(){
   return BD.filter(function(b){return b.est==='activo';}).map(function(b){return b.n+' '+b.a;});
@@ -2272,6 +2310,20 @@ function abrirFormRegistro(id,recId){
         html+='<label class="gf-check-item"><input type="checkbox" name="'+f.k+'" value="'+esc(o)+'"'+(sel.indexOf(o)>=0?' checked':'')+'/> '+esc(o)+'</label>';
       });
       html+='</div>';
+    } else if(f.type==='checkboxes_dinamico'){
+      // Si hay valor guardado, pre-cargar aspectos
+      var selAsp=Array.isArray(val)?val:(val?[val]:[]);
+      html+='<div id="aspectos-dinamicos">';
+      if(selAsp.length){
+        html+='<div class="gf-check-group">';
+        selAsp.forEach(function(a){
+          html+='<label class="gf-check-item"><input type="checkbox" name="tratamientos" value="'+esc(a)+'" checked/> '+esc(a)+'</label>';
+        });
+        html+='</div>';
+      } else {
+        html+='<div style="font-size:13px;color:#94a3b8;padding:8px 4px">Selecciona una actividad para ver los aspectos trabajados</div>';
+      }
+      html+='</div>';
     }
     html+='</div>';
   });
@@ -2282,6 +2334,20 @@ function abrirFormRegistro(id,recId){
   html+='</div>';
   html+='</form></div>';
   document.getElementById('view-registros').innerHTML=html;
+
+  // Añadir listeners a checkboxes de actividad para actualizar aspectos dinámicamente
+  document.querySelectorAll('input[name="actividad"]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var selTratActual=Array.from(document.querySelectorAll('input[name="tratamientos"]:checked')).map(function(c){return c.value;});
+      _actualizarAspectos();
+      // Re-marcar los que ya estaban seleccionados
+      setTimeout(function(){
+        document.querySelectorAll('input[name="tratamientos"]').forEach(function(c){
+          if(selTratActual.indexOf(c.value)>=0) c.checked=true;
+        });
+      }, 0);
+    });
+  });
 }
 
 function guardarRegistro(id,recId){
@@ -2289,7 +2355,7 @@ function guardarRegistro(id,recId){
   var form=document.getElementById('regForm');
   var data={_id:recId!=null?recId:(_regId++)};
   tipo.fields.forEach(function(f){
-    if(f.type==='checkboxes'){
+    if(f.type==='checkboxes'||f.type==='checkboxes_dinamico'){
       var boxes=form.querySelectorAll('input[name="'+f.k+'"]:checked');
       data[f.k]=Array.from(boxes).map(function(b){return b.value;});
     } else {
