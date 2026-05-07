@@ -45,6 +45,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-primary:hover{background:#035a9f}
 .btn-secondary{background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
 .btn-secondary:hover{background:#f8fafc}
+.btn-back{display:inline-flex;align-items:center;gap:7px;background:#f1f5f9;color:#374151;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-back:hover{background:#e2e8f0;border-color:#cbd5e1}
 .btn-danger{background:#dc2626;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
 .btn-sm{padding:6px 12px;font-size:12px;border-radius:7px}
 /* PAGE HEADER */
@@ -2167,7 +2169,7 @@ function abrirRegistro(id){
   var colorB=tipo.color||'#dbeafe';
 
   var html='<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">';
-  html+='<button class="btn-back" onclick="renderRegistros()">← Registros</button>';
+  html+='<button class="btn-back" onclick="renderRegistros()">‹ Registros</button>';
   html+='<div style="font-size:22px">'+tipo.icon+'</div>';
   html+='<div><div style="font-size:20px;font-weight:800;color:#1e293b">'+tipo.titulo+'</div>';
   html+='<div style="font-size:12px;color:#94a3b8">'+lista.length+' registro'+(lista.length!==1?'s':'')+' guardado'+(lista.length!==1?'s':'')+'</div></div>';
@@ -2236,7 +2238,7 @@ function abrirFormRegistro(id,recId){
 
   var html='<div style="max-width:680px">';
   // Botón volver
-  html+='<button class="btn-back" onclick="abrirRegistro(\''+id+'\')" style="margin-bottom:16px">← '+tipo.titulo+'</button>';
+  html+='<button class="btn-back" onclick="abrirRegistro(\''+id+'\')" style="margin-bottom:16px">‹ '+tipo.titulo+'</button>';
   // Cabecera estilo Google Forms
   html+='<div style="background:'+colorT+';border-radius:12px 12px 0 0;padding:24px 28px;border-top:8px solid '+colorB+'">';
   html+='<div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">'+(rec?'Editar':'Nuevo registro')+'</div>';
@@ -2346,7 +2348,7 @@ function _renderHistorialAlumno(id, activos, alumnoId){
   var campoM=REG_CAMPO_MULTI[id];
   var campoC=REG_CAMPO_CATEGORIA[id];
 
-  var html='<button class="btn-back" onclick="abrirRegistro(\''+id+'\')" style="margin-bottom:16px">← '+tipo.titulo+'</button>';
+  var html='<button class="btn-back" onclick="abrirRegistro(\''+id+'\')" style="margin-bottom:16px">‹ '+tipo.titulo+'</button>';
   html+='<h2 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px">'+tipo.icon+' Historial por alumno</h2>';
 
   // Pestañas alumnos
