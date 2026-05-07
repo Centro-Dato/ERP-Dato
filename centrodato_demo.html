@@ -2171,8 +2171,8 @@ function abrirRegistro(id){
   if(lista.length){
     html+='<button class="btn-secondary" onclick="exportarExcel(\''+id+'\')" style="display:flex;align-items:center;gap:6px">📊 Exportar Excel</button>';
   }
-  if(id==='actividades'){
-    html+='<button class="btn-secondary" onclick="abrirActividadesAlumno()" style="display:flex;align-items:center;gap:6px">👤 Historial por alumno</button>';
+  if(tieneHistorialAlumno(id)){
+    html+='<button class="btn-secondary" onclick="abrirHistorialAlumno(\''+id+'\')" style="display:flex;align-items:center;gap:6px">👤 Historial por alumno</button>';
   }
   html+='</div>';
   if(!lista.length){
@@ -2278,62 +2278,181 @@ function borrarRegistro(id,recId){
   abrirRegistro(id);
 }
 
-/* ===== ACTIVIDADES POR ALUMNO ===== */
-function abrirActividadesAlumno(){
-  var activos=BD.filter(function(b){return b.est==='activo';});
-  if(!activos.length){document.getElementById('view-registros').innerHTML='<div class="empty-state">No hay beneficiarios activos</div>';return;}
-  var primerAlumno=activos[0].id;
-  _renderTabsAlumnos(activos, primerAlumno);
+/* ===== HISTORIAL POR ALUMNO — TODOS LOS REGISTROS ===== */
+
+// Registros que tienen campo alumno individual (select)
+var REG_CAMPO_USUARIO={
+  caidas:'usuario', posturales:'usuario', comunicacion:'usuario',
+  constantes:'usuario', epilepsia:'usuario', desaparicion:'usuario',
+  entradas:'usuario', hidratacion:'usuario', higiene:'usuario',
+  incontinencias:'usuario', medicacion:'usuario', recepcionmed:'usuario'
+};
+// Registros con múltiples alumnos (checkboxes)
+var REG_CAMPO_MULTI={
+  actividades:'alumnos', autonomia:'usuarios', transporte:'usuariosRuta'
+};
+// Registros con categoría interna para sub-pestañas (actividades → por tipo de actividad)
+var REG_CAMPO_CATEGORIA={
+  actividades:'actividad', autonomia:'taller'
+};
+
+function tieneHistorialAlumno(id){
+  return REG_CAMPO_USUARIO[id]||REG_CAMPO_MULTI[id];
 }
 
-function _renderTabsAlumnos(activos, alumnoId){
-  var html='<button class="btn-back" onclick="abrirRegistro(\'actividades\')" style="margin-bottom:16px">← Actividades</button>';
-  html+='<h2 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px">📊 Historial por alumno</h2>';
-  // Tabs
+function abrirHistorialAlumno(id){
+  var activos=BD.filter(function(b){return b.est==='activo';});
+  if(!activos.length){
+    document.getElementById('view-registros').innerHTML='<div class="empty-state">No hay beneficiarios activos</div>';
+    return;
+  }
+  _renderHistorialAlumno(id, activos, activos[0].id);
+}
+
+function _renderHistorialAlumno(id, activos, alumnoId){
+  var tipo=REG_TIPOS.find(function(t){return t.id===id;});
+  var campoU=REG_CAMPO_USUARIO[id];
+  var campoM=REG_CAMPO_MULTI[id];
+  var campoC=REG_CAMPO_CATEGORIA[id];
+
+  var html='<button class="btn-back" onclick="abrirRegistro(\''+id+'\')" style="margin-bottom:16px">← '+tipo.titulo+'</button>';
+  html+='<h2 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px">'+tipo.icon+' Historial por alumno</h2>';
+
+  // Pestañas alumnos
   html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">';
   activos.forEach(function(b){
     var active=b.id===alumnoId;
-    html+='<button onclick="_renderTabsAlumnos(BD.filter(function(x){return x.est===\'activo\';}),'+b.id+')" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(active?'#1e40af':'#e2e8f0')+';background:'+(active?'#1e40af':'#fff')+';color:'+(active?'#fff':'#374151')+';font-size:12px;font-weight:600;cursor:pointer">'+esc(b.n+' '+b.a.split(' ')[0])+'</button>';
+    html+='<button onclick="_renderHistorialAlumno(\''+id+'\',BD.filter(function(x){return x.est===\'activo\';}),'+b.id+')" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(active?'#1e40af':'#e2e8f0')+';background:'+(active?'#1e40af':'#fff')+';color:'+(active?'#fff':'#374151')+';font-size:12px;font-weight:600;cursor:pointer">'+esc(b.n+' '+b.a.split(' ')[0])+'</button>';
   });
   html+='</div>';
 
-  // Tabla del alumno seleccionado
-  var nombreAlumno='';
-  var registrosAlumno=[];
-  var todosActiv=REGISTROS['actividades']||[];
-  activos.forEach(function(b){
-    if(b.id===alumnoId) nombreAlumno=b.n+' '+b.a;
-  });
+  // Obtener nombre completo del alumno
+  var alumno=activos.find(function(b){return b.id===alumnoId;});
+  var nombreAlumno=alumno?alumno.n+' '+alumno.a:'';
 
-  // Filtrar registros donde el alumno está en el campo alumnos
-  registrosAlumno=todosActiv.filter(function(r){
-    var lista=Array.isArray(r.alumnos)?r.alumnos:(r.alumnos?[r.alumnos]:[]);
-    return lista.indexOf(nombreAlumno)>=0;
-  }).sort(function(a,b){
-    return (b.fecha||'').localeCompare(a.fecha||'');
-  });
+  // Filtrar registros de este alumno
+  var todos=REGISTROS[id]||[];
+  var regsAlumno;
+  if(campoU){
+    regsAlumno=todos.filter(function(r){return r[campoU]===nombreAlumno;});
+  } else if(campoM){
+    regsAlumno=todos.filter(function(r){
+      var lista=Array.isArray(r[campoM])?r[campoM]:(r[campoM]?[r[campoM]]:[]);
+      return lista.indexOf(nombreAlumno)>=0;
+    });
+  }
+  regsAlumno=regsAlumno.sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
 
   html+='<div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">';
-  html+='<div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#1e293b">'+esc(nombreAlumno)+' — Registro de actividades</div>';
-  if(!registrosAlumno.length){
-    html+='<div class="empty-state">Sin registros aún</div>';
-  } else {
-    html+='<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html+='<thead><tr style="background:#f1f5f9"><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Fecha</th><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Actividad</th><th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0">Aspectos trabajados</th></tr></thead><tbody>';
-    registrosAlumno.forEach(function(r,i){
-      var aspectos=Array.isArray(r.tratamientos)?r.tratamientos.join(', '):(r.tratamientos||'—');
-      var activ=Array.isArray(r.actividad)?r.actividad.join(', '):(r.actividad||'—');
-      html+='<tr style="border-bottom:1px solid #f1f5f9;'+(i%2===0?'':'background:#fafafa')+'">';
-      html+='<td style="padding:10px 16px;color:#475569;white-space:nowrap">'+fd(r.fecha)+'</td>';
-      html+='<td style="padding:10px 16px;font-weight:500;color:#1e293b">'+esc(activ)+'</td>';
-      html+='<td style="padding:10px 16px;color:#64748b;font-size:12px">'+esc(aspectos)+'</td>';
-      html+='</tr>';
+  html+='<div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#1e293b">'+esc(nombreAlumno)+'</div>';
+
+  if(!regsAlumno.length){
+    html+='<div class="empty-state">Sin registros para este alumno</div>';
+  } else if(campoC){
+    // Sub-pestañas por categoría (actividades → tipo de actividad; autonomia → taller)
+    var categorias=[];
+    regsAlumno.forEach(function(r){
+      var cats=Array.isArray(r[campoC])?r[campoC]:[r[campoC]||'SIN CATEGORÍA'];
+      cats.forEach(function(c){if(c&&categorias.indexOf(c)<0)categorias.push(c);});
     });
-    html+='</tbody></table>';
+    categorias.sort();
+    // Guardar categoría activa en una variable global temporal
+    if(!window._histCat)window._histCat={};
+    if(!window._histCat[id+alumnoId])window._histCat[id+alumnoId]=categorias[0];
+    var catActiva=window._histCat[id+alumnoId];
+
+    // Sub-tabs por actividad/taller
+    html+='<div style="display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #e2e8f0;padding:0 16px;background:#fff">';
+    categorias.forEach(function(cat){
+      var active=cat===catActiva;
+      html+='<button onclick="window._histCat[\''+id+alumnoId+'\']=\''+cat.replace(/'/g,"\\'")+'\';&nbsp;_renderHistorialAlumno(\''+id+'\',BD.filter(function(x){return x.est===\'activo\';}),'+alumnoId+')" style="padding:10px 14px;border:none;background:none;font-size:12px;font-weight:600;cursor:pointer;color:'+(active?'#1e40af':'#64748b')+';border-bottom:3px solid '+(active?'#1e40af':'transparent')+';margin-bottom:-2px;white-space:nowrap">'+esc(cat)+'</button>';
+    });
+    html+='</div>';
+
+    // Registros de la categoría activa
+    var regsCat=regsAlumno.filter(function(r){
+      var cats=Array.isArray(r[campoC])?r[campoC]:[r[campoC]||'SIN CATEGORÍA'];
+      return cats.indexOf(catActiva)>=0;
+    });
+
+    html+=_tablaHistorial(id, regsCat, tipo, campoC);
+  } else {
+    html+=_tablaHistorial(id, regsAlumno, tipo, null);
   }
+
   html+='</div>';
+
+  // Botón exportar solo este alumno
+  if(regsAlumno.length){
+    html+='<div style="margin-top:12px"><button class="btn-secondary" onclick="exportarExcelAlumno(\''+id+'\',\''+nombreAlumno.replace(/'/g,'\\\'')+'\')" style="display:flex;align-items:center;gap:6px">📊 Exportar Excel — '+esc(nombreAlumno)+'</button></div>';
+  }
+
   document.getElementById('view-registros').innerHTML=html;
 }
+
+function _tablaHistorial(id, regs, tipo, campoC){
+  if(!regs.length) return '<div class="empty-state">Sin registros en esta categoría</div>';
+  // Columnas: fecha + campos relevantes (excluir usuario/alumnos/campo categoría)
+  var excluir=['usuario','alumnos','usuarios','usuariosRuta'];
+  if(campoC)excluir.push(campoC);
+  var cols=tipo.fields.filter(function(f){return excluir.indexOf(f.k)<0;});
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr style="background:#f1f5f9">';
+  cols.forEach(function(f){
+    html+='<th style="padding:9px 14px;text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+f.label+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+  regs.forEach(function(r,i){
+    html+='<tr style="border-bottom:1px solid #f1f5f9;'+(i%2===0?'':'background:#fafafa')+'">';
+    cols.forEach(function(f){
+      var v=r[f.k]||'—';
+      if(Array.isArray(v))v=v.join(', ');
+      if(f.type==='date')v=fd(v);
+      html+='<td style="padding:9px 14px;color:#374151;vertical-align:top">'+esc(String(v))+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+
+function exportarExcelAlumno(id, nombreAlumno){
+  var tipo=REG_TIPOS.find(function(t){return t.id===id;});
+  var campoU=REG_CAMPO_USUARIO[id];
+  var campoM=REG_CAMPO_MULTI[id];
+  var todos=REGISTROS[id]||[];
+  var lista;
+  if(campoU){
+    lista=todos.filter(function(r){return r[campoU]===nombreAlumno;});
+  } else {
+    lista=todos.filter(function(r){
+      var l=Array.isArray(r[campoM])?r[campoM]:(r[campoM]?[r[campoM]]:[]);
+      return l.indexOf(nombreAlumno)>=0;
+    });
+  }
+  lista=lista.slice().sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
+  if(!lista.length){alert('No hay registros para este alumno.');return;}
+  var headers=tipo.fields.map(function(f){return '"'+f.label+'"';});
+  var rows=[headers.join(',')];
+  lista.forEach(function(rec){
+    var cols=tipo.fields.map(function(f){
+      var v=rec[f.k]||'';
+      if(Array.isArray(v))v=v.join(' | ');
+      return '"'+String(v).replace(/"/g,'""')+'"';
+    });
+    rows.push(cols.join(','));
+  });
+  var csv='\uFEFF'+rows.join('\r\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='Registro_'+tipo.titulo.replace(/\s/g,'_')+'_'+nombreAlumno.replace(/\s/g,'_')+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function abrirActividadesAlumno(){ abrirHistorialAlumno('actividades'); }
 
 /* ===== EXPORTAR EXCEL (CSV descargable) ===== */
 function exportarExcel(id){
