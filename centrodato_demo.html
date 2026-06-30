@@ -1026,6 +1026,7 @@ function pintarHojaAsistencia(){
   html+='<button class="btn-primary" style="margin-left:auto" onclick="_abrirModalActividadManual()">✏️ Añadir actividad manual</button>';
   html+='<button class="btn-secondary" onclick="_abrirModalPlantillaMes()">📋 Crear hoja desde plantilla</button>';
   html+='<button class="btn-secondary" onclick="_asistVistaHistorico=true;pintarHojaAsistencia()">🕓 Histórico por meses</button>';
+  html+='<button class="btn-secondary" onclick="deshacerAsistencia()"'+(_asistUndoStack.length===0?' disabled style="opacity:.4;cursor:not-allowed"':'')+'>↩️ Deshacer'+(_asistUndoStack.length?' ('+_asistUndoStack.length+')':'')+'</button>';
   html+='</div>';
 
   if(!sorted.length){
@@ -1040,7 +1041,10 @@ function pintarHojaAsistencia(){
   html+='<thead><tr>';
   html+='<th style="position:sticky;left:0;background:#f8fafc;padding:12px;min-width:200px;text-align:left;border-bottom:2px solid #e2e8f0;z-index:2">Usuario</th>';
   sorted.forEach(function(act){
-    html+='<th colspan="2" style="background:#1e40af;color:#fff;padding:10px;text-align:center;font-size:12px;font-weight:700;border-left:2px solid #fff">'+fd(act.fecha)+(act.fechaFin?(' – '+fd(act.fechaFin)):'')+'</th>';
+    html+='<th colspan="2" style="background:#1e40af;padding:10px;text-align:center;border-left:2px solid #fff">'+
+      '<input type="date" value="'+act.fecha+'" onchange="_editarFechaInline('+act.id+',this.value,\'inicio\')" style="background:transparent;color:#fff;border:none;font-size:12px;font-weight:700;text-align:center;cursor:pointer;width:108px" title="Fecha de inicio — haz clic para cambiar"/>'+
+      (act.fechaFin?(' – <input type="date" value="'+act.fechaFin+'" onchange="_editarFechaInline('+act.id+',this.value,\'fin\')" style="background:transparent;color:#fff;border:none;font-size:12px;font-weight:700;text-align:center;cursor:pointer;width:108px" title="Fecha de fin"/>'):'')+
+      '</th>';
   });
   html+='</tr><tr>';
   html+='<th style="position:sticky;left:0;background:#f8fafc;padding:8px;border-bottom:2px solid #e2e8f0;z-index:2"></th>';
@@ -1083,6 +1087,17 @@ function pintarHojaAsistencia(){
   html+='<div style="margin-top:12px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;background:#fbbf24;border-radius:3px"></div> Marcado/Sí/Pagado &nbsp;&nbsp;<div style="width:14px;height:14px;background:#e2e8f0;border-radius:3px"></div> Sin marcar — haz clic en cualquier celda para alternar</div>';
   document.getElementById('ocio-asistencia').innerHTML=html;
 }
+
+function _editarFechaInline(actId, nuevaFecha, tipo){
+  var act=ACTIVIDADES.find(function(a){return a.id===actId;});
+  if(!act||!nuevaFecha)return;
+  if(tipo==='inicio') act.fecha=nuevaFecha;
+  else act.fechaFin=nuevaFecha;
+  var d=new Date(nuevaFecha+'T12:00:00');
+  _asistMes=d.getMonth(); _asistAnio=d.getFullYear();
+  pintarHojaAsistencia();
+}
+
 
 function _asistNavMes(delta){
   _asistMes+=delta;
@@ -1263,10 +1278,24 @@ function _borrarActividadManual(actId){
 }
 
 
+var _asistUndoStack=[];
+
 function toggleAsistencia(actId, benId, campo){
   if(!ASISTENCIA_OCIO[actId]) ASISTENCIA_OCIO[actId]={};
   if(!ASISTENCIA_OCIO[actId][benId]) ASISTENCIA_OCIO[actId][benId]={si:false,pagado:false};
-  ASISTENCIA_OCIO[actId][benId][campo]=!ASISTENCIA_OCIO[actId][benId][campo];
+  var valorAnterior=ASISTENCIA_OCIO[actId][benId][campo];
+  _asistUndoStack.push({actId:actId,benId:benId,campo:campo,valorAnterior:valorAnterior});
+  if(_asistUndoStack.length>50)_asistUndoStack.shift();
+  ASISTENCIA_OCIO[actId][benId][campo]=!valorAnterior;
+  pintarHojaAsistencia();
+}
+
+function deshacerAsistencia(){
+  var ultimo=_asistUndoStack.pop();
+  if(!ultimo){return;}
+  if(ASISTENCIA_OCIO[ultimo.actId]&&ASISTENCIA_OCIO[ultimo.actId][ultimo.benId]){
+    ASISTENCIA_OCIO[ultimo.actId][ultimo.benId][ultimo.campo]=ultimo.valorAnterior;
+  }
   pintarHojaAsistencia();
 }
 
@@ -3889,9 +3918,16 @@ function pintarCalendarioOcio(){
     var actsDia=actsPorDia[dStr]||[];
     var esHoy=dStr===hoyStr;
     var tieneOcio=actsDia.length>0;
-    html+='<div onclick="'+(tieneOcio?"_verOcioDia('"+dStr+"')":'')+'" style="aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:'+(tieneOcio?'pointer':'default')+';border:2px solid '+(esHoy?'#0270c4':(tieneOcio?'#fbbf24':'#f1f5f9'))+';background:'+(tieneOcio?'#fffbeb':'#fff')+';transition:all .15s"'+(tieneOcio?' onmouseover="this.style.background=\'#fef3c7\'" onmouseout="this.style.background=\'#fffbeb\'"':'')+'>';
+    var totalAsistDia=0;
+    actsDia.forEach(function(act){
+      totalAsistDia+=Object.values(ASISTENCIA_OCIO[act.id]||{}).filter(function(s){return s.si;}).length;
+    });
+    html+='<div onclick="'+(tieneOcio?"_verOcioDia('"+dStr+"')":'')+'" style="aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:'+(tieneOcio?'pointer':'default')+';border:2px solid '+(esHoy?'#0270c4':(tieneOcio?'#fbbf24':'#f1f5f9'))+';background:'+(tieneOcio?'#fffbeb':'#fff')+';transition:all .15s"'+(tieneOcio?' onmouseover="this.style.background=\'#fef3c7\'" onmouseout="this.style.background=\'#fffbeb\'"':'')+'>';
     html+='<div style="font-size:13px;font-weight:'+(esHoy?'800':'600')+';color:'+(esHoy?'#0270c4':'#1e293b')+'">'+d+'</div>';
-    if(tieneOcio) html+='<div style="font-size:9px;color:#92400e;font-weight:700">🎨 '+actsDia.length+'</div>';
+    if(tieneOcio){
+      html+='<div style="font-size:13px;line-height:1">🎨</div>';
+      html+='<div style="font-size:10px;color:#92400e;font-weight:800">'+totalAsistDia+' '+(totalAsistDia===1?'asist.':'asist.')+'</div>';
+    }
     html+='</div>';
   }
   html+='</div></div>';
