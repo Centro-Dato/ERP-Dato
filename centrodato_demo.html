@@ -995,14 +995,46 @@ function setOcioTab(tab){
 /* ===== HOJA DE ASISTENCIA OCIO ===== */
 var ASISTENCIA_OCIO={}; // {actId: {benefId: {si:bool, pagado:bool}}}
 
+var _asistMes=new Date().getMonth(); // 0-11
+var _asistAnio=new Date().getFullYear();
+var _asistVistaHistorico=false;
+
+var PLANTILLA_ACTIVIDADES_OCIO=[
+  {nombre:'Cine',lugar:'Cines locales'},
+  {nombre:'Excursión',lugar:''},
+  {nombre:'Taller cultural',lugar:'Centro Dato'},
+  {nombre:'Salida gastronómica',lugar:''}
+];
+
+var MESES_LARGO=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
 function pintarHojaAsistencia(){
-  var sorted=[].concat(ACTIVIDADES).sort(function(a,b){return a.fecha.localeCompare(b.fecha);});
+  if(_asistVistaHistorico){ _renderHistoricoAsistencia(); return; }
+
+  var actsMes=ACTIVIDADES.filter(function(act){
+    var d=new Date(act.fecha+'T12:00:00');
+    return d.getMonth()===_asistMes && d.getFullYear()===_asistAnio;
+  });
+  var sorted=actsMes.slice().sort(function(a,b){return a.fecha.localeCompare(b.fecha);});
   var benefs=BD.filter(function(b){return b.est==='activo';}).sort(function(a,b){return a.a.localeCompare(b.a,'es');});
 
-  var html='<div style="overflow-x:auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0">';
+  var html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">';
+  html+='<button class="btn-secondary" onclick="_asistNavMes(-1)">◀</button>';
+  html+='<div style="font-size:18px;font-weight:800;color:#1e293b;min-width:200px;text-align:center">'+MESES_LARGO[_asistMes]+' '+_asistAnio+'</div>';
+  html+='<button class="btn-secondary" onclick="_asistNavMes(1)">▶</button>';
+  html+='<button class="btn-primary" style="margin-left:auto" onclick="_abrirModalPlantillaMes()">📋 Crear hoja desde plantilla</button>';
+  html+='<button class="btn-secondary" onclick="_asistVistaHistorico=true;pintarHojaAsistencia()">🕓 Histórico por meses</button>';
+  html+='</div>';
+
+  if(!sorted.length){
+    html+='<div style="text-align:center;padding:48px;background:#fff;border-radius:12px;border:2px dashed #e2e8f0;color:#94a3b8">No hay actividades registradas en '+MESES_LARGO[_asistMes]+' de '+_asistAnio+'.<br>Usa "Crear hoja desde plantilla" o añade actividades nuevas desde la pestaña Actividades.</div>';
+    document.getElementById('ocio-asistencia').innerHTML=html;
+    return;
+  }
+
+  html+='<div style="overflow-x:auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0">';
   html+='<table style="border-collapse:collapse;font-size:13px;min-width:100%">';
 
-  // Fila fecha
   html+='<thead><tr>';
   html+='<th style="position:sticky;left:0;background:#f8fafc;padding:12px;min-width:200px;text-align:left;border-bottom:2px solid #e2e8f0;z-index:2">Usuario</th>';
   sorted.forEach(function(act){
@@ -1034,7 +1066,6 @@ function pintarHojaAsistencia(){
     html+='</tr>';
   });
 
-  // Fila totales
   html+='<tr style="background:#f1f5f9">';
   html+='<td style="position:sticky;left:0;background:#f1f5f9;padding:10px 12px;font-weight:800;color:#1e293b;z-index:1">TOTALES</td>';
   sorted.forEach(function(act){
@@ -1051,12 +1082,103 @@ function pintarHojaAsistencia(){
   document.getElementById('ocio-asistencia').innerHTML=html;
 }
 
+function _asistNavMes(delta){
+  _asistMes+=delta;
+  if(_asistMes>11){_asistMes=0;_asistAnio++;}
+  if(_asistMes<0){_asistMes=11;_asistAnio--;}
+  pintarHojaAsistencia();
+}
+
+function _renderHistoricoAsistencia(){
+  // Agrupar actividades por mes-año
+  var meses={};
+  ACTIVIDADES.forEach(function(act){
+    var d=new Date(act.fecha+'T12:00:00');
+    var key=d.getFullYear()+'-'+String(d.getMonth()).padStart(2,'0');
+    if(!meses[key])meses[key]={mes:d.getMonth(),anio:d.getFullYear(),acts:[]};
+    meses[key].acts.push(act);
+  });
+  var keys=Object.keys(meses).sort().reverse();
+
+  var html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">';
+  html+='<button class="btn-secondary" onclick="_asistVistaHistorico=false;pintarHojaAsistencia()">‹ Volver a la hoja actual</button>';
+  html+='<div style="font-size:18px;font-weight:800;color:#1e293b">🕓 Histórico de hojas de asistencia</div>';
+  html+='</div>';
+
+  if(!keys.length){
+    html+='<div style="text-align:center;padding:48px;background:#fff;border-radius:12px;border:2px dashed #e2e8f0;color:#94a3b8">Todavía no hay hojas de asistencia en el histórico.</div>';
+  } else {
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">';
+    keys.forEach(function(k){
+      var m=meses[k];
+      var totalAsist=0, totalPagado=0;
+      m.acts.forEach(function(act){
+        totalAsist+=Object.values(ASISTENCIA_OCIO[act.id]||{}).filter(function(s){return s.si;}).length;
+        totalPagado+=Object.values(ASISTENCIA_OCIO[act.id]||{}).filter(function(s){return s.pagado;}).length;
+      });
+      html+='<div onclick="_irAMesHistorico('+m.mes+','+m.anio+')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor=\'#93c5fd\';this.style.boxShadow=\'0 4px 14px rgba(0,0,0,.08)\'" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.boxShadow=\'none\'">';
+      html+='<div style="font-size:16px;font-weight:800;color:#1e293b">'+MESES_LARGO[m.mes]+'</div>';
+      html+='<div style="font-size:13px;color:#94a3b8;margin-bottom:10px">'+m.anio+'</div>';
+      html+='<div style="font-size:12px;color:#475569">📌 '+m.acts.length+' actividad'+(m.acts.length!==1?'es':'')+'</div>';
+      html+='<div style="font-size:12px;color:#15803d;margin-top:4px">✓ '+totalAsist+' asistencias</div>';
+      html+='<div style="font-size:12px;color:#92400e">💰 '+totalPagado+' pagos registrados</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+  document.getElementById('ocio-asistencia').innerHTML=html;
+}
+
+function _irAMesHistorico(mes, anio){
+  _asistMes=mes; _asistAnio=anio; _asistVistaHistorico=false;
+  pintarHojaAsistencia();
+}
+
+function _abrirModalPlantillaMes(){
+  var existing=document.getElementById('modal-plantilla-mes');
+  if(existing)existing.remove();
+  var overlay=document.createElement('div');
+  overlay.id='modal-plantilla-mes';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2200;display:flex;align-items:center;justify-content:center';
+  var opts=PLANTILLA_ACTIVIDADES_OCIO.map(function(p,i){
+    return '<label class="gf-check-item"><input type="checkbox" id="pla-'+i+'" checked/> '+esc(p.nombre)+(p.lugar?' — <span style="color:#94a3b8">'+esc(p.lugar)+'</span>':'')+'</label>';
+  }).join('');
+  overlay.innerHTML='<div style="background:#fff;border-radius:16px;width:460px;max-width:92vw;padding:26px">'+
+    '<div style="font-size:18px;font-weight:800;color:#1e293b;margin-bottom:4px">📋 Crear hoja desde plantilla</div>'+
+    '<div style="font-size:13px;color:#64748b;margin-bottom:16px">Se crearán actividades de ejemplo editables para '+MESES_LARGO[_asistMes]+' '+_asistAnio+'. Podrás cambiar fecha y nombre después.</div>'+
+    '<div class="gf-check-group" style="margin-bottom:18px">'+opts+'</div>'+
+    '<div style="display:flex;gap:10px">'+
+    '<button class="btn-primary" onclick="_crearActividadesPlantilla()">Crear actividades seleccionadas</button>'+
+    '<button class="btn-secondary" onclick="document.getElementById(\'modal-plantilla-mes\').remove()">Cancelar</button>'+
+    '</div></div>';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
+function _crearActividadesPlantilla(){
+  var creadas=0;
+  PLANTILLA_ACTIVIDADES_OCIO.forEach(function(p,i){
+    var chk=document.getElementById('pla-'+i);
+    if(chk&&chk.checked){
+      var dia=String(7+i*7).padStart(2,'0'); // reparte por semanas dentro del mes
+      var fecha=_asistAnio+'-'+String(_asistMes+1).padStart(2,'0')+'-'+dia;
+      ACTIVIDADES.push({id:nextActId++,nombre:p.nombre,fecha:fecha,fechaFin:'',precio:0,lugar:p.lugar||'',desc:''});
+      creadas++;
+    }
+  });
+  document.getElementById('modal-plantilla-mes').remove();
+  pintarHojaAsistencia();
+  if(creadas)alert(creadas+' actividad'+(creadas!==1?'es':'')+' creada'+(creadas!==1?'s':'')+' para '+MESES_LARGO[_asistMes]+' '+_asistAnio+'. Ya puedes marcar la asistencia.');
+}
+
 function toggleAsistencia(actId, benId, campo){
   if(!ASISTENCIA_OCIO[actId]) ASISTENCIA_OCIO[actId]={};
   if(!ASISTENCIA_OCIO[actId][benId]) ASISTENCIA_OCIO[actId][benId]={si:false,pagado:false};
   ASISTENCIA_OCIO[actId][benId][campo]=!ASISTENCIA_OCIO[actId][benId][campo];
   pintarHojaAsistencia();
 }
+
+
 
 
 function login(){
