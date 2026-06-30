@@ -1022,7 +1022,8 @@ function pintarHojaAsistencia(){
   html+='<button class="btn-secondary" onclick="_asistNavMes(-1)">◀</button>';
   html+='<div style="font-size:18px;font-weight:800;color:#1e293b;min-width:200px;text-align:center">'+MESES_LARGO[_asistMes]+' '+_asistAnio+'</div>';
   html+='<button class="btn-secondary" onclick="_asistNavMes(1)">▶</button>';
-  html+='<button class="btn-primary" style="margin-left:auto" onclick="_abrirModalPlantillaMes()">📋 Crear hoja desde plantilla</button>';
+  html+='<button class="btn-primary" style="margin-left:auto" onclick="_abrirModalActividadManual()">✏️ Añadir actividad manual</button>';
+  html+='<button class="btn-secondary" onclick="_abrirModalPlantillaMes()">📋 Crear hoja desde plantilla</button>';
   html+='<button class="btn-secondary" onclick="_asistVistaHistorico=true;pintarHojaAsistencia()">🕓 Histórico por meses</button>';
   html+='</div>';
 
@@ -1043,7 +1044,7 @@ function pintarHojaAsistencia(){
   html+='</tr><tr>';
   html+='<th style="position:sticky;left:0;background:#f8fafc;padding:8px;border-bottom:2px solid #e2e8f0;z-index:2"></th>';
   sorted.forEach(function(act){
-    html+='<th colspan="2" style="background:#dbeafe;color:#1e3a8a;padding:8px;text-align:center;font-size:12px;font-style:italic;font-weight:700;border-left:2px solid #fff">'+esc(act.nombre)+'</th>';
+    html+='<th colspan="2" style="background:#dbeafe;color:#1e3a8a;padding:8px;text-align:center;font-size:12px;font-style:italic;font-weight:700;border-left:2px solid #fff">'+esc(act.nombre)+' <span style="cursor:pointer;font-style:normal" onclick="_editarActividadManual('+act.id+')" title="Editar">✏️</span> <span style="cursor:pointer;font-style:normal" onclick="_borrarActividadManual('+act.id+')" title="Eliminar">🗑</span></th>';
   });
   html+='</tr><tr>';
   html+='<th style="position:sticky;left:0;background:#f8fafc;padding:8px;border-bottom:2px solid #e2e8f0;z-index:2"></th>';
@@ -1170,6 +1171,96 @@ function _crearActividadesPlantilla(){
   pintarHojaAsistencia();
   if(creadas)alert(creadas+' actividad'+(creadas!==1?'es':'')+' creada'+(creadas!==1?'s':'')+' para '+MESES_LARGO[_asistMes]+' '+_asistAnio+'. Ya puedes marcar la asistencia.');
 }
+
+function _abrirModalActividadManual(){
+  var existing=document.getElementById('modal-act-manual');
+  if(existing)existing.remove();
+  var diaDefecto=_asistAnio+'-'+String(_asistMes+1).padStart(2,'0')+'-01';
+  var overlay=document.createElement('div');
+  overlay.id='modal-act-manual';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2200;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML='<div style="background:#fff;border-radius:16px;width:460px;max-width:92vw;padding:26px">'+
+    '<div style="font-size:18px;font-weight:800;color:#1e293b;margin-bottom:16px">✏️ Añadir actividad manualmente</div>'+
+    '<label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Nombre de la actividad</label>'+
+    '<input type="text" id="am-nombre" placeholder="Ej: Cine, Excursión al Retiro..." style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:14px">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'+
+    '<div><label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Fecha inicio</label><input type="date" id="am-fecha" value="'+diaDefecto+'" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px"></div>'+
+    '<div><label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Fecha fin (opcional)</label><input type="date" id="am-fecha-fin" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px"></div>'+
+    '</div>'+
+    '<label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Lugar (opcional)</label>'+
+    '<input type="text" id="am-lugar" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:20px">'+
+    '<div style="display:flex;gap:10px">'+
+    '<button class="btn-primary" onclick="_guardarActividadManual()">Crear actividad</button>'+
+    '<button class="btn-secondary" onclick="document.getElementById(\'modal-act-manual\').remove()">Cancelar</button>'+
+    '</div></div>';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
+function _guardarActividadManual(){
+  var nom=document.getElementById('am-nombre').value.trim();
+  var fec=document.getElementById('am-fecha').value;
+  var fecFin=document.getElementById('am-fecha-fin').value;
+  var lug=document.getElementById('am-lugar').value.trim();
+  if(!nom||!fec){alert('Por favor indica al menos el nombre y la fecha.');return;}
+  ACTIVIDADES.push({id:nextActId++,nombre:nom,fecha:fec,fechaFin:fecFin||'',precio:0,lugar:lug,desc:''});
+  // Mover la vista al mes de la nueva actividad por si es distinto
+  var d=new Date(fec+'T12:00:00');
+  _asistMes=d.getMonth(); _asistAnio=d.getFullYear();
+  document.getElementById('modal-act-manual').remove();
+  pintarHojaAsistencia();
+}
+
+function _editarActividadManual(actId){
+  var act=ACTIVIDADES.find(function(a){return a.id===actId;});
+  if(!act)return;
+  var existing=document.getElementById('modal-act-manual');
+  if(existing)existing.remove();
+  var overlay=document.createElement('div');
+  overlay.id='modal-act-manual';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2200;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML='<div style="background:#fff;border-radius:16px;width:460px;max-width:92vw;padding:26px">'+
+    '<div style="font-size:18px;font-weight:800;color:#1e293b;margin-bottom:16px">✏️ Editar actividad</div>'+
+    '<label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Nombre de la actividad</label>'+
+    '<input type="text" id="am-nombre" value="'+esc(act.nombre)+'" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:14px">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'+
+    '<div><label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Fecha inicio</label><input type="date" id="am-fecha" value="'+act.fecha+'" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px"></div>'+
+    '<div><label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Fecha fin (opcional)</label><input type="date" id="am-fecha-fin" value="'+(act.fechaFin||'')+'" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px"></div>'+
+    '</div>'+
+    '<label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">Lugar (opcional)</label>'+
+    '<input type="text" id="am-lugar" value="'+esc(act.lugar||'')+'" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:20px">'+
+    '<div style="display:flex;gap:10px">'+
+    '<button class="btn-primary" onclick="_guardarEdicionActividadManual('+actId+')">Guardar cambios</button>'+
+    '<button class="btn-secondary" onclick="document.getElementById(\'modal-act-manual\').remove()">Cancelar</button>'+
+    '</div></div>';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
+function _guardarEdicionActividadManual(actId){
+  var act=ACTIVIDADES.find(function(a){return a.id===actId;});
+  if(!act)return;
+  var nom=document.getElementById('am-nombre').value.trim();
+  var fec=document.getElementById('am-fecha').value;
+  var fecFin=document.getElementById('am-fecha-fin').value;
+  var lug=document.getElementById('am-lugar').value.trim();
+  if(!nom||!fec){alert('Por favor indica al menos el nombre y la fecha.');return;}
+  act.nombre=nom; act.fecha=fec; act.fechaFin=fecFin||''; act.lugar=lug;
+  var d=new Date(fec+'T12:00:00');
+  _asistMes=d.getMonth(); _asistAnio=d.getFullYear();
+  document.getElementById('modal-act-manual').remove();
+  pintarHojaAsistencia();
+}
+
+function _borrarActividadManual(actId){
+  var act=ACTIVIDADES.find(function(a){return a.id===actId;});
+  if(!act)return;
+  if(!confirm('¿Eliminar la actividad "'+act.nombre+'"? Se perderá también la asistencia registrada.'))return;
+  ACTIVIDADES=ACTIVIDADES.filter(function(a){return a.id!==actId;});
+  delete ASISTENCIA_OCIO[actId];
+  pintarHojaAsistencia();
+}
+
 
 function toggleAsistencia(actId, benId, campo){
   if(!ASISTENCIA_OCIO[actId]) ASISTENCIA_OCIO[actId]={};
