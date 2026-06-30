@@ -1023,7 +1023,7 @@ function pintarHojaAsistencia(){
 
   benefs.forEach(function(b,i){
     html+='<tr style="'+(i%2===0?'background:#fff':'background:#fafafa')+'">';
-    html+='<td style="position:sticky;left:0;background:'+(i%2===0?'#fff':'#fafafa')+';padding:9px 12px;font-weight:600;color:#1e293b;border-bottom:1px solid #f1f5f9;z-index:1;white-space:nowrap">'+esc(b.n)+' '+esc(b.a)+'</td>';
+    html+='<td style="position:sticky;left:0;background:'+(i%2===0?'#fff':'#fafafa')+';padding:9px 12px;font-weight:600;color:#1e293b;border-bottom:1px solid #f1f5f9;z-index:1;white-space:nowrap">'+esc(b.a)+', '+esc(b.n)+'</td>';
     sorted.forEach(function(act){
       var st=(ASISTENCIA_OCIO[act.id]&&ASISTENCIA_OCIO[act.id][b.id])||{si:false,pagado:false};
       var bgSi=st.si?'background:#fbbf24':'background:#e2e8f0';
