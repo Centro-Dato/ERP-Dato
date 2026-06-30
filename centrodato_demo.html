@@ -1106,7 +1106,7 @@ function pintarLista(){
   tbody.innerHTML=rows.map(function(b){
     var telM=b.tel?b.tel.split('/')[0].trim():'—';
     var domM=b.dom?(b.dom.length>30?b.dom.substring(0,30)+'…':b.dom):'—';
-    return "<tr><td onclick='verDet("+b.id+")'><div class='name-cell'><div class='avatar'>"+ini(b.n,b.a)+"</div><span class='name-text'>"+esc(b.n)+" "+esc(b.a)+"</span></div></td><td onclick='verDet("+b.id+")'>"+fd(b.fnac)+"</td><td onclick='verDet("+b.id+")' style='font-size:13px'>"+esc(telM)+"</td><td onclick='verDet("+b.id+")'>"+fd(b.fi)+"</td><td onclick='verDet("+b.id+")' style='font-size:13px;color:#475569' title='"+esc(b.dom||'')+"'>"+esc(domM)+"</td><td onclick='verDet("+b.id+")'>"+(b.est==="activo"?bdg("bg","Activo"):bdg("br","Baja"))+"</td><td><button class='btn-expediente' onclick='abrirExpediente("+b.id+")'>📋 Expediente</button></td><td><button class='btn-expediente' onclick='abrirRegistroBeneficiario("+b.id+")' style='background:#f0fdf4;color:#15803d;border-color:#bbf7d0'>📁 Ver registros</button></td></tr>";
+    return "<tr><td onclick='verDet("+b.id+")'><div class='name-cell'><div class='avatar'>"+ini(b.n,b.a)+"</div><span class='name-text'>"+esc(b.a)+", "+esc(b.n)+"</span></div></td><td onclick='verDet("+b.id+")'>"+fd(b.fnac)+"</td><td onclick='verDet("+b.id+")' style='font-size:13px'>"+esc(telM)+"</td><td onclick='verDet("+b.id+")'>"+fd(b.fi)+"</td><td onclick='verDet("+b.id+")' style='font-size:13px;color:#475569' title='"+esc(b.dom||'')+"'>"+esc(domM)+"</td><td onclick='verDet("+b.id+")'>"+(b.est==="activo"?bdg("bg","Activo"):bdg("br","Baja"))+"</td><td><button class='btn-expediente' onclick='abrirExpediente("+b.id+")'>📋 Expediente</button></td><td><button class='btn-expediente' onclick='abrirRegistroBeneficiario("+b.id+")' style='background:#f0fdf4;color:#15803d;border-color:#bbf7d0'>📁 Ver registros</button></td></tr>";
   }).join("");
 }
 function verDet(id){var b=BD.find(function(x){return x.id===id;});if(!b)return;tabActual="dadmin";document.getElementById("view-lista").classList.add("hidden");document.getElementById("view-detalle").classList.remove("hidden");pintarDet(b);}
@@ -2117,6 +2117,14 @@ var REG_TIPOS=[
     {k:'tratamientos',label:'Aspectos trabajados',type:'checkboxes_dinamico',opts:[]},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
   ]},
+  {id:'hoja_asistencia',titulo:'Hoja de Asistencia Ocio',icon:'\ud83d\udccb',color:'#fef3c7',colorT:'#92400e',soloLectura:true,
+   fields:[
+    {k:'fecha',label:'Fecha',type:'date'},
+    {k:'actividad',label:'Actividad',type:'text'},
+    {k:'usuario',label:'Usuario',type:'text'},
+    {k:'asiste',label:'Asiste',type:'text'},
+    {k:'pagado',label:'Pagado',type:'text'}
+  ]},
   {id:'posturales',titulo:'Cambios Posturales',icon:'\ud83e\udeba',color:'#d1fae5',colorT:'#065f46',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
@@ -2308,6 +2316,7 @@ function _regTodayStr(){
 }
 
 function renderRegistros(){
+  REGISTROS['hoja_asistencia']=_generarRegistrosAsistencia();
   var html='<div class="view-header"><h2>\ud83d\udcc2 Registros Digitales</h2><p style="color:#6b7280;font-size:.9rem;margin-top:4px">Selecciona un tipo de registro para ver el historial o añadir uno nuevo</p></div>';
   html+='<div class="reg-grid">';
   REG_TIPOS.slice().sort(function(a,b){return a.titulo.localeCompare(b.titulo,'es');}).forEach(function(t){
@@ -2322,6 +2331,7 @@ function renderRegistros(){
 }
 
 function abrirRegistro(id){
+  REGISTROS['hoja_asistencia']=_generarRegistrosAsistencia();
   _regActivo=id;
   var tipo=REG_TIPOS.find(function(t){return t.id===id;});
   var lista=REGISTROS[id]||[];
@@ -2339,10 +2349,17 @@ function abrirRegistro(id){
   html+='<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">';
 
   // Nuevo registro
+  if(!tipo.soloLectura){
   html+='<div onclick="abrirFormRegistro(\''+id+'\',null)" style="display:flex;align-items:center;gap:12px;padding:14px 20px;background:'+colorT+';border-radius:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:all .15s;min-width:160px" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">';
   html+='<div style="font-size:22px;background:rgba(255,255,255,.2);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center">➕</div>';
   html+='<div><div style="font-size:13px;font-weight:700;color:#fff">Nuevo registro</div><div style="font-size:11px;color:rgba(255,255,255,.75)">Añadir entrada</div></div>';
   html+='</div>';
+  } else {
+  html+='<div onclick="setOcioTab(\'asistencia\');navTo(\'ocio\')" style="display:flex;align-items:center;gap:12px;padding:14px 20px;background:'+colorT+';border-radius:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:all .15s;min-width:160px" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">';
+  html+='<div style="font-size:22px;background:rgba(255,255,255,.2);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center">📋</div>';
+  html+='<div><div style="font-size:13px;font-weight:700;color:#fff">Ir a la hoja</div><div style="font-size:11px;color:rgba(255,255,255,.75)">Marcar asistencia</div></div>';
+  html+='</div>';
+  }
 
   // Exportar Excel
   if(lista.length){
@@ -2376,12 +2393,14 @@ function abrirRegistro(id){
       var fechaDisp=rec.fecha?fd(rec.fecha):'Sin fecha';
       var sub=rec.usuario||rec.taller||rec.actividad||rec.tipo||rec.persona||rec.furgoneta||'';
       if(Array.isArray(sub))sub=sub.join(', ');
-      html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #f1f5f9;cursor:pointer;'+(i%2===0?'':'background:#fafafa')+'" onclick="abrirFormRegistro(\''+id+'\','+rec._id+')" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\''+(i%2===0?'#fff':'#fafafa')+'\'">';
+      var clickAttr=tipo.soloLectura?'':' onclick="abrirFormRegistro(\''+id+'\','+rec._id+')"';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #f1f5f9;'+(tipo.soloLectura?'':'cursor:pointer;')+(i%2===0?'':'background:#fafafa')+'"'+clickAttr+' onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\''+(i%2===0?'#fff':'#fafafa')+'\'">';
       html+='<div style="display:flex;align-items:center;gap:12px">';
       html+='<div style="background:'+colorB+';border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;color:'+colorT+';white-space:nowrap">'+fechaDisp+'</div>';
       if(sub)html+='<span style="font-size:13px;color:#475569">'+esc(sub)+'</span>';
+      if(tipo.soloLectura&&rec.asiste)html+='<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:'+(rec.asiste==='Sí'?'#dcfce7':'#fee2e2')+';color:'+(rec.asiste==='Sí'?'#15803d':'#b91c1c')+'">'+(rec.asiste==='Sí'?'Asistió':'No asistió')+'</span>';
       html+='</div>';
-      html+='<button onclick="event.stopPropagation();borrarRegistro(\''+id+'\','+rec._id+')" style="background:#fee2e2;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:#b91c1c" title="Eliminar">🗑</button>';
+      if(!tipo.soloLectura)html+='<button onclick="event.stopPropagation();borrarRegistro(\''+id+'\','+rec._id+')" style="background:#fee2e2;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:#b91c1c" title="Eliminar">🗑</button>';
       html+='</div>';
     });
     html+='</div>';
@@ -2507,7 +2526,8 @@ function borrarRegistro(id,recId){
 var REG_CAMPO_USUARIO={
   caidas:'usuario', posturales:'usuario', comunicacion:'usuario',
   constantes:'usuario', epilepsia:'usuario',
-  entradas:'usuario', incontinencias:'usuario', medicacion:'usuario'
+  entradas:'usuario', incontinencias:'usuario', medicacion:'usuario',
+  hoja_asistencia:'usuario'
 };
 var REG_CAMPO_MULTI={
   actividades:'alumnos', autonomia:'usuarios'
@@ -2517,11 +2537,36 @@ var REG_CAMPO_CATEGORIA={
   actividades:'actividad', autonomia:'taller'
 };
 
+function _generarRegistrosAsistencia(){
+  var out=[];
+  var idCounter=1;
+  Object.keys(ASISTENCIA_OCIO).forEach(function(actId){
+    var act=ACTIVIDADES.find(function(a){return a.id===parseInt(actId);});
+    if(!act)return;
+    Object.keys(ASISTENCIA_OCIO[actId]).forEach(function(benId){
+      var st=ASISTENCIA_OCIO[actId][benId];
+      var b=BD.find(function(x){return x.id===parseInt(benId);});
+      if(!b)return;
+      out.push({
+        _id:idCounter++,
+        fecha:act.fecha,
+        actividad:act.nombre,
+        usuario:b.n+' '+b.a,
+        asiste:st.si?'Sí':'No',
+        pagado:st.pagado?'Sí':'No'
+      });
+    });
+  });
+  return out;
+}
+
+
 function tieneHistorialAlumno(id){
   return REG_CAMPO_USUARIO[id]||REG_CAMPO_MULTI[id];
 }
 
 function descargarLibroBeneficiario(bid){
+  REGISTROS['hoja_asistencia']=_generarRegistrosAsistencia();
   var b=BD.find(function(x){return x.id===bid;});
   if(!b)return;
   var nombreCompleto=b.n+' '+b.a;
@@ -2535,18 +2580,33 @@ function descargarLibroBeneficiario(bid){
     else return;
     if(!regs.length)return;
     regs=regs.slice().sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
-    var excluir=['usuario','alumnos','usuarios'];
-    var cols=t.fields.filter(function(f){return excluir.indexOf(f.k)<0;});
-    var aoa=[cols.map(function(f){return f.label;})];
-    regs.forEach(function(r){
-      aoa.push(cols.map(function(f){
-        var v=r[f.k];
-        if(Array.isArray(v))return v.join(', ');
-        if(f.type==='date'&&v)return fd(v);
-        return v||'';
-      }));
-    });
-    var ws=XLSX.utils.aoa_to_sheet(aoa);
+
+    var ws;
+    if(t.id==='actividades'){
+      // Formato especial: FECHA | AREA | ACTIVIDADES TRABAJADAS (una fila por área/actividad)
+      var aoa=[['FECHA','AREA','ACTIVIDADES TRABAJADAS']];
+      regs.forEach(function(r){
+        var areas=Array.isArray(r.actividad)?r.actividad:[r.actividad];
+        var aspectos=Array.isArray(r.tratamientos)?r.tratamientos.join(', '):(r.tratamientos||'');
+        areas.forEach(function(area){
+          aoa.push([fd(r.fecha), area||'', aspectos]);
+        });
+      });
+      ws=XLSX.utils.aoa_to_sheet(aoa);
+    } else {
+      var excluir=['usuario','alumnos','usuarios'];
+      var cols=t.fields.filter(function(f){return excluir.indexOf(f.k)<0;});
+      var aoa2=[cols.map(function(f){return f.label;})];
+      regs.forEach(function(r){
+        aoa2.push(cols.map(function(f){
+          var v=r[f.k];
+          if(Array.isArray(v))return v.join(', ');
+          if(f.type==='date'&&v)return fd(v);
+          return v||'';
+        }));
+      });
+      ws=XLSX.utils.aoa_to_sheet(aoa2);
+    }
     var sheetName=t.titulo.replace(/[\\\/\?\*\[\]:]/g,'').substring(0,31);
     XLSX.utils.book_append_sheet(wb,ws,sheetName);
   });
@@ -2556,6 +2616,7 @@ function descargarLibroBeneficiario(bid){
 
 
 function abrirRegistroBeneficiario(bid){
+  REGISTROS['hoja_asistencia']=_generarRegistrosAsistencia();
   var b=BD.find(function(x){return x.id===bid;});
   if(!b)return;
   var nombreCompleto=b.n+' '+b.a;
