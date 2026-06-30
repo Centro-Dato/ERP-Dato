@@ -706,6 +706,7 @@ td{padding:13px 20px;vertical-align:middle;color:#64748b}
         <button class="active" id="rtab-hoy" onclick="setRutasTab('hoy')">&#x1F4CD; Hoy</button>
         <button id="rtab-flota" onclick="setRutasTab('flota')">&#x1F697; Flota</button>
         <button id="rtab-rutas" onclick="setRutasTab('rutas')">&#x1F5FA; Rutas</button>
+        <button id="rtab-calocio" onclick="setRutasTab('calocio')">&#x1F4C5; Calendario Ocio</button>
         <button id="rtab-incid" onclick="setRutasTab('incid')">&#x26A0; Incidencias</button>
       </div>
       <div id="rutas-content"></div>
@@ -3832,15 +3833,138 @@ var currentRutasTab="hoy";
 
 function setRutasTab(tab){
   currentRutasTab=tab;
-  ["hoy","flota","rutas","incid"].forEach(function(t){
+  ["hoy","flota","rutas","calocio","incid"].forEach(function(t){
     var b=document.getElementById("rtab-"+t);
     if(b)b.classList.toggle("active",t===tab);
   });
   if(tab==="hoy")pintarHoy();
   else if(tab==="flota")pintarFlota();
   else if(tab==="rutas")pintarRutas();
+  else if(tab==="calocio")pintarCalendarioOcio();
   else pintarIncidencias();
 }
+
+var _calOcioMes=new Date().getMonth();
+var _calOcioAnio=new Date().getFullYear();
+
+function pintarCalendarioOcio(){
+  var primerDia=new Date(_calOcioAnio,_calOcioMes,1);
+  var ultimoDia=new Date(_calOcioAnio,_calOcioMes+1,0);
+  var diasMes=ultimoDia.getDate();
+  var diaSemanaInicio=(primerDia.getDay()+6)%7; // lunes=0
+
+  // Mapear actividades del mes por día
+  var actsPorDia={};
+  ACTIVIDADES.forEach(function(act){
+    var ini=new Date(act.fecha+'T12:00:00');
+    var fin=act.fechaFin?new Date(act.fechaFin+'T12:00:00'):ini;
+    var cursor=new Date(ini);
+    while(cursor<=fin){
+      if(cursor.getMonth()===_calOcioMes && cursor.getFullYear()===_calOcioAnio){
+        var dStr=cursor.getFullYear()+'-'+String(cursor.getMonth()+1).padStart(2,'0')+'-'+String(cursor.getDate()).padStart(2,'0');
+        if(!actsPorDia[dStr])actsPorDia[dStr]=[];
+        actsPorDia[dStr].push(act);
+      }
+      cursor.setDate(cursor.getDate()+1);
+    }
+  });
+
+  var html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">';
+  html+='<button class="btn-secondary" onclick="_calOcioNavMes(-1)">◀</button>';
+  html+='<div style="font-size:18px;font-weight:800;color:#1e293b;min-width:200px;text-align:center">'+MESES_LARGO[_calOcioMes]+' '+_calOcioAnio+'</div>';
+  html+='<button class="btn-secondary" onclick="_calOcioNavMes(1)">▶</button>';
+  html+='</div>';
+
+  html+='<div style="background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:18px;max-width:760px">';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px">';
+  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(function(d){
+    html+='<div style="text-align:center;font-size:11px;font-weight:700;color:#94a3b8;padding:6px 0">'+d+'</div>';
+  });
+  html+='</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
+  for(var i=0;i<diaSemanaInicio;i++) html+='<div></div>';
+  var hoyStr=new Date().toISOString().split('T')[0];
+  for(var d=1;d<=diasMes;d++){
+    var dStr=_calOcioAnio+'-'+String(_calOcioMes+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var actsDia=actsPorDia[dStr]||[];
+    var esHoy=dStr===hoyStr;
+    var tieneOcio=actsDia.length>0;
+    html+='<div onclick="'+(tieneOcio?"_verOcioDia('"+dStr+"')":'')+'" style="aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:'+(tieneOcio?'pointer':'default')+';border:2px solid '+(esHoy?'#0270c4':(tieneOcio?'#fbbf24':'#f1f5f9'))+';background:'+(tieneOcio?'#fffbeb':'#fff')+';transition:all .15s"'+(tieneOcio?' onmouseover="this.style.background=\'#fef3c7\'" onmouseout="this.style.background=\'#fffbeb\'"':'')+'>';
+    html+='<div style="font-size:13px;font-weight:'+(esHoy?'800':'600')+';color:'+(esHoy?'#0270c4':'#1e293b')+'">'+d+'</div>';
+    if(tieneOcio) html+='<div style="font-size:9px;color:#92400e;font-weight:700">🎨 '+actsDia.length+'</div>';
+    html+='</div>';
+  }
+  html+='</div></div>';
+  html+='<div style="margin-top:12px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;background:#fffbeb;border:2px solid #fbbf24;border-radius:3px"></div> Día con actividad de ocio — haz clic para ver quién asiste</div>';
+
+  document.getElementById('rutas-content').innerHTML=html;
+}
+
+function _calOcioNavMes(delta){
+  _calOcioMes+=delta;
+  if(_calOcioMes>11){_calOcioMes=0;_calOcioAnio++;}
+  if(_calOcioMes<0){_calOcioMes=11;_calOcioAnio--;}
+  pintarCalendarioOcio();
+}
+
+function _verOcioDia(dStr){
+  var actsDia=ACTIVIDADES.filter(function(act){
+    var ini=new Date(act.fecha+'T12:00:00');
+    var fin=act.fechaFin?new Date(act.fechaFin+'T12:00:00'):ini;
+    var d=new Date(dStr+'T12:00:00');
+    return d>=ini && d<=fin;
+  });
+  var existing=document.getElementById('modal-ocio-dia');
+  if(existing)existing.remove();
+  var overlay=document.createElement('div');
+  overlay.id='modal-ocio-dia';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2200;display:flex;align-items:center;justify-content:center;padding:20px';
+
+  var dFmt=new Date(dStr+'T12:00:00');
+  var diasLargos=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var tituloDia=diasLargos[dFmt.getDay()]+', '+dFmt.getDate()+' de '+MESES_LARGO[dFmt.getMonth()]+' '+dFmt.getFullYear();
+
+  var html='<div style="background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">';
+  html+='<div style="padding:20px 24px;border-bottom:1px solid #e2e8f0">';
+  html+='<div style="font-size:18px;font-weight:800;color:#1e293b">🎨 Ocio y Tiempo Libre</div>';
+  html+='<div style="font-size:13px;color:#64748b;margin-top:2px">'+tituloDia+'</div>';
+  html+='</div>';
+  html+='<div style="padding:20px 24px;overflow-y:auto;flex:1">';
+
+  actsDia.forEach(function(act){
+    var asistentes=[];
+    var benefs=BD.filter(function(b){return b.est==='activo';}).sort(function(a,b){return a.a.localeCompare(b.a,'es');});
+    benefs.forEach(function(b){
+      var st=(ASISTENCIA_OCIO[act.id]&&ASISTENCIA_OCIO[act.id][b.id]);
+      if(st&&st.si) asistentes.push(b);
+    });
+    html+='<div style="margin-bottom:18px">';
+    html+='<div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:4px">'+esc(act.nombre)+(act.lugar?' <span style="color:#94a3b8;font-weight:500;font-size:12px">— '+esc(act.lugar)+'</span>':'')+'</div>';
+    html+='<div style="font-size:12px;color:#15803d;font-weight:700;margin-bottom:10px">✓ '+asistentes.length+' persona'+(asistentes.length!==1?'s':'')+' va'+(asistentes.length!==1?'n':'')+' a esta actividad</div>';
+    if(!asistentes.length){
+      html+='<div style="font-size:13px;color:#94a3b8;padding:8px 0">Aún no hay asistencia marcada para esta actividad. Ve a Ocio → Hoja de Asistencia para marcarla.</div>';
+    } else {
+      html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
+      asistentes.forEach(function(b){
+        html+='<div style="display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px">';
+        html+='<div style="width:28px;height:28px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">'+ini(b.n,b.a)+'</div>';
+        html+='<span style="font-size:12px;font-weight:600;color:#1e293b">'+esc(b.a)+', '+esc(b.n)+'</span>';
+        html+='</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+
+  html+='</div>';
+  html+='<div style="padding:14px 24px;border-top:1px solid #e2e8f0;text-align:right">';
+  html+='<button class="btn-secondary" onclick="document.getElementById(\'modal-ocio-dia\').remove()">Cerrar</button>';
+  html+='</div></div>';
+  overlay.innerHTML=html;
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
 
 function docAlert(fechaStr){
   if(!fechaStr)return'<span class="doc-alert doc-danger">Sin datos</span>';
