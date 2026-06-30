@@ -2098,7 +2098,7 @@ var REG_TIPOS=[
   {id:'caidas',titulo:'Caídas',icon:'\ud83e\ude79',color:'#fee2e2',colorT:'#991b1b',
    fields:[
     {k:'fecha',label:'Fecha caída',type:'date',req:true},
-    {k:'usuario',label:'Nombre usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Nombre usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'hora',label:'Hora',type:'time',req:true},
     {k:'atendido',label:'Atendido por',type:'text',req:true},
     {k:'donde',label:'¿Dónde ocurrió?',type:'select',opts:['AULA','BAÑO','COMEDOR','JARDÍn','ASCENSOR','PASILLOS','ESCALERAS','GIMNASIO','GARAJE','OTROS']},
@@ -2112,8 +2112,8 @@ var REG_TIPOS=[
   {id:'actividades',titulo:'Actividades',icon:'\ud83d\udccc',color:'#dbeafe',colorT:'#1e40af',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'actividad',label:'Actividad',type:'checkboxes',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO Y TIEMPO LIBRE','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
-    {k:'alumnos',label:'Alumnos participantes',type:'checkboxes',opts:'BD'},
+    {k:'actividad',label:'Actividad / Área',type:'radio_lista',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO Y TIEMPO LIBRE','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
+    {k:'alumnos',label:'Alumnos participantes',type:'checkboxes',opts:'BD',req:true},
     {k:'tratamientos',label:'Aspectos trabajados',type:'checkboxes_dinamico',opts:[]},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
   ]},
@@ -2128,21 +2128,21 @@ var REG_TIPOS=[
   {id:'posturales',titulo:'Cambios Posturales',icon:'\ud83e\udeba',color:'#d1fae5',colorT:'#065f46',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'momento',label:'Momento del día',type:'checkboxes',opts:['MEDIA MAÑANA','EN LA COMIDA']},
     {k:'motivo',label:'Motivo',type:'checkboxes',opts:['UPP','ARTICULAR','CIRCULATORIO','HIGIENE CORPORAL']}
   ]},
   {id:'comunicacion',titulo:'Comunicación Familias',icon:'\ud83d\udcde',color:'#fef3c7',colorT:'#92400e',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'medio',label:'Medio de comunicación',type:'select',opts:['WHATSAPP EMPRESA','TELÉFONO','PRESENCIAL','CORREO ELECTRÓNICO']},
     {k:'motivo',label:'Motivo',type:'textarea',req:true}
   ]},
   {id:'constantes',titulo:'Constantes Vitales',icon:'\u2764\ufe0f',color:'#fce7f3',colorT:'#9d174d',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'fc',label:'Frecuencia Cardíaca (lpm)',type:'text'},
     {k:'tension1',label:'Tensión Arterial - Toma 1',type:'text'},
     {k:'tension2',label:'Tensión Arterial - Toma 2 (extra)',type:'text'},
@@ -2168,35 +2168,35 @@ var REG_TIPOS=[
   {id:'desaparicion',titulo:'Desaparición Usuarios',icon:'\ud83d\udd0d',color:'#fef2f2',colorT:'#7f1d1d',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'descripcion',label:'Descripción del suceso',type:'textarea',req:true},
     {k:'resolucion',label:'Tiempo y forma de resolución',type:'textarea',req:true}
   ]},
   {id:'entradas',titulo:'Entradas y Salidas',icon:'\ud83d\udeb6',color:'#eff6ff',colorT:'#1e3a8a',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'tipo',label:'Tipo',type:'select',opts:['ENTRADA','SALIDA'],req:true},
     {k:'motivo',label:'Motivo',type:'textarea',req:true}
   ]},
   {id:'hidratacion',titulo:'Hidratación',icon:'\ud83d\udca7',color:'#e0f2fe',colorT:'#0c4a6e',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'desayuno',label:'Hidratación desayuno',type:'checkboxes',opts:['AGUA','ZUMO','LECHE','CAFÉ','INFUSIÓN','OTROS']},
     {k:'comida',label:'Hidratación comida',type:'checkboxes',opts:['AGUA','OTROS']}
   ]},
   {id:'higiene',titulo:'Higiene Personal',icon:'\ud83e\uddf4',color:'#f0fdf4',colorT:'#14532d',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'items',label:'Higiene realizada',type:'checkboxes',opts:['MANOS','CEPILLADO','ROPA','SILLA']}
   ]},
   {id:'incontinencias',titulo:'Incontinencias',icon:'\ud83d\udec1',color:'#f5f3ff',colorT:'#4c1d95',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'tipoReg',label:'Registro de',type:'select',opts:['CAMBIO DE PAÑAL','INCONTINENCIA'],req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'momento',label:'Momento del día',type:'checkboxes',opts:['MEDIA MAÑANA','EN LA COMIDA','TARDE','RUTA']},
     {k:'tipoInc',label:'Tipo incontinencia',type:'select',opts:['PIS','HECES','PIS Y HECES']},
     {k:'notas',label:'Notas',type:'textarea'}
@@ -2212,7 +2212,7 @@ var REG_TIPOS=[
   {id:'medicacion',titulo:'Administración Medicación',icon:'\ud83d\udc8a',color:'#fdf4ff',colorT:'#581c87',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'cronica',label:'Medicación crónica',type:'select',opts:['ADMINISTRADA','NO ADMINISTRADA']},
     {k:'temporal',label:'Medicación temporal',type:'select',opts:['NINGUNA','IBUPROFENO','PARACETAMOL','OTROS']},
     {k:'incidencias',label:'Incidencias',type:'textarea'}
@@ -2233,7 +2233,7 @@ var REG_TIPOS=[
   {id:'recepcionmed',titulo:'Recepción Medicación',icon:'\ud83d\udce6',color:'#f0f9ff',colorT:'#0c4a6e',
    fields:[
     {k:'fecha',label:'Fecha recepción',type:'date',req:true},
-    {k:'usuario',label:'Usuario',type:'select',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'radio_bd',opts:'BD',req:true},
     {k:'medicacion',label:'Medicación entregada',type:'textarea',req:true}
   ]},
   {id:'temperaturas',titulo:'Temperaturas Catering',icon:'\ud83c\udf21\ufe0f',color:'#fff7ed',colorT:'#7c2d12',
@@ -2451,6 +2451,12 @@ function abrirFormRegistro(id,recId){
         html+='<label class="gf-check-item"><input type="checkbox" name="'+f.k+'" value="'+esc(o)+'"'+(sel.indexOf(o)>=0?' checked':'')+'/> '+esc(o)+'</label>';
       });
       html+='</div>';
+    } else if(f.type==='radio_bd'||f.type==='radio_lista'){
+      html+='<div class="gf-check-group">';
+      opts.forEach(function(o){
+        html+='<label class="gf-check-item"><input type="radio" name="'+f.k+'" value="'+esc(o)+'"'+(val===o?' checked':'')+(f.req?' required':'')+'/> '+esc(o)+'</label>';
+      });
+      html+='</div>';
     } else if(f.type==='checkboxes_dinamico'){
       // Si hay valor guardado, pre-cargar aspectos
       var selAsp=Array.isArray(val)?val:(val?[val]:[]);
@@ -2495,15 +2501,21 @@ function guardarRegistro(id,recId){
   var tipo=REG_TIPOS.find(function(t){return t.id===id;});
   var form=document.getElementById('regForm');
   var data={_id:recId!=null?recId:(_regId++)};
+  var errores=[];
   tipo.fields.forEach(function(f){
     if(f.type==='checkboxes'||f.type==='checkboxes_dinamico'){
       var boxes=form.querySelectorAll('input[name="'+f.k+'"]:checked');
       data[f.k]=Array.from(boxes).map(function(b){return b.value;});
+      if(f.req&&data[f.k].length===0) errores.push(f.label);
     } else {
       var el=form.elements[f.k];
       data[f.k]=el?el.value:'';
     }
   });
+  if(errores.length){
+    alert('Por favor completa el campo obligatorio: '+errores.join(', '));
+    return;
+  }
   if(!REGISTROS[id])REGISTROS[id]=[];
   if(recId!=null){
     var idx=REGISTROS[id].findIndex(function(r){return r._id===recId;});
@@ -2565,12 +2577,12 @@ function tieneHistorialAlumno(id){
   return REG_CAMPO_USUARIO[id]||REG_CAMPO_MULTI[id];
 }
 
-function descargarLibroBeneficiario(bid){
+function _generarHojasBeneficiario(bid){
   REGISTROS['hoja_asistencia']=_generarRegistrosAsistencia();
   var b=BD.find(function(x){return x.id===bid;});
-  if(!b)return;
+  if(!b)return{b:null,hojas:[]};
   var nombreCompleto=b.n+' '+b.a;
-  var wb=XLSX.utils.book_new();
+  var hojas=[];
   REG_TIPOS.forEach(function(t){
     var camU=REG_CAMPO_USUARIO[t.id], camM=REG_CAMPO_MULTI[t.id];
     var lista=REGISTROS[t.id]||[];
@@ -2581,10 +2593,9 @@ function descargarLibroBeneficiario(bid){
     if(!regs.length)return;
     regs=regs.slice().sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
 
-    var ws;
+    var aoa;
     if(t.id==='actividades'){
-      // Formato especial: FECHA | AREA | ACTIVIDADES TRABAJADAS (una fila por área/actividad)
-      var aoa=[['FECHA','AREA','ACTIVIDADES TRABAJADAS']];
+      aoa=[['FECHA','AREA','ACTIVIDADES TRABAJADAS']];
       regs.forEach(function(r){
         var areas=Array.isArray(r.actividad)?r.actividad:[r.actividad];
         var aspectos=Array.isArray(r.tratamientos)?r.tratamientos.join(', '):(r.tratamientos||'');
@@ -2592,27 +2603,144 @@ function descargarLibroBeneficiario(bid){
           aoa.push([fd(r.fecha), area||'', aspectos]);
         });
       });
-      ws=XLSX.utils.aoa_to_sheet(aoa);
     } else {
       var excluir=['usuario','alumnos','usuarios'];
       var cols=t.fields.filter(function(f){return excluir.indexOf(f.k)<0;});
-      var aoa2=[cols.map(function(f){return f.label;})];
+      aoa=[cols.map(function(f){return f.label;})];
       regs.forEach(function(r){
-        aoa2.push(cols.map(function(f){
+        aoa.push(cols.map(function(f){
           var v=r[f.k];
           if(Array.isArray(v))return v.join(', ');
           if(f.type==='date'&&v)return fd(v);
           return v||'';
         }));
       });
-      ws=XLSX.utils.aoa_to_sheet(aoa2);
     }
-    var sheetName=t.titulo.replace(/[\\\/\?\*\[\]:]/g,'').substring(0,31);
-    XLSX.utils.book_append_sheet(wb,ws,sheetName);
+    hojas.push({nombre:t.titulo, sheetName:t.titulo.replace(/[\\\/\?\*\[\]:]/g,'').substring(0,31), aoa:aoa, colorT:t.colorT, icon:t.icon});
   });
-  if(wb.SheetNames.length===0){alert('No hay registros para este beneficiario.');return;}
-  XLSX.writeFile(wb,'Registros_'+b.n.replace(/\s/g,'_')+'_'+b.a.replace(/\s/g,'_')+'.xlsx');
+  return{b:b, nombreCompleto:nombreCompleto, hojas:hojas};
 }
+
+function descargarLibroBeneficiario(bid){
+  var res=_generarHojasBeneficiario(bid);
+  if(!res.b)return;
+  if(!res.hojas.length){alert('No hay registros para este beneficiario.');return;}
+  var wb=XLSX.utils.book_new();
+  res.hojas.forEach(function(h){
+    var ws=XLSX.utils.aoa_to_sheet(h.aoa);
+    XLSX.utils.book_append_sheet(wb,ws,h.sheetName);
+  });
+  XLSX.writeFile(wb,'Registros_'+res.b.n.replace(/\s/g,'_')+'_'+res.b.a.replace(/\s/g,'_')+'.xlsx');
+}
+
+function vistaPreviaLibroBeneficiario(bid){
+  var res=_generarHojasBeneficiario(bid);
+  if(!res.b)return;
+  if(!res.hojas.length){alert('No hay registros para este beneficiario.');return;}
+  window._previaHojas=res.hojas;
+  window._previaBid=bid;
+
+  var existing=document.getElementById('preview-libro-overlay');
+  if(existing)existing.remove();
+  var overlay=document.createElement('div');
+  overlay.id='preview-libro-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2500;display:flex;align-items:center;justify-content:center;padding:20px';
+  var html='<div style="background:#fff;border-radius:16px;width:1000px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">';
+  html+='<div style="padding:18px 22px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px">';
+  html+='<div style="font-size:18px;font-weight:800;color:#1e293b;flex:1">📊 '+esc(res.nombreCompleto)+' — Vista previa de registros</div>';
+  html+='<button class="btn-secondary" onclick="descargarLibroBeneficiario('+bid+')">⬇ Excel</button>';
+  html+='<button class="btn-secondary" onclick="descargarPDFLibroBeneficiario('+bid+')">⬇ PDF</button>';
+  html+='<button class="btn-secondary" onclick="document.getElementById(\'preview-libro-overlay\').remove()">✕ Cerrar</button>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid #e2e8f0;overflow-x:auto;background:#f8fafc" id="preview-tabs"></div>';
+  html+='<div style="padding:20px;overflow:auto;flex:1" id="preview-tabla"></div>';
+  html+='</div>';
+  overlay.innerHTML=html;
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+
+  var tabsHtml=res.hojas.map(function(h,i){
+    return '<button onclick="_mostrarHojaPreview('+i+',this)" style="padding:8px 14px;border-radius:8px;border:2px solid '+(i===0?h.colorT:'#e2e8f0')+';background:'+(i===0?h.colorT:'#fff')+';color:'+(i===0?'#fff':'#374151')+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">'+h.icon+' '+h.nombre+'</button>';
+  }).join('');
+  document.getElementById('preview-tabs').innerHTML=tabsHtml;
+  _mostrarHojaPreview(0);
+}
+
+function _mostrarHojaPreview(idx, btn){
+  var hojas=window._previaHojas;
+  if(!hojas||!hojas[idx])return;
+  if(btn){
+    document.querySelectorAll('#preview-tabs button').forEach(function(b,i){
+      var h=hojas[i];
+      b.style.background=i===idx?h.colorT:'#fff';
+      b.style.color=i===idx?'#fff':'#374151';
+      b.style.borderColor=i===idx?h.colorT:'#e2e8f0';
+    });
+  }
+  var aoa=hojas[idx].aoa;
+  var html='<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html+='<thead><tr>';
+  (aoa[0]||[]).forEach(function(h){html+='<th style="background:'+hojas[idx].colorT+';color:#fff;padding:10px 14px;text-align:left;font-weight:700">'+esc(String(h))+'</th>';});
+  html+='</tr></thead><tbody>';
+  for(var r=1;r<aoa.length;r++){
+    html+='<tr style="'+(r%2===0?'background:#f8fafc':'')+'">';
+    aoa[r].forEach(function(c){html+='<td style="padding:9px 14px;border-bottom:1px solid #f1f5f9;color:#374151">'+esc(String(c==null?'':c))+'</td>';});
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  if(aoa.length<=1) html='<div style="text-align:center;padding:32px;color:#94a3b8">Sin filas de datos</div>';
+  document.getElementById('preview-tabla').innerHTML=html;
+}
+
+function descargarPDFLibroBeneficiario(bid){
+  var res=_generarHojasBeneficiario(bid);
+  if(!res.b)return;
+  var temp=document.createElement('div');
+  temp.style.cssText='position:fixed;left:-9999px;top:0;width:760px;background:#fff;padding:40px;font-family:Arial,sans-serif;color:#1e293b';
+  var html='<div style="border-bottom:3px solid #0270c4;padding-bottom:14px;margin-bottom:20px">'+
+    '<div style="font-size:22px;font-weight:800;color:#0270c4">📊 Registros — '+esc(res.nombreCompleto)+'</div>'+
+    '<div style="font-size:12px;color:#64748b;margin-top:4px">Generado el '+new Date().toLocaleDateString('es-ES')+' · Centro Dato</div></div>';
+  res.hojas.forEach(function(h){
+    html+='<div style="margin-top:24px;page-break-inside:avoid">';
+    html+='<div style="font-size:15px;font-weight:700;color:#1e293b;background:#eff6ff;padding:8px 12px;border-radius:6px;margin-bottom:10px">'+h.icon+' '+h.nombre+'</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html+='<tr>';
+    (h.aoa[0]||[]).forEach(function(c){html+='<th style="background:#f1f5f9;padding:6px 8px;text-align:left;border:1px solid #e2e8f0">'+esc(String(c))+'</th>';});
+    html+='</tr>';
+    for(var r=1;r<h.aoa.length;r++){
+      html+='<tr>';
+      h.aoa[r].forEach(function(c){html+='<td style="padding:6px 8px;border:1px solid #e2e8f0">'+esc(String(c==null?'':c))+'</td>';});
+      html+='</tr>';
+    }
+    html+='</table></div>';
+  });
+  temp.innerHTML=html;
+  document.body.appendChild(temp);
+  html2canvas(temp,{scale:2,useCORS:true}).then(function(canvas){
+    var imgData=canvas.toDataURL('image/jpeg',0.95);
+    var pdf=new jspdf.jsPDF('p','mm','a4');
+    var pageW=210, pageH=297;
+    var imgW=pageW;
+    var imgH=canvas.height*imgW/canvas.width;
+    var heightLeft=imgH, y=0;
+    pdf.addImage(imgData,'JPEG',0,y,imgW,imgH);
+    heightLeft-=pageH;
+    while(heightLeft>0){
+      y=heightLeft-imgH;
+      pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,y,imgW,imgH);
+      heightLeft-=pageH;
+    }
+    pdf.save('Registros_'+res.b.n.replace(/\s/g,'_')+'_'+res.b.a.replace(/\s/g,'_')+'.pdf');
+    document.body.removeChild(temp);
+  }).catch(function(err){
+    console.error(err);
+    alert('No se pudo generar el PDF.');
+    document.body.removeChild(temp);
+  });
+}
+
+
 
 
 function abrirRegistroBeneficiario(bid){
@@ -2636,7 +2764,7 @@ function abrirRegistroBeneficiario(bid){
     if(!tiposConDatos.length){
       html+='<div style="text-align:center;padding:48px;background:#fff;border-radius:12px;border:2px dashed #e2e8f0;color:#94a3b8">Este beneficiario no tiene registros aún.</div>';
     } else {
-      html+='<div style="margin-bottom:16px"><button class="btn-secondary" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d" onclick="descargarLibroBeneficiario('+bid+')">📊 Descargar hoja de cálculo completa (todas las pestañas)</button></div>';
+      html+='<div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn-secondary" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d" onclick="descargarLibroBeneficiario('+bid+')">📊 Descargar hoja de cálculo completa (todas las pestañas)</button><button class="btn-secondary" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8" onclick="vistaPreviaLibroBeneficiario('+bid+')">🔍 Vista previa</button></div>';
       html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">';
       tiposConDatos.forEach(function(t,i){
         html+='<button onclick="_mostrarTabRegBenef(\''+t.id+'\',\''+nombreCompleto.replace(/'/g,"\\'")+'\','+bid+')" id="tabregbtn-'+t.id+'" style="padding:9px 16px;border-radius:10px;border:2px solid '+(i===0?t.colorT:'#e2e8f0')+';background:'+(i===0?t.colorT:'#fff')+';color:'+(i===0?'#fff':'#374151')+';font-size:13px;font-weight:700;cursor:pointer">'+t.icon+' '+t.titulo+'</button>';
