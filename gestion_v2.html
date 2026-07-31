@@ -535,7 +535,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="page-header">
         <div><div class="page-title">Asistencia</div><div class="page-subtitle" id="ocio-anio-titulo">Archivo 2026 — una pestaña por mes</div></div>
         <button class="btn-primary" onclick="guardarAsistenciaOcioEnDriveReal()">💾 Guardar en hoja de cálculo real</button>
-        <button class="btn-secondary btn-sm" onclick="cambiarHojaOcioElegida()">🔄 Cambiar hoja de destino</button>
+        <button class="btn-secondary btn-sm" onclick="cambiarHojaOcioElegida()">🔗 Usar hoja de cálculo por enlace</button>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
         <div class="tabs-bar" id="ocio-meses-tabs" style="margin-bottom:0"></div>
@@ -799,6 +799,19 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="lista-elegir-hoja-ocio" style="margin:14px 0"></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="document.getElementById('modal-elegir-hoja-ocio').classList.add('hidden')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: USAR HOJA DE CÁLCULO DE OCIO PEGANDO SU ENLACE ===== -->
+<div id="modal-pegar-hoja-ocio" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalPegarHojaOcio()">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-title">Hoja de cálculo de Ocio</div>
+    <div class="modal-sub">Abre en tu navegador la hoja de cálculo real donde se rellenan los ocios, copia la URL de la barra de direcciones, y pégala aquí:</div>
+    <input type="text" class="form-input" id="input-enlace-hoja-ocio" placeholder="https://docs.google.com/spreadsheets/d/..." style="margin:14px 0 16px" onkeydown="if(event.key==='Enter')usarHojaOcioPorEnlace()"/>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="cerrarModalPegarHojaOcio()">Cancelar</button>
+      <button class="btn-primary" onclick="usarHojaOcioPorEnlace()">Usar esta hoja</button>
     </div>
   </div>
 </div>
@@ -1358,7 +1371,33 @@ function fijarHojaOcioElegida(hoja){ localStorage.setItem('drive_hoja_ocio', JSO
 function olvidarHojaOcioElegida(){ localStorage.removeItem('drive_hoja_ocio'); }
 function cambiarHojaOcioElegida(){
   olvidarHojaOcioElegida();
-  mostrarAviso('Olvidado. Vuelve a pulsar "Guardar en hoja de cálculo real" para elegir de nuevo.', '🔄');
+  abrirModalPegarHojaOcio();
+}
+function abrirModalPegarHojaOcio(){
+  document.getElementById('input-enlace-hoja-ocio').value = '';
+  document.getElementById('modal-pegar-hoja-ocio').classList.remove('hidden');
+}
+function cerrarModalPegarHojaOcio(){
+  document.getElementById('modal-pegar-hoja-ocio').classList.add('hidden');
+}
+function usarHojaOcioPorEnlace(){
+  var texto = document.getElementById('input-enlace-hoja-ocio').value.trim();
+  if(!texto){ mostrarAviso('Pega el enlace de la hoja de cálculo.'); return; }
+  var id = null;
+  var m = texto.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if(m){ id = m[1]; } else if(/^[a-zA-Z0-9-_]{20,}$/.test(texto)){ id = texto; }
+  if(!id){ mostrarAviso('No he podido reconocer el ID en ese enlace. Comprueba que has copiado la URL completa de la hoja de cálculo (debe contener "/spreadsheets/d/...").', '⚠️'); return; }
+  cerrarModalPegarHojaOcio();
+  mostrarAviso('Comprobando la hoja de cálculo…', '⏳');
+  autorizarGoogleDrive(function(){
+    gapi.client.sheets.spreadsheets.get({spreadsheetId: id}).then(function(resp){
+      var hoja = {id: id, name: resp.result.properties.title};
+      fijarHojaOcioElegida(hoja);
+      mostrarAviso('Hoja "'+hoja.name+'" vinculada correctamente. Ya puedes darle a "💾 Guardar en hoja de cálculo real".', '✅');
+    }, function(err){
+      mostrarAviso('No se pudo abrir esa hoja de cálculo. Comprueba que el enlace es correcto y que tu cuenta tiene acceso a ella.', '⚠️');
+    });
+  });
 }
 
 function guardarAsistenciaOcioEnDriveReal(){
