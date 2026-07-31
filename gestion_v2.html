@@ -1019,6 +1019,12 @@ function cargarGapi(cb){
       function(err){ mostrarAviso('No se pudo inicializar la conexión con Google: '+(err && err.details ? err.details : 'error desconocido'), '⚠️'); });
   });
 }
+// Precarga silenciosa: dejamos la librería de Google lista en segundo plano al abrir la página,
+// para que al pulsar "Conectar con Drive" la ventana de permiso se abra al instante (si se pide
+// con retraso, el navegador puede bloquearla por no venir "pegada" al clic).
+window.addEventListener('load', function(){
+  if(typeof gapi !== 'undefined'){ cargarGapi(function(){}); }
+});
 
 function autorizarGoogleDrive(callback){
   cargarGapi(function(){
@@ -2484,7 +2490,6 @@ var DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 var _diaHorarioActual = 'Miércoles';
 var _subvistaHorarios = 'area';
 var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
-var PROFESIONALES_HORARIO = ['M.JOSE','MARCIAL','NUEVO','PATRICIA','TERE','TRAPERO','VIOLETA'];
 var HORARIOS_POR_DIA = {
   'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': []
 };
@@ -2514,15 +2519,6 @@ function cambiarDiaHorario(dia){
   _diaHorarioActual = dia;
   renderDiasTabsHorarios();
   renderFranjasDia();
-}
-function nombresProfesionalesDisponibles(idxFranja, aIdxActual){
-  var franja = HORARIOS_POR_DIA[_diaHorarioActual][idxFranja];
-  var usadosEnOtras = {};
-  (franja.areas||[]).forEach(function(a, i){ if(i!==aIdxActual && a.profesional) usadosEnOtras[a.profesional]=true; });
-  var lista = PROFESIONALES_HORARIO.filter(function(p){ return !usadosEnOtras[p]; });
-  var actual = franja.areas[aIdxActual].profesional;
-  if(actual && lista.indexOf(actual)===-1) lista.push(actual);
-  return ordenarAlfabetico(lista, function(x){return x;});
 }
 function alumnosDisponiblesEnFranja(idxFranja, aIdxActual){
   var franja = HORARIOS_POR_DIA[_diaHorarioActual][idxFranja];
@@ -2560,10 +2556,7 @@ function renderFranjasDia(){
       h += '<option value="">— Elige actividad —</option>';
       ACTIVIDADES_HORARIO.forEach(function(act){ h += '<option value="'+act+'" '+(a.nombre===act?'selected':'')+'>'+act+'</option>'; });
       h += '</select>';
-      h += '<select class="form-input" style="margin-bottom:8px;font-size:12.5px;color:#64748b" onchange="cambiarProfesionalArea('+idx+','+aIdx+',this.value)">';
-      h += '<option value="">— Profesional —</option>';
-      nombresProfesionalesDisponibles(idx, aIdx).forEach(function(p){ h += '<option value="'+p+'" '+(a.profesional===p?'selected':'')+'>'+p+'</option>'; });
-      h += '</select>';
+      h += '<input type="text" class="form-input" placeholder="Profesional" style="margin-bottom:8px;font-size:12.5px;color:#64748b" value="'+esc(a.profesional||'')+'" oninput="cambiarProfesionalTexto('+idx+','+aIdx+',this.value)"/>';
       h += '<div class="fl-lbl" style="margin-bottom:4px">Alumnos</div>';
       h += '<div class="chk-group" style="max-height:190px;overflow-y:auto;flex-direction:column;gap:4px">';
       var coloresAlumnos = a.coloresAlumnos || {};
@@ -2629,9 +2622,8 @@ function eliminarArea(idx, aIdx){
 function cambiarCampoArea(idx, aIdx, campo, valor){
   HORARIOS_POR_DIA[_diaHorarioActual][idx].areas[aIdx][campo] = valor;
 }
-function cambiarProfesionalArea(idx, aIdx, valor){
+function cambiarProfesionalTexto(idx, aIdx, valor){
   HORARIOS_POR_DIA[_diaHorarioActual][idx].areas[aIdx].profesional = valor;
-  renderFranjasDia();
 }
 function cambiarColorAreaFondo(idx, aIdx, valor){
   HORARIOS_POR_DIA[_diaHorarioActual][idx].areas[aIdx].colorFondo = valor;
