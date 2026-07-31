@@ -251,6 +251,8 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   .reg-grid,.home-grid{gap:14px}
 }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
 
@@ -415,13 +417,13 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <!-- ===== DRIVE SIMULADO ===== -->
     <div id="view-drive" class="page hidden">
       <button class="btn-back" onclick="volverDeDrive()">← Volver</button>
-      <div class="info-banner">📁 Esta es una <strong>simulación</strong> de cómo se vería la carpeta sincronizada de Google Drive. Todavía no está conectada a vuestra cuenta real.</div>
+      <div id="drive-banner-dinamico"></div>
       <div class="card">
         <div class="card-header">
           <div id="drive-breadcrumb" style="font-size:13.5px;color:#64748b;font-weight:700">Mi unidad</div>
           <div style="display:flex;gap:8px;align-items:center">
             <div id="drive-zona-subida"></div>
-            <button class="btn-secondary btn-sm" onclick="mostrarAviso('Esto abriría esta carpeta directamente en tu Google Drive real, una vez conectada la cuenta.','🔗')">🔗 Abrir en Google Drive</button>
+            <button class="btn-secondary btn-sm" onclick="abrirEnDriveReal()">🔗 Abrir en Google Drive</button>
           </div>
         </div>
         <div class="docs-grid docs-list" id="drive-grid"></div>
@@ -546,6 +548,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-secondary" onclick="descargarHorarios()">⬇ Descargar</button>
           <button class="btn-secondary" onclick="imprimirHtml(generarHtmlHorarioSemana(), true)">🖨 Imprimir</button>
           <button class="btn-secondary" onclick="abrirHistoricoHorarios()">🕐 Histórico</button>
+          <button class="btn-secondary" onclick="verCarpetaHorariosDrive()">📁 Ver carpeta en Drive</button>
         </div>
       </div>
       <div class="tabs-bar">
@@ -951,6 +954,159 @@ function aplicarPermisosVisuales(){
     actualizarBadgeConexionDrive();
   }
 }
+/* ===================== CONEXIÓN REAL CON GOOGLE DRIVE (piloto: Horarios y Transporte) ===================== */
+var GOOGLE_CLIENT_ID = '496228924695-amquf0pghvq40ra9k81uv84t9v297n3d.apps.googleusercontent.com';
+var GOOGLE_API_KEY = 'AIzaSyDhLQKovtDLS_z8eLMVFgOb_uBEfW4BLwE';
+var GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+
+// Carpetas piloto: solo se guarda el nombre/ID esperado a modo de referencia para avisar si alguien
+// elige por error otra carpeta. El acceso real se concede siempre al elegir la carpeta con el selector
+// de Google (Picker) — nunca por conocer el ID de antemano.
+var CARPETAS_PILOTO = {
+  transporte: { nombre: 'Transporte', idEsperado: '1Yw-ako8Un8ZwTQl7MJiLd4xqhMa_y-aQ' },
+  horarios:   { nombre: 'Horarios',   idEsperado: '1-XmXxxCHkNd4UP42FF7EXgfLqot0rxYB' }
+};
+
+var _gapiListo = false;
+var _tokenClient = null;
+var _tokenActual = null;
+
+function cargarGapi(cb){
+  if(_gapiListo){ cb(); return; }
+  if(typeof gapi === 'undefined'){ mostrarAviso('No se pudo cargar la librería de Google. Comprueba tu conexión a internet e inténtalo de nuevo.', '⚠️'); return; }
+  gapi.load('client:picker', function(){
+    gapi.client.init({
+      apiKey: GOOGLE_API_KEY,
+      discoveryDocs: [
+        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+        'https://sheets.googleapis.com/$discovery/rest?version=v4'
+      ]
+    }).then(function(){ _gapiListo = true; cb(); },
+      function(err){ mostrarAviso('No se pudo inicializar la conexión con Google: '+(err && err.details ? err.details : 'error desconocido'), '⚠️'); });
+  });
+}
+
+function autorizarGoogleDrive(callback){
+  cargarGapi(function(){
+    if(typeof google === 'undefined' || !google.accounts){ mostrarAviso('No se pudo cargar el inicio de sesión de Google. Inténtalo de nuevo en unos segundos.', '⚠️'); return; }
+    if(!_tokenClient){
+      _tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: GOOGLE_SCOPES,
+        callback: function(resp){
+          if(resp.error){ mostrarAviso('No se pudo autorizar el acceso a Google Drive: '+resp.error, '⚠️'); return; }
+          _tokenActual = resp.access_token;
+          gapi.client.setToken({access_token: _tokenActual});
+          if(callback) callback();
+        }
+      });
+    }
+    _tokenClient.requestAccessToken({prompt: _tokenActual ? '' : 'consent'});
+  });
+}
+
+// Abre el selector de Google (Picker) para que la persona elija, con su propio ratón, la carpeta
+// concreta que quiere vincular. El permiso queda limitado solo a esa carpeta (y lo de dentro).
+function abrirSelectorCarpeta(tipoId){
+  autorizarGoogleDrive(function(){
+    var picker = new google.picker.PickerBuilder()
+      .addView(new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+        .setIncludeFolders(true)
+        .setSelectFolderEnabled(true)
+        .setMimeTypes('application/vnd.google-apps.folder')
+        .setEnableDrives(true))
+      .setOAuthToken(_tokenActual)
+      .setDeveloperKey(GOOGLE_API_KEY)
+      .setTitle('Elige la carpeta de '+((CARPETAS_PILOTO[tipoId]||{}).nombre||tipoId))
+      .setCallback(function(data){
+        if(data.action === google.picker.Action.PICKED){
+          var carpeta = data.docs[0];
+          var esperado = CARPETAS_PILOTO[tipoId];
+          localStorage.setItem('drive_real_'+tipoId, JSON.stringify({id: carpeta.id, nombre: carpeta.name}));
+          if(esperado && carpeta.id !== esperado.idEsperado){
+            mostrarAviso('Vinculada la carpeta "'+carpeta.name+'". Ojo: no coincide con el ID que nos habías pasado para '+esperado.nombre+' — si fue sin querer, vuelve a pulsar "Conectar" y elige la correcta.', '⚠️');
+          } else {
+            mostrarAviso('Carpeta "'+carpeta.name+'" vinculada correctamente. Ya puedes ver su contenido real.', '✅');
+          }
+          rerenderCarpetaDriveActual();
+        }
+      })
+      .build();
+    picker.setVisible(true);
+  });
+}
+
+function carpetaRealVinculada(tipoId){
+  var raw = localStorage.getItem('drive_real_'+tipoId);
+  return raw ? JSON.parse(raw) : null;
+}
+function desvincularCarpetaReal(tipoId){
+  localStorage.removeItem('drive_real_'+tipoId);
+  mostrarAviso('Carpeta desvinculada. Puedes conectarla de nuevo cuando quieras.');
+  rerenderCarpetaDriveActual();
+}
+
+function listarArchivosRealesDrive(tipoId, callback){
+  var vinculo = carpetaRealVinculada(tipoId);
+  if(!vinculo){ callback(null, 'no_vinculada'); return; }
+  autorizarGoogleDrive(function(){
+    gapi.client.drive.files.list({
+      q: "'"+vinculo.id+"' in parents and trashed = false",
+      fields: 'files(id, name, mimeType, webViewLink, modifiedTime)',
+      orderBy: 'name_natural',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
+    }).then(function(resp){ callback(resp.result.files, null); },
+      function(err){ callback(null, err); });
+  });
+}
+
+// Abre una carpeta que puede estar (a) ya vinculada a Drive real, (b) solo simulada todavía.
+function abrirCarpetaConectable(tipoId, tituloBase, vistaOrigen, docsSimuladosFallback, permitirSubirSimulado){
+  var vinculo = carpetaRealVinculada(tipoId);
+  var driveId = 'd'+(_driveIdSeq++);
+  if(vinculo){
+    _driveStore[driveId] = {titulo: tituloBase+' — '+vinculo.nombre+' (Drive real)', docs: [], cargando:true, tipoId: tipoId, folderIdReal: vinculo.id};
+    verCarpetaDrive(driveId, vistaOrigen);
+    listarArchivosRealesDrive(tipoId, function(archivos, err){
+      if(_driveIdActual !== driveId) return;
+      if(err){
+        _driveStore[driveId].cargando = false;
+        _driveStore[driveId].error = true;
+        verCarpetaDrive(driveId, vistaOrigen);
+        mostrarAviso('No se pudo leer la carpeta real de Drive. Puede que el permiso haya caducado — prueba a conectar de nuevo desde el botón de arriba.', '⚠️');
+        return;
+      }
+      _driveStore[driveId].cargando = false;
+      _driveStore[driveId].docs = (archivos||[]).map(function(a){
+        var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
+        var esSheet = a.mimeType && a.mimeType.indexOf('spreadsheet')>-1;
+        return {
+          nombre: a.name,
+          icono: esCarpeta ? '📁' : (esSheet ? '📊' : iconoPorExtension(a.name)),
+          accionPreview: "window.open('"+(a.webViewLink||'')+"','_blank')",
+          accionDescargar: "window.open('"+(a.webViewLink||'')+"','_blank')"
+        };
+      });
+      verCarpetaDrive(driveId, vistaOrigen);
+    });
+  } else {
+    _driveStore[driveId] = {titulo: tituloBase, docs: docsSimuladosFallback||[], permitirSubir: permitirSubirSimulado, noConectada:true, tipoId: tipoId};
+    verCarpetaDrive(driveId, vistaOrigen);
+  }
+}
+function rerenderCarpetaDriveActual(){
+  if(_driveIdActual && _driveStore[_driveIdActual]) verCarpetaDrive(_driveIdActual, _driveVistaAnterior);
+}
+function abrirEnDriveReal(){
+  var info = _driveIdActual ? _driveStore[_driveIdActual] : null;
+  if(info && info.folderIdReal){
+    window.open('https://drive.google.com/drive/folders/'+info.folderIdReal, '_blank');
+  } else {
+    mostrarAviso('Esta carpeta todavía no está conectada a Drive real. Usa el botón "🔗 Conectar con Drive" de arriba.', '🔗');
+  }
+}
+
 // Pinta el botón grande de acceso rápido a un tipo de Registro dentro de una página de área (Transporte/Ocio)
 function renderAccesoRegistroEnArea(contenedorId, tipoId){
   var el = document.getElementById(contenedorId);
@@ -1018,45 +1174,371 @@ var PERMISOS_ACTUAL = {usuarios:'todo',expedientes:'todo',registros:'todo',paap:
 
 var USUARIOS = [
   {
-    id:1, nombre:'Raúl', apellidos:'Gómez Pérez', dni:'12345678-A',
-    contacto:{tutor:'María Pérez (madre)', tel:'611 222 333', dom:'C/ Mayor 12, Madrid'},
+    id:1, nombre:'Alan', apellidos:'Hermo Placeres', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
     exp:{
-      identificacion:{nombre:'Raúl',apellidos:'Gómez Pérez',dni:'12345678-A',ss:'281234567890',lugarNac:'Madrid',fechaNac:'1998-04-12'},
-      docs_identificacion:['DNI - Raúl Gómez.pdf','Tarjeta Seguridad Social.pdf'],
-      ingresobaja:{adjudicacion:'2020-09-01',acept:'SÍ',adapt:'SÍ',baja:'-',motivo:'-'},
-      docs_ingresobaja:['Resolución de adjudicación de plaza.pdf'],
-      personales:{nombre:'María Pérez',tutor:'Madre',tel:'611 222 333',dom:'C/ Mayor 12, Madrid'},
-      docs_personales:['DNI del tutor - María Pérez.pdf'],
-      discapacidad:{dependencia:'Grado II',curatela:'Sí, curatela representativa',discapacidad:'65%',etiologia:'Parálisis Cerebral'},
-      docs_discapacidad:['Certificado de discapacidad.pdf','Resolución grado de dependencia.pdf'],
-      docs_ingreso:['Doc. entregada','Reglamento Régimen Interno','Derechos y Deberes','Consentimiento Explícito','Tratamiento de Datos','Toma de Imágenes','Política de Calidad','Autorización Ocio'],
-      docs_sujeciones:['Autorización dispositivos posturales (Marzo 2026)'],
-      docs_programa:['Informe Evaluación Inicial','PAAP 2026','Seguimiento Trimestral','Ficha Usuario','Registro Actividades'],
-      docs_informes:['Informe médico anual','Informe social 2025'],
-      docs_medicacion:['Administración Centro - Marzo','Administración Propia - Autorización'],
-      docs_otros:[],
-      docs_autorizaciones:['Autorización salidas','Autorización imágenes']
+      identificacion:{nombre:'Alan', apellidos:'Hermo Placeres', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
     }
   },
   {
-    id:2, nombre:'Edurne', apellidos:'Ibáñez Ruiz', dni:'87654321-B',
-    contacto:{tutor:'Pilar Ruiz (madre)', tel:'622 333 444', dom:'Av. Constitución 4, Madrid'},
+    id:2, nombre:'Alejandra', apellidos:'Sagüés García', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
     exp:{
-      identificacion:{nombre:'Edurne',apellidos:'Ibáñez Ruiz',dni:'87654321-B',ss:'281987654321',lugarNac:'Vallecas',fechaNac:'2001-11-02'},
-      docs_identificacion:['DNI - Edurne Ibáñez.pdf','Tarjeta Seguridad Social.pdf'],
-      ingresobaja:{adjudicacion:'2021-02-15',acept:'SÍ',adapt:'SÍ',baja:'-',motivo:'-'},
-      docs_ingresobaja:['Resolución de adjudicación de plaza.pdf'],
-      personales:{nombre:'Pilar Ruiz',tutor:'Madre',tel:'622 333 444',dom:'Av. Constitución 4, Madrid'},
-      docs_personales:['DNI del tutor - Pilar Ruiz.pdf'],
-      discapacidad:{dependencia:'Grado III',curatela:'Sí, curatela plena',discapacidad:'78%',etiologia:'Síndrome de Down'},
-      docs_discapacidad:['Certificado de discapacidad.pdf'],
-      docs_ingreso:['Doc. entregada','Reglamento Régimen Interno','Consentimiento Explícito','Tratamiento de Datos'],
-      docs_sujeciones:[],
-      docs_programa:['PAAP 2026','Ficha Usuario'],
-      docs_informes:['Informe médico anual'],
-      docs_medicacion:['Administración Centro - Marzo'],
-      docs_otros:['Certificado discapacidad'],
-      docs_autorizaciones:['Autorización salidas']
+      identificacion:{nombre:'Alejandra', apellidos:'Sagüés García', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:3, nombre:'Alejandro', apellidos:'González Arias', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Alejandro', apellidos:'González Arias', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:4, nombre:'Alfonso', apellidos:'Luis Julián Vicaria', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Alfonso', apellidos:'Luis Julián Vicaria', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:5, nombre:'Beatriz', apellidos:'González', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Beatriz', apellidos:'González', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:6, nombre:'Carlos', apellidos:'Izaguirre Nazar', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Carlos', apellidos:'Izaguirre Nazar', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:7, nombre:'Carlos', apellidos:'Velasco Martín', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Carlos', apellidos:'Velasco Martín', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:8, nombre:'Carmen', apellidos:'Eduarte Lendínez', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Carmen', apellidos:'Eduarte Lendínez', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:9, nombre:'Cristina', apellidos:'Fulido Rincón', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Cristina', apellidos:'Fulido Rincón', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:10, nombre:'David', apellidos:'Bonilla Granados', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'David', apellidos:'Bonilla Granados', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:11, nombre:'Eduardo', apellidos:'Cebrecos Rol', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Eduardo', apellidos:'Cebrecos Rol', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:12, nombre:'Edurne', apellidos:'Chunchurreta Merino', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Edurne', apellidos:'Chunchurreta Merino', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:13, nombre:'Isabel', apellidos:'Contreras de Blas', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Isabel', apellidos:'Contreras de Blas', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:14, nombre:'Javier', apellidos:'Ibáñez González', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Javier', apellidos:'Ibáñez González', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:15, nombre:'José', apellidos:'Antonio Brihuega Salas', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'José', apellidos:'Antonio Brihuega Salas', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:16, nombre:'José', apellidos:'María Rodríguez Lucas', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'José', apellidos:'María Rodríguez Lucas', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:17, nombre:'Juan', apellidos:'José Leganés Álcora', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Juan', apellidos:'José Leganés Álcora', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:18, nombre:'María', apellidos:'Tisca Porras Recio', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'María', apellidos:'Tisca Porras Recio', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:19, nombre:'Mercedes', apellidos:'García Martínez', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Mercedes', apellidos:'García Martínez', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:20, nombre:'Óscar', apellidos:'Martín Martínez', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Óscar', apellidos:'Martín Martínez', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:21, nombre:'Patricia', apellidos:'de Barrio López', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Patricia', apellidos:'de Barrio López', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:22, nombre:'Raúl', apellidos:'Álvarez Llanas', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Raúl', apellidos:'Álvarez Llanas', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
+    }
+  },
+  {
+    id:23, nombre:'Santiago', apellidos:'Patón Pascual', dni:'-',
+    contacto:{tutor:'-', tel:'-', dom:'-'},
+    exp:{
+      identificacion:{nombre:'Santiago', apellidos:'Patón Pascual', dni:'', ss:'', lugarNac:'', fechaNac:''},
+      docs_identificacion:[],
+      ingresobaja:{adjudicacion:'', acept:'', adapt:'', baja:'', motivo:''},
+      docs_ingresobaja:[],
+      personales:{nombre:'', tutor:'', tel:'', dom:''},
+      docs_personales:[],
+      discapacidad:{dependencia:'', curatela:'', discapacidad:'', etiologia:''},
+      docs_discapacidad:[],
+      docs_ingreso:[], docs_sujeciones:[], docs_programa:[], docs_informes:[],
+      docs_medicacion:[], docs_otros:[], docs_autorizaciones:[]
     }
   }
 ];
@@ -2929,9 +3411,12 @@ function verCarpetaRegistrosDigitales(vistaOrigen){
 
 // Carpeta pendiente de nombre definitivo (de momento "Medias Transporte")
 function verCarpetaMediasTransporte(){
-  var driveId = 'd'+(_driveIdSeq++);
-  _driveStore[driveId] = {titulo:'Medias Transporte (nombre provisional)', docs: []};
-  verCarpetaDrive(driveId, 'transporte');
+  abrirCarpetaConectable('transporte', 'Medias Transporte (nombre provisional)', 'transporte', [], false);
+}
+
+// Carpeta de Horarios (piloto de conexión real)
+function verCarpetaHorariosDrive(){
+  abrirCarpetaConectable('horarios', 'Horarios', 'horarios', [], false);
 }
 
 // Carpeta de cartas de autorización enviadas a las familias para las salidas de ocio
@@ -3062,6 +3547,18 @@ function verCarpetaDrive(driveId, vistaOrigenExplicita){
   _driveIdActual = driveId;
   _driveVistaAnterior = vistaOrigenExplicita || (document.getElementById('view-form-registro').classList.contains('hidden') ? 'expediente' : 'registros');
   document.getElementById('drive-breadcrumb').textContent = 'Mi unidad  ›  Centro Dato  ›  ' + info.titulo;
+  var bannerEl = document.getElementById('drive-banner-dinamico');
+  if(info.noConectada){
+    bannerEl.innerHTML = '<div class="info-banner">📁 Esto es una <strong>simulación</strong>. Para ver aquí el contenido real de Drive, conecta esta carpeta: <button class="btn-primary btn-sm" style="margin-left:8px" onclick="abrirSelectorCarpeta(\''+info.tipoId+'\')">🔗 Conectar con Drive</button></div>';
+  } else if(info.cargando){
+    bannerEl.innerHTML = '<div class="info-banner">⏳ Cargando el contenido real desde Google Drive…</div>';
+  } else if(info.error){
+    bannerEl.innerHTML = '<div class="info-banner">⚠️ No se pudo cargar el contenido real de esta carpeta. <button class="btn-secondary btn-sm" style="margin-left:8px" onclick="abrirSelectorCarpeta(\''+info.tipoId+'\')">🔗 Reconectar</button></div>';
+  } else if(info.folderIdReal){
+    bannerEl.innerHTML = '<div class="info-banner">✅ Conectada a la carpeta real de Google Drive. <button class="btn-secondary btn-sm" style="margin-left:8px" onclick="desvincularCarpetaReal(\''+info.tipoId+'\')">Desvincular</button></div>';
+  } else {
+    bannerEl.innerHTML = '<div class="info-banner">📁 Esta es una <strong>simulación</strong> de cómo se vería la carpeta sincronizada de Google Drive.</div>';
+  }
   var zonaSubida = document.getElementById('drive-zona-subida');
   zonaSubida.innerHTML = info.permitirSubir
     ? '<input type="file" id="input-subir-drive" accept=".txt,.docx,.pdf" class="hidden" onchange="subirArchivoADrive(event)"/><button class="btn-secondary btn-sm" onclick="document.getElementById(\'input-subir-drive\').click()">⬆ Subir archivo</button>'
