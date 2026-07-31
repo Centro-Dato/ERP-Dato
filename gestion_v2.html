@@ -535,6 +535,8 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="page-header">
         <div><div class="page-title">Asistencia</div><div class="page-subtitle" id="ocio-anio-titulo">Archivo 2026 — una pestaña por mes</div></div>
         <button class="btn-primary" onclick="guardarAsistenciaOcioEnDriveReal()">💾 Guardar en hoja de cálculo real</button>
+        <button class="btn-secondary btn-sm" onclick="abrirHojaOcioEnDrive()">📊 Abrir hoja en Drive</button>
+        <button class="btn-secondary btn-sm" onclick="aplicarFormatoHojaOcioActual()">🎨 Aplicar formato de colores</button>
         <button class="btn-secondary btn-sm" onclick="cambiarHojaOcioElegida()">🔗 Usar hoja de cálculo por enlace</button>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -1369,6 +1371,26 @@ function obtenerHojaOcioElegida(){
 }
 function fijarHojaOcioElegida(hoja){ localStorage.setItem('drive_hoja_ocio', JSON.stringify(hoja)); }
 function olvidarHojaOcioElegida(){ localStorage.removeItem('drive_hoja_ocio'); }
+function abrirHojaOcioEnDrive(){
+  var hoja = obtenerHojaOcioElegida();
+  if(!hoja){ mostrarAviso('Todavía no hay ninguna hoja de cálculo vinculada. Usa "🔗 Usar hoja de cálculo por enlace" primero.', 'ℹ️'); return; }
+  window.open('https://docs.google.com/spreadsheets/d/'+hoja.id+'/edit', '_blank');
+}
+function aplicarFormatoHojaOcioActual(){
+  var hoja = obtenerHojaOcioElegida();
+  if(!hoja){ mostrarAviso('Todavía no hay ninguna hoja de cálculo vinculada. Usa "🔗 Usar hoja de cálculo por enlace" primero.', 'ℹ️'); return; }
+  mostrarAviso('Aplicando el formato de colores a la pestaña "'+_ocioMesActual+'"…', '🎨');
+  autorizarGoogleDrive(function(){
+    gapi.client.sheets.spreadsheets.get({spreadsheetId: hoja.id}).then(function(resp){
+      var pestana = (resp.result.sheets||[]).filter(function(s){ return s.properties.title === _ocioMesActual; })[0];
+      if(!pestana){ mostrarAviso('Esa pestaña todavía no existe en la hoja. Guarda primero con "💾 Guardar en hoja de cálculo real".', '⚠️'); return; }
+      formatearHojaAsistenciaOcio(hoja.id, pestana.properties.sheetId, function(err){
+        if(err){ mostrarAviso('No se pudo aplicar el formato.', '⚠️'); return; }
+        mostrarAviso('Formato de colores aplicado a "'+_ocioMesActual+'".', '✅');
+      });
+    }, function(){ mostrarAviso('No se pudo leer la hoja de cálculo.', '⚠️'); });
+  });
+}
 function cambiarHojaOcioElegida(){
   olvidarHojaOcioElegida();
   abrirModalPegarHojaOcio();
