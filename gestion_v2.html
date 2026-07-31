@@ -510,7 +510,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="page-header">
         <div><div class="page-title">Actividades de Ocio</div><div class="page-subtitle">Registro, cartas y asistencia de las salidas de ocio</div></div>
       </div>
-      <div class="reg-grid" style="margin-bottom:22px" id="ocio-acceso-registro"></div>
       <div class="card" style="margin-bottom:18px">
         <div class="card-header">
           <div class="card-title">📁 Cartas</div>
@@ -966,7 +965,7 @@ function irA(modulo){
   if(modulo==='usuarios' || modulo==='expedientes') navTo('usuarios');
   if(modulo==='registros') navTo('registros');
   if(modulo==='transporte'){ renderAccesoRegistroEnArea('transporte-acceso-registro','transporte'); navTo('transporte'); }
-  if(modulo==='ocio'){ renderAccesoRegistroEnArea('ocio-acceso-registro','actividades'); navTo('ocio'); }
+  if(modulo==='ocio'){ navTo('ocio'); }
   if(modulo==='horarios'){ renderHorarios(); navTo('horarios'); }
   if(modulo==='paap'){ renderPaapGrid(); navTo('paap'); }
 }
