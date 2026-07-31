@@ -709,8 +709,39 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           Este interruptor solo lo veis Carlos, Tere y tú. Ahora mismo el programa todavía no está conectado de verdad a Drive/API — este control queda preparado para el día que sí lo esté: en "Desactivada", el programa funciona como hasta ahora (simulado); en "Activada", sincronizaría de verdad con vuestra cuenta de Google Drive.
         </p>
       </div>
+
+      <div class="card" style="margin-top:24px" id="tarjeta-buzon-sugerencias">
+        <div class="card-header">
+          <div class="card-title">📬 Buzón de Sugerencias y Quejas</div>
+          <button class="btn-primary btn-sm" onclick="abrirModalNuevoMensajeBuzon()">+ Nuevo mensaje</button>
+        </div>
+        <p style="color:#64748b;font-size:13.5px;line-height:1.6;margin-bottom:14px">
+          Espacio para que cualquier persona del equipo deje sugerencias, quejas o incidencias sobre el funcionamiento del programa. De momento se guarda en este navegador (no se comparte todavía entre dispositivos); cuando conectemos esta carpeta a Drive de verdad, pasará a verse por todo el equipo desde cualquier sitio.
+        </p>
+        <div id="lista-buzon-sugerencias"></div>
+      </div>
     </div>
 
+  </div>
+</div>
+
+<div id="modal-nuevo-mensaje-buzon" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalNuevoMensajeBuzon()">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">📬 Nuevo mensaje al buzón</div>
+    <div class="modal-sub">Tu nombre y la fecha se añaden automáticamente</div>
+    <label class="form-lbl" for="buzon-tipo">Tipo</label>
+    <select class="form-input" id="buzon-tipo" style="margin-bottom:14px">
+      <option value="Sugerencia">💡 Sugerencia</option>
+      <option value="Queja">⚠️ Queja</option>
+      <option value="Incidencia técnica">🐞 Incidencia técnica</option>
+      <option value="Felicitación">🎉 Felicitación</option>
+    </select>
+    <label class="form-lbl" for="buzon-mensaje">Mensaje</label>
+    <textarea class="form-input" id="buzon-mensaje" rows="4" style="margin-bottom:16px" placeholder="Escribe aquí lo que quieras comentar..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="cerrarModalNuevoMensajeBuzon()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarMensajeBuzon()">Enviar</button>
+    </div>
   </div>
 </div>
 
@@ -1166,6 +1197,71 @@ function abrirEnDriveReal(){
   } else {
     mostrarAviso('Esta carpeta todavía no está conectada a Drive real. Usa el botón "🔗 Conectar con Drive" de arriba.', '🔗');
   }
+}
+
+/* ===================== BUZÓN DE SUGERENCIAS Y QUEJAS ===================== */
+var BUZON_ICONOS = {'Sugerencia':'💡','Queja':'⚠️','Incidencia técnica':'🐞','Felicitación':'🎉'};
+function leerMensajesBuzon(){
+  try{
+    var raw = localStorage.getItem('buzon_sugerencias');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e){ return []; }
+}
+function guardarMensajesBuzon(lista){
+  localStorage.setItem('buzon_sugerencias', JSON.stringify(lista));
+}
+function abrirModalNuevoMensajeBuzon(){
+  document.getElementById('buzon-tipo').value = 'Sugerencia';
+  document.getElementById('buzon-mensaje').value = '';
+  document.getElementById('modal-nuevo-mensaje-buzon').classList.remove('hidden');
+}
+function cerrarModalNuevoMensajeBuzon(){
+  document.getElementById('modal-nuevo-mensaje-buzon').classList.add('hidden');
+}
+function guardarMensajeBuzon(){
+  var tipo = document.getElementById('buzon-tipo').value;
+  var mensaje = document.getElementById('buzon-mensaje').value.trim();
+  if(!mensaje){ mostrarAviso('Escribe algo antes de enviarlo.'); return; }
+  var lista = leerMensajesBuzon();
+  lista.unshift({
+    id: Date.now(),
+    tipo: tipo,
+    mensaje: mensaje,
+    autor: (typeof USUARIO_ACTUAL !== 'undefined' && USUARIO_ACTUAL) ? USUARIO_ACTUAL.nombre : 'Empleado',
+    fecha: new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'})
+  });
+  guardarMensajesBuzon(lista);
+  cerrarModalNuevoMensajeBuzon();
+  renderBuzonSugerencias();
+  mostrarAviso('Mensaje enviado al buzón. ¡Gracias por tu aportación!', '📬');
+}
+function eliminarMensajeBuzon(id){
+  var lista = leerMensajesBuzon().filter(function(m){ return m.id !== id; });
+  guardarMensajesBuzon(lista);
+  renderBuzonSugerencias();
+}
+function renderBuzonSugerencias(){
+  var cont = document.getElementById('lista-buzon-sugerencias');
+  if(!cont) return;
+  var lista = leerMensajesBuzon();
+  var puedeEliminar = PERMISOS_ACTUAL.configuracion === 'todo';
+  if(lista.length === 0){
+    cont.innerHTML = '<div class="empty-state">Todavía no hay ningún mensaje. Sé el primero en escribir algo con "+ Nuevo mensaje".</div>';
+    return;
+  }
+  var h = '';
+  lista.forEach(function(m){
+    h += '<div class="doc-item" style="align-items:flex-start">';
+    h += '<div class="doc-ic">'+(BUZON_ICONOS[m.tipo]||'📝')+'</div>';
+    h += '<div style="flex:1"><div class="doc-name">'+m.tipo+'</div>';
+    h += '<div style="font-size:13.5px;color:#334155;margin:4px 0;white-space:pre-wrap">'+esc(m.mensaje)+'</div>';
+    h += '<div class="doc-sub">'+esc(m.autor)+' · '+m.fecha+'</div></div>';
+    if(puedeEliminar){
+      h += '<div class="doc-actions"><button class="doc-btn" title="Eliminar" onclick="eliminarMensajeBuzon('+m.id+')">🗑️</button></div>';
+    }
+    h += '</div>';
+  });
+  cont.innerHTML = h;
 }
 
 // Pinta el botón grande de acceso rápido a un tipo de Registro dentro de una página de área (Transporte/Ocio)
@@ -3883,6 +3979,7 @@ function renderConfig(){
     h += '</tr>';
   });
   document.getElementById('tbl-config').innerHTML = h;
+  renderBuzonSugerencias();
 }
 /* ---- Interruptor de Conexión con Drive/API (solo visible para quien tenga el permiso) ---- */
 var CONEXION_DRIVE_ACTIVA = false;
