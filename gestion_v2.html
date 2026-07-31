@@ -41,18 +41,19 @@ button{font-family:inherit}
 .sb-logo-title{font-size:20px;font-weight:800}
 .sb-logo-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:4px}
 .sb-nav{flex:1;padding:14px 8px;overflow-y:auto}
-.sb-nav-item{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:12px;font-size:16.5px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.72);margin-bottom:5px;transition:background .15s}
+.sb-nav-item{display:flex;align-items:center;gap:14px;padding:18px 18px;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.72);margin-bottom:6px;transition:background .15s}
 .sb-nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
 .sb-nav-item.active{background:var(--primary);color:#fff}
 .sb-nav-item.disabled{opacity:.3;cursor:default}
+.sb-nav-ic{font-size:24px;opacity:1;filter:saturate(1.3) brightness(1.15)}
 .sb-section{font-size:10px;font-weight:800;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em;padding:16px 16px 7px}
 .sb-user{padding:18px 18px;border-top:1px solid rgba(255,255,255,.12)}
 .sb-user-row{display:flex;align-items:center;gap:13px;margin-bottom:13px}
 .sb-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
 .sb-user-name{font-size:16px;font-weight:700}
 .sb-user-role{font-size:13px;color:rgba(255,255,255,.5);text-transform:capitalize}
-.sb-logout{background:none;border:none;color:rgba(255,255,255,.45);font-size:14.5px;cursor:pointer;padding:0;text-align:left;width:100%;font-weight:700}
-.sb-logout:hover{color:rgba(255,255,255,.8)}
+.sb-logout{background:none;border:none;color:rgba(255,255,255,.5);font-size:16px;cursor:pointer;padding:0;text-align:left;width:100%;font-weight:700}
+.sb-logout:hover{color:rgba(255,255,255,.85)}
 .main-content{flex:1;overflow-y:auto}
 .page{padding:38px 44px}
 /* BOTONES */
@@ -288,8 +289,8 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     </div>
     <button class="btn-menu-movil" onclick="alternarMenuMovil(event)" title="Menú">☰</button>
     <div class="sb-nav">
-      <div class="sb-nav-item" id="nav-config" onclick="navTo('config');cerrarMenuMovil()">⚙️&nbsp; Configuración</div>
-      <div class="sb-nav-item" id="nav-buzon" onclick="navTo('buzon');cerrarMenuMovil()">📬&nbsp; Buzón de Sugerencias</div>
+      <div class="sb-nav-item" id="nav-config" onclick="navTo('config');cerrarMenuMovil()"><span class="sb-nav-ic">⚙️</span> Configuración</div>
+      <div class="sb-nav-item" id="nav-buzon" onclick="abrirModalNuevoMensajeBuzon();cerrarMenuMovil()"><span class="sb-nav-ic">📬</span> Buzón de Sugerencias</div>
     </div>
     <div class="sb-user">
       <div class="sb-user-row">
@@ -710,17 +711,15 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           Este interruptor solo lo veis Carlos, Tere y tú. Ahora mismo el programa todavía no está conectado de verdad a Drive/API — este control queda preparado para el día que sí lo esté: en "Desactivada", el programa funciona como hasta ahora (simulado); en "Activada", sincronizaría de verdad con vuestra cuenta de Google Drive.
         </p>
       </div>
-    </div>
 
-    <!-- ===== BUZÓN DE SUGERENCIAS ===== -->
-    <div id="view-buzon" class="page hidden">
-      <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
-      <div class="page-header">
-        <div><div class="page-title">📬 Buzón de Sugerencias y Quejas</div><div class="page-subtitle">Cualquiera del equipo puede dejar aquí sugerencias, quejas o incidencias sobre el programa</div></div>
-        <button class="btn-primary" onclick="abrirModalNuevoMensajeBuzon()">+ Nuevo mensaje</button>
-      </div>
-      <div class="info-banner">ℹ️ De momento se guarda en este navegador (no se comparte todavía entre dispositivos); cuando conectemos esta carpeta a Drive de verdad, pasará a verse por todo el equipo desde cualquier sitio.</div>
-      <div class="card" style="margin-top:16px">
+      <div class="card" style="margin-top:24px" id="tarjeta-buzon-sugerencias">
+        <div class="card-header">
+          <div class="card-title">📬 Buzón de Sugerencias y Quejas</div>
+          <button class="btn-primary btn-sm" onclick="abrirModalNuevoMensajeBuzon()">+ Nuevo mensaje</button>
+        </div>
+        <p style="color:#64748b;font-size:13.5px;line-height:1.6;margin-bottom:14px">
+          Solo Carlos, Tere y tú veis estos mensajes. De momento se guardan en este navegador (no se comparten todavía entre dispositivos); cuando conectemos esta carpeta a Drive de verdad, se verán por todo el equipo de coordinación desde cualquier sitio.
+        </p>
         <div id="lista-buzon-sugerencias"></div>
       </div>
     </div>
@@ -3091,15 +3090,14 @@ document.getElementById('btn-logout').onclick = function(){
 
 /* ===================== NAVEGACIÓN ===================== */
 function navTo(view){
-  ['inicio','usuarios','registros','config','buzon'].forEach(function(v){
+  ['inicio','usuarios','registros','config'].forEach(function(v){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','transporte','ocio','asistencia-ocio','carta-ocio','horarios','historico-horarios','paap','paap-detalle','config','buzon'].forEach(function(v){
+  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','transporte','ocio','asistencia-ocio','carta-ocio','horarios','historico-horarios','paap','paap-detalle','config'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
-  if(view==='buzon') renderBuzonSugerencias();
 }
 
 /* ===================== INICIO ===================== */
@@ -3985,6 +3983,7 @@ function renderConfig(){
     h += '</tr>';
   });
   document.getElementById('tbl-config').innerHTML = h;
+  renderBuzonSugerencias();
 }
 /* ---- Interruptor de Conexión con Drive/API (solo visible para quien tenga el permiso) ---- */
 var CONEXION_DRIVE_ACTIVA = false;
