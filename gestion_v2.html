@@ -2265,7 +2265,7 @@ function renderTablaAsistenciaOcio(){
   actividades.forEach(function(a){ h += '<th class="ocio-th-fecha" colspan="3">'+a.fecha+'</th>'; });
   h += '</tr><tr>';
   actividades.forEach(function(a, i){
-    h += '<th class="ocio-th-actividad" colspan="3">'+a.nombre.toUpperCase()+' '+
+    h += '<th class="ocio-th-actividad" colspan="3">'+a.nombre.toUpperCase()+(a.precio?' — '+esc(a.precio):'')+' '+
       '<button class="doc-btn" style="width:20px;height:20px;font-size:11px;vertical-align:middle" title="Editar salida" onclick="abrirModalActividadOcio('+i+')">✏️</button>'+
       '<button class="doc-btn" style="width:20px;height:20px;font-size:11px;vertical-align:middle" title="Eliminar salida" onclick="eliminarActividadOcio('+i+')">🗑️</button>'+
       '</th>';
