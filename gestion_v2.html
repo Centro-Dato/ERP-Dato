@@ -1197,8 +1197,10 @@ function abrirEnDriveReal(){
   var info = _driveIdActual ? _driveStore[_driveIdActual] : null;
   if(info && info.folderIdReal){
     window.open('https://drive.google.com/drive/folders/'+info.folderIdReal, '_blank');
+  } else if(info && info.tipoId){
+    abrirSelectorCarpeta(info.tipoId);
   } else {
-    mostrarAviso('Esta carpeta todavía no está conectada a Drive real. Usa el botón "🔗 Conectar con Drive" de arriba.', '🔗');
+    mostrarAviso('Esta carpeta todavía no está conectada a Drive real.', '🔗');
   }
 }
 
