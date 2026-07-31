@@ -710,7 +710,12 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <p style="color:#64748b;font-size:13.5px;line-height:1.6">
           Este interruptor solo lo veis Carlos, Tere y tú. Ahora mismo el programa todavía no está conectado de verdad a Drive/API — este control queda preparado para el día que sí lo esté: en "Desactivada", el programa funciona como hasta ahora (simulado); en "Activada", sincronizaría de verdad con vuestra cuenta de Google Drive.
         </p>
+        <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
+          <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
+          <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios y Transporte</button>
+        </div>
       </div>
+
 
       <div class="card" style="margin-top:24px" id="tarjeta-buzon-sugerencias">
         <div class="card-header">
@@ -1207,6 +1212,24 @@ function abrirEnDriveReal(){
   } else {
     mostrarAviso('Esta carpeta todavía no está conectada a Drive real.', '🔗');
   }
+}
+
+function estadoTextoCarpetaPiloto(tipoId, nombre){
+  var v = carpetaRealVinculada(tipoId);
+  return '<strong>'+nombre+':</strong> ' + (v ? ('vinculada a "'+esc(v.nombre)+'"') : 'sin vincular todavía');
+}
+function renderEstadoCarpetasPiloto(){
+  var el = document.getElementById('estado-carpetas-piloto');
+  if(!el) return;
+  el.innerHTML = estadoTextoCarpetaPiloto('horarios','Horarios') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('transporte','Transporte');
+}
+function reiniciarConexionesDrivePiloto(){
+  localStorage.removeItem('drive_real_horarios');
+  localStorage.removeItem('drive_real_transporte');
+  _tokenActual = null;
+  _tokenClient = null;
+  renderEstadoCarpetasPiloto();
+  mostrarAviso('Conexiones de Horarios y Transporte reiniciadas del todo. La próxima vez que pulses "Abrir en Google Drive" en cualquiera de las dos, se abrirá el selector desde cero.', '🔄');
 }
 
 /* ===================== BUZÓN DE SUGERENCIAS Y QUEJAS ===================== */
@@ -3976,6 +3999,7 @@ function renderConfig(){
   });
   document.getElementById('tbl-config').innerHTML = h;
   renderBuzonSugerencias();
+  renderEstadoCarpetasPiloto();
 }
 /* ---- Interruptor de Conexión con Drive/API (solo visible para quien tenga el permiso) ---- */
 var CONEXION_DRIVE_ACTIVA = false;
