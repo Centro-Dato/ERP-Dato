@@ -533,6 +533,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('ocio')">← Volver a Actividades de Ocio</button>
       <div class="page-header">
         <div><div class="page-title">Asistencia</div><div class="page-subtitle" id="ocio-anio-titulo">Archivo 2026 — una pestaña por mes</div></div>
+        <button class="btn-primary" onclick="guardarAsistenciaOcioEnDriveReal()">💾 Guardar en hoja de cálculo real</button>
       </div>
       <div class="tabs-bar" id="ocio-meses-tabs"></div>
       <div id="ocio-tabla-contenido"></div>
@@ -711,7 +712,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         </p>
         <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
-          <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios y Transporte</button>
+          <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios, Transporte y Ocio</button>
         </div>
       </div>
 
@@ -1001,7 +1002,8 @@ var GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.goog
 // de Google (Picker) — nunca por conocer el ID de antemano.
 var CARPETAS_PILOTO = {
   transporte: { nombre: 'Transporte', idEsperado: '1Yw-ako8Un8ZwTQl7MJiLd4xqhMa_y-aQ' },
-  horarios:   { nombre: 'Horarios',   idEsperado: '1-XmXxxCHkNd4UP42FF7EXgfLqot0rxYB' }
+  horarios:   { nombre: 'Horarios',   idEsperado: '1-XmXxxCHkNd4UP42FF7EXgfLqot0rxYB' },
+  ocio:       { nombre: 'Ocio (2025-2026)', idEsperado: '1AvkI3WD6g2aI3677zi9locXBP0gz9L-8' }
 };
 
 var _gapiListo = false;
@@ -1129,6 +1131,87 @@ function listarArchivosRealesDrive(tipoId, callback){
   });
 }
 
+/* ---- Guardar la Asistencia de Ocio en la hoja de cálculo real de la carpeta conectada ---- */
+function encontrarHojaCalculoEnCarpeta(tipoId, callback){
+  var vinculo = carpetaRealVinculada(tipoId);
+  if(!vinculo){ callback(null, 'no_vinculada'); return; }
+  autorizarGoogleDrive(function(){
+    try{
+      gapi.client.drive.files.list({
+        q: "'"+vinculo.id+"' in parents and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+        fields: 'files(id, name)',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      }).then(function(resp){ callback(resp.result.files, null); }, function(err){ callback(null, err); });
+    } catch(e){ callback(null, e); }
+  });
+}
+function asegurarPestanaSheet(spreadsheetId, nombrePestana, callback){
+  autorizarGoogleDrive(function(){
+    try{
+      gapi.client.sheets.spreadsheets.get({spreadsheetId: spreadsheetId}).then(function(resp){
+        var existe = (resp.result.sheets||[]).some(function(s){ return s.properties.title === nombrePestana; });
+        if(existe){ callback(null); return; }
+        gapi.client.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: spreadsheetId,
+          resource: { requests: [{ addSheet: { properties: { title: nombrePestana } } }] }
+        }).then(function(){ callback(null); }, function(err){ callback(err); });
+      }, function(err){ callback(err); });
+    } catch(e){ callback(e); }
+  });
+}
+function construirFilasAsistenciaOcio(){
+  var actividades = OCIO_ACTIVIDADES[_ocioMesActual] || [];
+  var usuariosOrdenados = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;});
+  var filas = [];
+  var header1 = ['Usuario'], header2 = [''], header3 = [''];
+  actividades.forEach(function(a){
+    header1.push(a.fecha,'',''); header2.push(a.nombre.toUpperCase(),'',''); header3.push('SI','NO','Pagado');
+  });
+  filas.push(header1, header2, header3);
+  usuariosOrdenados.forEach(function(u){
+    var fila = [u.nombre+' '+u.apellidos];
+    actividades.forEach(function(a, i){
+      var d = (OCIO_ASISTENCIA[_ocioMesActual][u.id]||[])[i] || {};
+      fila.push(d.si?'X':'', d.no?'X':'', d.pagado?'X':'');
+    });
+    filas.push(fila);
+  });
+  return filas;
+}
+function guardarAsistenciaOcioEnDriveReal(){
+  var vinculo = carpetaRealVinculada('ocio');
+  if(!vinculo){
+    mostrarAviso('Primero hay que conectar la carpeta de Ocio con Google Drive. Se abre el selector ahora — elige la carpeta "2025-2026".', '🔗');
+    abrirSelectorCarpeta('ocio');
+    return;
+  }
+  mostrarAviso('Buscando la hoja de cálculo dentro de la carpeta de Ocio…', '⏳');
+  encontrarHojaCalculoEnCarpeta('ocio', function(archivos, err){
+    if(err){ mostrarAviso('No se pudo acceder a la carpeta de Ocio. Prueba a reconectar (Configuración → Reiniciar conexiones, y vuelve a elegir la carpeta).', '⚠️'); return; }
+    if(!archivos || archivos.length===0){ mostrarAviso('No he encontrado ninguna hoja de cálculo dentro de esa carpeta.', '⚠️'); return; }
+    var hoja = archivos[0];
+    if(archivos.length>1){
+      mostrarAviso('Aviso: hay varias hojas de cálculo en esa carpeta; voy a guardar en "'+hoja.name+'". Dime si debería ser otra.', 'ℹ️');
+    }
+    asegurarPestanaSheet(hoja.id, _ocioMesActual, function(errPestana){
+      if(errPestana){ mostrarAviso('No se pudo preparar la pestaña de "'+_ocioMesActual+'" en la hoja de cálculo.', '⚠️'); return; }
+      var filas = construirFilasAsistenciaOcio();
+      gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: hoja.id,
+        range: "'"+_ocioMesActual+"'!A1",
+        valueInputOption: 'RAW',
+        resource: { values: filas }
+      }).then(function(){
+        mostrarAviso('Guardado en "'+hoja.name+'", pestaña "'+_ocioMesActual+'".', '✅');
+      }, function(errGuardar){
+        var msg = (errGuardar && errGuardar.result && errGuardar.result.error) ? errGuardar.result.error.message : 'error desconocido';
+        mostrarAviso('No se pudo guardar en la hoja de cálculo: '+msg, '⚠️');
+      });
+    });
+  });
+}
+
 // Refresca la ficha de Drive que esté abierta AHORA MISMO con el contenido real de la carpeta recién
 // vinculada (o ya vinculada). Se usa tanto justo después de elegirla en el selector como al reconectar.
 function cargarContenidoRealEnCarpetaActual(tipoId, folderId, folderNombre){
@@ -1220,15 +1303,16 @@ function estadoTextoCarpetaPiloto(tipoId, nombre){
 function renderEstadoCarpetasPiloto(){
   var el = document.getElementById('estado-carpetas-piloto');
   if(!el) return;
-  el.innerHTML = estadoTextoCarpetaPiloto('horarios','Horarios') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('transporte','Transporte');
+  el.innerHTML = estadoTextoCarpetaPiloto('horarios','Horarios') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('transporte','Transporte') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('ocio','Ocio');
 }
 function reiniciarConexionesDrivePiloto(){
   localStorage.removeItem('drive_real_horarios');
   localStorage.removeItem('drive_real_transporte');
+  localStorage.removeItem('drive_real_ocio');
   _tokenActual = null;
   _tokenClient = null;
   renderEstadoCarpetasPiloto();
-  mostrarAviso('Conexiones de Horarios y Transporte reiniciadas del todo. La próxima vez que pulses "Abrir en Google Drive" en cualquiera de las dos, se abrirá el selector desde cero.', '🔄');
+  mostrarAviso('Conexiones de Horarios, Transporte y Ocio reiniciadas del todo. La próxima vez que conectes cualquiera de ellas, se abrirá el selector desde cero.', '🔄');
 }
 
 /* ===================== BUZÓN DE SUGERENCIAS Y QUEJAS ===================== */
