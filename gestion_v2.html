@@ -765,10 +765,20 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div class="modal-title" id="titulo-modal-actividad-ocio">Nueva salida</div>
     <label class="form-lbl">Nombre de la actividad</label>
     <input type="text" class="form-input" id="act-ocio-nombre" style="margin-bottom:12px" placeholder="Ej: Cine"/>
-    <label class="form-lbl">Fecha (como se ve en la tabla)</label>
-    <input type="text" class="form-input" id="act-ocio-fecha" style="margin-bottom:12px" placeholder="Ej: mié, 1 jul 2026"/>
-    <label class="form-lbl">Fecha para la carta a familias</label>
-    <input type="text" class="form-input" id="act-ocio-fechacarta" style="margin-bottom:12px" placeholder="Ej: Miércoles 1 de JULIO"/>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="flex:1">
+        <label class="form-lbl">Fecha</label>
+        <input type="date" class="form-input" id="act-ocio-fecha-inicio" onchange="actualizarFechasActividadOcio()"/>
+      </div>
+      <div style="flex:1">
+        <label class="form-lbl">Hasta (si dura varios días)</label>
+        <input type="date" class="form-input" id="act-ocio-fecha-fin" onchange="actualizarFechasActividadOcio()"/>
+      </div>
+    </div>
+    <label class="form-lbl">Fecha (como se ve en la tabla) — se rellena sola, puedes ajustarla</label>
+    <input type="text" class="form-input" id="act-ocio-fecha" style="margin-bottom:12px" placeholder="Se rellena al elegir la fecha de arriba"/>
+    <label class="form-lbl">Fecha para la carta a familias — se rellena sola, puedes ajustarla</label>
+    <input type="text" class="form-input" id="act-ocio-fechacarta" style="margin-bottom:12px" placeholder="Se rellena al elegir la fecha de arriba"/>
     <label class="form-lbl">Descripción (para la carta)</label>
     <textarea class="form-input" id="act-ocio-descripcion" rows="3" style="margin-bottom:12px"></textarea>
     <label class="form-lbl">Precio</label>
@@ -2305,11 +2315,41 @@ function abrirModalActividadOcio(idx){
   var a = (_actividadOcioEditandoIdx!==null) ? (OCIO_ACTIVIDADES[_ocioMesActual]||[])[_actividadOcioEditandoIdx] : null;
   document.getElementById('titulo-modal-actividad-ocio').textContent = a ? 'Editar salida' : 'Nueva salida';
   document.getElementById('act-ocio-nombre').value = a ? a.nombre : '';
+  document.getElementById('act-ocio-fecha-inicio').value = '';
+  document.getElementById('act-ocio-fecha-fin').value = '';
   document.getElementById('act-ocio-fecha').value = a ? a.fecha : '';
   document.getElementById('act-ocio-fechacarta').value = a ? (a.fechaCarta||'') : '';
   document.getElementById('act-ocio-descripcion').value = a ? (a.descripcion||'') : '';
   document.getElementById('act-ocio-precio').value = a ? (a.precio||'') : '';
   document.getElementById('modal-actividad-ocio').classList.remove('hidden');
+}
+var DIAS_SEMANA_ABREV_OCIO = ['dom','lun','mar','mié','jue','vie','sáb'];
+var DIAS_SEMANA_COMPLETO_OCIO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+var MESES_ABREV_OCIO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var MESES_MAYUS_OCIO = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+function parsearFechaLocalOcio(iso){
+  var p = iso.split('-');
+  return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+}
+function actualizarFechasActividadOcio(){
+  var ini = document.getElementById('act-ocio-fecha-inicio').value;
+  var fin = document.getElementById('act-ocio-fecha-fin').value;
+  if(!ini) return;
+  var dIni = parsearFechaLocalOcio(ini);
+  if(fin && fin !== ini){
+    var dFin = parsearFechaLocalOcio(fin);
+    document.getElementById('act-ocio-fecha').value = dIni.getDate()+'-'+dFin.getDate()+' '+MESES_ABREV_OCIO[dIni.getMonth()]+' '+dIni.getFullYear();
+    var dias = [];
+    var cursor = new Date(dIni);
+    while(cursor <= dFin){
+      dias.push(DIAS_SEMANA_COMPLETO_OCIO[cursor.getDay()]+' '+cursor.getDate());
+      cursor.setDate(cursor.getDate()+1);
+    }
+    document.getElementById('act-ocio-fechacarta').value = dias.join(', ')+' de '+MESES_MAYUS_OCIO[dIni.getMonth()];
+  } else {
+    document.getElementById('act-ocio-fecha').value = DIAS_SEMANA_ABREV_OCIO[dIni.getDay()]+', '+dIni.getDate()+' '+MESES_ABREV_OCIO[dIni.getMonth()]+' '+dIni.getFullYear();
+    document.getElementById('act-ocio-fechacarta').value = DIAS_SEMANA_COMPLETO_OCIO[dIni.getDay()]+' '+dIni.getDate()+' de '+MESES_MAYUS_OCIO[dIni.getMonth()];
+  }
 }
 function cerrarModalActividadOcio(){
   document.getElementById('modal-actividad-ocio').classList.add('hidden');
@@ -2363,9 +2403,9 @@ function pedirConfirmacion(titulo, sub, callback){
   document.getElementById('modal-confirmar-accion').classList.remove('hidden');
 }
 
-/* ---- Ver la carpeta real de Ocio en Drive ---- */
+/* ---- Ver la carpeta real de Ocio en Drive (enlace directo, sin pasar por la API) ---- */
 function abrirCarpetaOcioDrive(){
-  abrirCarpetaConectable('ocio', 'Ocio (2025-2026)', 'ocio', [], false);
+  window.open('https://drive.google.com/drive/folders/1AvkI3WD6g2aI3677zi9locXBP0gz9L-8', '_blank');
 }
 
 /* ---- Carta mensual de Actividades de Ocio: plantilla editable, para imprimir o descargar ---- */
