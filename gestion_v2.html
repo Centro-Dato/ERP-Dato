@@ -1232,12 +1232,14 @@ function asegurarPestanaSheet(spreadsheetId, nombrePestana, callback){
   autorizarGoogleDrive(function(){
     try{
       gapi.client.sheets.spreadsheets.get({spreadsheetId: spreadsheetId}).then(function(resp){
-        var existe = (resp.result.sheets||[]).some(function(s){ return s.properties.title === nombrePestana; });
-        if(existe){ callback(null); return; }
+        var existente = (resp.result.sheets||[]).filter(function(s){ return s.properties.title === nombrePestana; })[0];
+        if(existente){ callback(null, existente.properties.sheetId); return; }
         gapi.client.sheets.spreadsheets.batchUpdate({
           spreadsheetId: spreadsheetId,
           resource: { requests: [{ addSheet: { properties: { title: nombrePestana } } }] }
-        }).then(function(){ callback(null); }, function(err){ callback(err); });
+        }).then(function(resp2){
+          callback(null, resp2.result.replies[0].addSheet.properties.sheetId);
+        }, function(err){ callback(err); });
       }, function(err){ callback(err); });
     } catch(e){ callback(e); }
   });
@@ -1259,7 +1261,90 @@ function construirFilasAsistenciaOcio(){
     });
     filas.push(fila);
   });
+  var totalRow = ['TOTAL'];
+  actividades.forEach(function(a, i){
+    var totalSi=0, totalNo=0, totalPagado=0;
+    usuariosOrdenados.forEach(function(u){
+      var d = (OCIO_ASISTENCIA[_ocioMesActual][u.id]||[])[i] || {};
+      if(d.si) totalSi++; if(d.no) totalNo++; if(d.pagado) totalPagado++;
+    });
+    totalRow.push(totalSi, totalNo, totalPagado);
+  });
+  filas.push(totalRow);
   return filas;
+}
+function hexAColorSheets(hex){
+  hex = hex.replace('#','');
+  return {
+    red: parseInt(hex.substring(0,2),16)/255,
+    green: parseInt(hex.substring(2,4),16)/255,
+    blue: parseInt(hex.substring(4,6),16)/255
+  };
+}
+function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
+  var actividades = OCIO_ACTIVIDADES[_ocioMesActual] || [];
+  var numUsuarios = ordenarAlfabetico(USUARIOS, function(u){return u.nombre;}).length;
+  var numCols = 1 + actividades.length*3;
+  var filaTotalIdx = 3 + numUsuarios; // 0-index: 0,1,2 cabeceras; 3..3+n-1 usuarios; filaTotalIdx = total
+
+  var AZUL = hexAColorSheets('#0270c4');
+  var AZUL_CLARO = hexAColorSheets('#5cc4f2');
+  var GRIS_TOTAL = hexAColorSheets('#f1f5f9');
+  var BLANCO = {red:1,green:1,blue:1};
+  var NEGRO = {red:0.08,green:0.08,blue:0.1};
+
+  function borde(color){ return {style:'SOLID', width:1, color: color||NEGRO}; }
+  function bordesCompletos(color){ return {top:borde(color), bottom:borde(color), left:borde(color), right:borde(color)}; }
+
+  var requests = [];
+
+  // Fila 1 (fechas): fondo azul, texto blanco, negrita, combinada por bloques de 3
+  actividades.forEach(function(a, i){
+    var colIni = 1 + i*3, colFin = colIni + 3;
+    requests.push({ mergeCells: { range: {sheetId:sheetId, startRowIndex:0, endRowIndex:1, startColumnIndex:colIni, endColumnIndex:colFin}, mergeType:'MERGE_ALL' } });
+    requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:0, endRowIndex:1, startColumnIndex:colIni, endColumnIndex:colFin},
+      cell: { userEnteredFormat: { backgroundColor: AZUL, horizontalAlignment:'CENTER', textFormat:{bold:true, foregroundColor:BLANCO} } },
+      fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)' } });
+  });
+  // Fila 2 (nombre actividad): fondo blanco, cursiva negrita, combinada por bloques de 3
+  actividades.forEach(function(a, i){
+    var colIni = 1 + i*3, colFin = colIni + 3;
+    requests.push({ mergeCells: { range: {sheetId:sheetId, startRowIndex:1, endRowIndex:2, startColumnIndex:colIni, endColumnIndex:colFin}, mergeType:'MERGE_ALL' } });
+    requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:1, endRowIndex:2, startColumnIndex:colIni, endColumnIndex:colFin},
+      cell: { userEnteredFormat: { backgroundColor: BLANCO, horizontalAlignment:'CENTER', textFormat:{bold:true, italic:true} } },
+      fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)' } });
+  });
+  // Fila 3 (SI/NO/Pagado): fondo azul claro, negrita
+  requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:2, endRowIndex:3, startColumnIndex:1, endColumnIndex:numCols},
+    cell: { userEnteredFormat: { backgroundColor: AZUL_CLARO, horizontalAlignment:'CENTER', textFormat:{bold:true, fontSize:9} } },
+    fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)' } });
+  // Cabecera "Usuario" combinada verticalmente (A1:A3): fondo azul claro, negrita, mayúsculas
+  requests.push({ mergeCells: { range: {sheetId:sheetId, startRowIndex:0, endRowIndex:3, startColumnIndex:0, endColumnIndex:1}, mergeType:'MERGE_ALL' } });
+  requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:0, endRowIndex:3, startColumnIndex:0, endColumnIndex:1},
+    cell: { userEnteredFormat: { backgroundColor: AZUL_CLARO, horizontalAlignment:'LEFT', verticalAlignment:'MIDDLE', textFormat:{bold:true} } },
+    fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,textFormat)' } });
+  // Columna Usuario en las filas de datos: negrita, fondo blanco
+  requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:3, endRowIndex:filaTotalIdx, startColumnIndex:0, endColumnIndex:1},
+    cell: { userEnteredFormat: { backgroundColor: BLANCO, textFormat:{bold:true} } },
+    fields: 'userEnteredFormat(backgroundColor,textFormat)' } });
+  // Fila de totales: negrita, fondo gris
+  requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:filaTotalIdx, endRowIndex:filaTotalIdx+1, startColumnIndex:0, endColumnIndex:numCols},
+    cell: { userEnteredFormat: { backgroundColor: GRIS_TOTAL, horizontalAlignment:'CENTER', textFormat:{bold:true} } },
+    fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)' } });
+  // Bordes en toda la tabla
+  requests.push({ updateBorders: { range: {sheetId:sheetId, startRowIndex:0, endRowIndex:filaTotalIdx+1, startColumnIndex:0, endColumnIndex:numCols},
+    top:borde(), bottom:borde(), left:borde(), right:borde(), innerHorizontal:borde(), innerVertical:borde() } });
+  // Centrar todas las celdas de datos
+  requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:3, endRowIndex:filaTotalIdx, startColumnIndex:1, endColumnIndex:numCols},
+    cell: { userEnteredFormat: { horizontalAlignment:'CENTER' } }, fields: 'userEnteredFormat(horizontalAlignment)' } });
+  // Inmovilizar cabeceras (3 filas) y columna de usuario (1 columna)
+  requests.push({ updateSheetProperties: { properties: { sheetId:sheetId, gridProperties: { frozenRowCount:3, frozenColumnCount:1 } }, fields: 'gridProperties(frozenRowCount,frozenColumnCount)' } });
+  // Ancho de columnas: usuario más ancha, el resto más estrechas
+  requests.push({ updateDimensionProperties: { range: {sheetId:sheetId, dimension:'COLUMNS', startIndex:0, endIndex:1}, properties: { pixelSize: 220 }, fields:'pixelSize' } });
+  requests.push({ updateDimensionProperties: { range: {sheetId:sheetId, dimension:'COLUMNS', startIndex:1, endIndex:numCols}, properties: { pixelSize: 60 }, fields:'pixelSize' } });
+
+  gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId: spreadsheetId, resource: { requests: requests } })
+    .then(function(){ callback(null); }, function(err){ callback(err); });
 }
 /* ---- Recordar qué hoja de cálculo concreta se usa para Ocio (por si hay varias en la carpeta) ---- */
 function obtenerHojaOcioElegida(){
@@ -1314,7 +1399,7 @@ function elegirHojaOcio(id, nombre){
   guardarAsistenciaEnHojaConcreta(hoja);
 }
 function guardarAsistenciaEnHojaConcreta(hoja){
-  asegurarPestanaSheet(hoja.id, _ocioMesActual, function(errPestana){
+  asegurarPestanaSheet(hoja.id, _ocioMesActual, function(errPestana, sheetId){
     if(errPestana){ mostrarAviso('No se pudo preparar la pestaña de "'+_ocioMesActual+'" en la hoja de cálculo.', '⚠️'); return; }
     var filas = construirFilasAsistenciaOcio();
     gapi.client.sheets.spreadsheets.values.update({
@@ -1323,7 +1408,13 @@ function guardarAsistenciaEnHojaConcreta(hoja){
       valueInputOption: 'RAW',
       resource: { values: filas }
     }).then(function(){
-      mostrarAviso('Guardado en "'+hoja.name+'", pestaña "'+_ocioMesActual+'".', '✅');
+      formatearHojaAsistenciaOcio(hoja.id, sheetId, function(errFormato){
+        if(errFormato){
+          mostrarAviso('Guardado en "'+hoja.name+'", pero no se pudo aplicar el formato visual. Los datos sí están bien.', '⚠️');
+          return;
+        }
+        mostrarAviso('Guardado y formateado en "'+hoja.name+'", pestaña "'+_ocioMesActual+'".', '✅');
+      });
     }, function(errGuardar){
       var msg = (errGuardar && errGuardar.result && errGuardar.result.error) ? errGuardar.result.error.message : 'error desconocido';
       mostrarAviso('No se pudo guardar en la hoja de cálculo: '+msg, '⚠️');
