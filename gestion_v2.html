@@ -535,6 +535,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="page-header">
         <div><div class="page-title">Asistencia</div><div class="page-subtitle" id="ocio-anio-titulo">Archivo 2026 — una pestaña por mes</div></div>
         <button class="btn-primary" onclick="guardarAsistenciaOcioEnDriveReal()">💾 Guardar en hoja de cálculo real</button>
+        <button class="btn-secondary btn-sm" onclick="cambiarHojaOcioElegida()">🔄 Cambiar hoja de destino</button>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
         <div class="tabs-bar" id="ocio-meses-tabs" style="margin-bottom:0"></div>
@@ -1233,12 +1234,12 @@ function asegurarPestanaSheet(spreadsheetId, nombrePestana, callback){
     try{
       gapi.client.sheets.spreadsheets.get({spreadsheetId: spreadsheetId}).then(function(resp){
         var existente = (resp.result.sheets||[]).filter(function(s){ return s.properties.title === nombrePestana; })[0];
-        if(existente){ callback(null, existente.properties.sheetId); return; }
+        if(existente){ callback(null, existente.properties.sheetId, false); return; }
         gapi.client.sheets.spreadsheets.batchUpdate({
           spreadsheetId: spreadsheetId,
           resource: { requests: [{ addSheet: { properties: { title: nombrePestana } } }] }
         }).then(function(resp2){
-          callback(null, resp2.result.replies[0].addSheet.properties.sheetId);
+          callback(null, resp2.result.replies[0].addSheet.properties.sheetId, true);
         }, function(err){ callback(err); });
       }, function(err){ callback(err); });
     } catch(e){ callback(e); }
@@ -1257,7 +1258,7 @@ function construirFilasAsistenciaOcio(){
     var fila = [u.nombre+' '+u.apellidos];
     actividades.forEach(function(a, i){
       var d = (OCIO_ASISTENCIA[_ocioMesActual][u.id]||[])[i] || {};
-      fila.push(d.si?'X':'', d.no?'X':'', d.pagado?'X':'');
+      fila.push(!!d.si, !!d.no, !!d.pagado);
     });
     filas.push(fila);
   });
@@ -1337,6 +1338,9 @@ function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
   // Centrar todas las celdas de datos
   requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:3, endRowIndex:filaTotalIdx, startColumnIndex:1, endColumnIndex:numCols},
     cell: { userEnteredFormat: { horizontalAlignment:'CENTER' } }, fields: 'userEnteredFormat(horizontalAlignment)' } });
+  // Convertir las celdas de datos (SI/NO/Pagado) en checkboxes reales
+  requests.push({ setDataValidation: { range: {sheetId:sheetId, startRowIndex:3, endRowIndex:filaTotalIdx, startColumnIndex:1, endColumnIndex:numCols},
+    rule: { condition: { type:'BOOLEAN' }, strict:true } } });
   // Inmovilizar cabeceras (3 filas) y columna de usuario (1 columna)
   requests.push({ updateSheetProperties: { properties: { sheetId:sheetId, gridProperties: { frozenRowCount:3, frozenColumnCount:1 } }, fields: 'gridProperties(frozenRowCount,frozenColumnCount)' } });
   // Ancho de columnas: usuario más ancha, el resto más estrechas
@@ -1352,6 +1356,10 @@ function obtenerHojaOcioElegida(){
 }
 function fijarHojaOcioElegida(hoja){ localStorage.setItem('drive_hoja_ocio', JSON.stringify(hoja)); }
 function olvidarHojaOcioElegida(){ localStorage.removeItem('drive_hoja_ocio'); }
+function cambiarHojaOcioElegida(){
+  olvidarHojaOcioElegida();
+  mostrarAviso('Olvidado. Vuelve a pulsar "Guardar en hoja de cálculo real" para elegir de nuevo.', '🔄');
+}
 
 function guardarAsistenciaOcioEnDriveReal(){
   var vinculo = carpetaRealVinculada('ocio');
@@ -1361,7 +1369,7 @@ function guardarAsistenciaOcioEnDriveReal(){
     return;
   }
   var elegida = obtenerHojaOcioElegida();
-  if(elegida){ guardarAsistenciaEnHojaConcreta(elegida); return; }
+  if(elegida){ prepararGuardadoEnHoja(elegida); return; }
   mostrarAviso('Buscando hojas de cálculo dentro de la carpeta de Ocio…', '⏳');
   encontrarHojaCalculoEnCarpeta('ocio', function(archivos, err){
     if(err){ mostrarAviso('No se pudo acceder a la carpeta de Ocio. Prueba a reconectarla desde Configuración ("Reiniciar conexiones") y vuelve a elegir la carpeta correcta.', '⚠️'); return; }
@@ -1370,13 +1378,13 @@ function guardarAsistenciaOcioEnDriveReal(){
       crearHojaCalculoEnCarpeta('ocio', 'Asistencia Ocio', function(nueva, errCrear){
         if(errCrear){ mostrarAviso('No se pudo crear la hoja de cálculo nueva.', '⚠️'); return; }
         fijarHojaOcioElegida(nueva);
-        guardarAsistenciaEnHojaConcreta(nueva);
+        prepararGuardadoEnHoja(nueva);
       });
       return;
     }
     if(archivos.length===1){
       fijarHojaOcioElegida(archivos[0]);
-      guardarAsistenciaEnHojaConcreta(archivos[0]);
+      prepararGuardadoEnHoja(archivos[0]);
       return;
     }
     mostrarSelectorHojaOcio(archivos);
@@ -1396,10 +1404,28 @@ function elegirHojaOcio(id, nombre){
   document.getElementById('modal-elegir-hoja-ocio').classList.add('hidden');
   var hoja = {id: id, name: nombre};
   fijarHojaOcioElegida(hoja);
-  guardarAsistenciaEnHojaConcreta(hoja);
+  prepararGuardadoEnHoja(hoja);
+}
+// Comprueba primero si la pestaña del mes ya existe; si ya existe, pide confirmación explícita
+// antes de tocar nada (para no arriesgarnos a machacar un formato que ya tuvierais hecho a mano).
+function prepararGuardadoEnHoja(hoja){
+  autorizarGoogleDrive(function(){
+    gapi.client.sheets.spreadsheets.get({spreadsheetId: hoja.id}).then(function(resp){
+      var existente = (resp.result.sheets||[]).some(function(s){ return s.properties.title === _ocioMesActual; });
+      if(existente){
+        pedirConfirmacion('La pestaña "'+_ocioMesActual+'" ya existe',
+          'Esa pestaña ya tiene contenido en "'+hoja.name+'". Si continúas, se sobrescribirán los datos de esa pestaña (fechas, actividades y marcas) con lo que ves en pantalla ahora mismo. El formato/colores que ya tuviera esa pestaña se mantiene tal cual, solo se tocan los valores.',
+          function(){ guardarAsistenciaEnHojaConcreta(hoja); });
+      } else {
+        guardarAsistenciaEnHojaConcreta(hoja);
+      }
+    }, function(err){
+      mostrarAviso('No se pudo comprobar la hoja de cálculo. Prueba de nuevo.', '⚠️');
+    });
+  });
 }
 function guardarAsistenciaEnHojaConcreta(hoja){
-  asegurarPestanaSheet(hoja.id, _ocioMesActual, function(errPestana, sheetId){
+  asegurarPestanaSheet(hoja.id, _ocioMesActual, function(errPestana, sheetId, seCreoAhora){
     if(errPestana){ mostrarAviso('No se pudo preparar la pestaña de "'+_ocioMesActual+'" en la hoja de cálculo.', '⚠️'); return; }
     var filas = construirFilasAsistenciaOcio();
     gapi.client.sheets.spreadsheets.values.update({
@@ -1408,12 +1434,17 @@ function guardarAsistenciaEnHojaConcreta(hoja){
       valueInputOption: 'RAW',
       resource: { values: filas }
     }).then(function(){
+      if(!seCreoAhora){
+        // La pestaña ya existía: no tocamos su formato/colores, solo los valores que acabamos de escribir.
+        mostrarAviso('Datos actualizados en "'+hoja.name+'", pestaña "'+_ocioMesActual+'" (se ha respetado el formato que ya tenía).', '✅');
+        return;
+      }
       formatearHojaAsistenciaOcio(hoja.id, sheetId, function(errFormato){
         if(errFormato){
           mostrarAviso('Guardado en "'+hoja.name+'", pero no se pudo aplicar el formato visual. Los datos sí están bien.', '⚠️');
           return;
         }
-        mostrarAviso('Guardado y formateado en "'+hoja.name+'", pestaña "'+_ocioMesActual+'".', '✅');
+        mostrarAviso('Pestaña "'+_ocioMesActual+'" creada y formateada en "'+hoja.name+'".', '✅');
       });
     }, function(errGuardar){
       var msg = (errGuardar && errGuardar.result && errGuardar.result.error) ? errGuardar.result.error.message : 'error desconocido';
