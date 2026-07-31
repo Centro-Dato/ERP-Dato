@@ -1026,9 +1026,9 @@ function abrirSelectorCarpeta(tipoId){
           if(esperado && carpeta.id !== esperado.idEsperado){
             mostrarAviso('Vinculada la carpeta "'+carpeta.name+'". Ojo: no coincide con el ID que nos habías pasado para '+esperado.nombre+' — si fue sin querer, vuelve a pulsar "Conectar" y elige la correcta.', '⚠️');
           } else {
-            mostrarAviso('Carpeta "'+carpeta.name+'" vinculada correctamente. Ya puedes ver su contenido real.', '✅');
+            mostrarAviso('Carpeta "'+carpeta.name+'" vinculada correctamente. Cargando su contenido…', '✅');
           }
-          rerenderCarpetaDriveActual();
+          cargarContenidoRealEnCarpetaActual(tipoId, carpeta.id, carpeta.name);
         }
       })
       .build();
@@ -1061,12 +1061,48 @@ function listarArchivosRealesDrive(tipoId, callback){
   });
 }
 
+// Refresca la ficha de Drive que esté abierta AHORA MISMO con el contenido real de la carpeta recién
+// vinculada (o ya vinculada). Se usa tanto justo después de elegirla en el selector como al reconectar.
+function cargarContenidoRealEnCarpetaActual(tipoId, folderId, folderNombre){
+  var driveId = _driveIdActual;
+  if(!driveId || !_driveStore[driveId]) return;
+  var info = _driveStore[driveId];
+  info.noConectada = false;
+  info.error = false;
+  info.cargando = true;
+  info.tipoId = tipoId;
+  info.folderIdReal = folderId;
+  if(folderNombre) info.titulo = info.tituloBase ? (info.tituloBase+' — '+folderNombre+' (Drive real)') : info.titulo;
+  verCarpetaDrive(driveId, _driveVistaAnterior);
+  listarArchivosRealesDrive(tipoId, function(archivos, err){
+    if(_driveIdActual !== driveId) return;
+    info.cargando = false;
+    if(err){
+      info.error = true;
+      verCarpetaDrive(driveId, _driveVistaAnterior);
+      mostrarAviso('No se pudo leer la carpeta real de Drive. Puede que el permiso haya caducado — prueba a conectar de nuevo desde el botón de arriba.', '⚠️');
+      return;
+    }
+    info.docs = (archivos||[]).map(function(a){
+      var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
+      var esSheet = a.mimeType && a.mimeType.indexOf('spreadsheet')>-1;
+      return {
+        nombre: a.name,
+        icono: esCarpeta ? '📁' : (esSheet ? '📊' : iconoPorExtension(a.name)),
+        accionPreview: "window.open('"+(a.webViewLink||'')+"','_blank')",
+        accionDescargar: "window.open('"+(a.webViewLink||'')+"','_blank')"
+      };
+    });
+    verCarpetaDrive(driveId, _driveVistaAnterior);
+  });
+}
+
 // Abre una carpeta que puede estar (a) ya vinculada a Drive real, (b) solo simulada todavía.
 function abrirCarpetaConectable(tipoId, tituloBase, vistaOrigen, docsSimuladosFallback, permitirSubirSimulado){
   var vinculo = carpetaRealVinculada(tipoId);
   var driveId = 'd'+(_driveIdSeq++);
   if(vinculo){
-    _driveStore[driveId] = {titulo: tituloBase+' — '+vinculo.nombre+' (Drive real)', docs: [], cargando:true, tipoId: tipoId, folderIdReal: vinculo.id};
+    _driveStore[driveId] = {titulo: tituloBase+' — '+vinculo.nombre+' (Drive real)', tituloBase: tituloBase, docs: [], cargando:true, tipoId: tipoId, folderIdReal: vinculo.id};
     verCarpetaDrive(driveId, vistaOrigen);
     listarArchivosRealesDrive(tipoId, function(archivos, err){
       if(_driveIdActual !== driveId) return;
@@ -1091,7 +1127,7 @@ function abrirCarpetaConectable(tipoId, tituloBase, vistaOrigen, docsSimuladosFa
       verCarpetaDrive(driveId, vistaOrigen);
     });
   } else {
-    _driveStore[driveId] = {titulo: tituloBase, docs: docsSimuladosFallback||[], permitirSubir: permitirSubirSimulado, noConectada:true, tipoId: tipoId};
+    _driveStore[driveId] = {titulo: tituloBase, tituloBase: tituloBase, docs: docsSimuladosFallback||[], permitirSubir: permitirSubirSimulado, noConectada:true, tipoId: tipoId};
     verCarpetaDrive(driveId, vistaOrigen);
   }
 }
