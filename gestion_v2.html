@@ -1148,14 +1148,21 @@ function abrirSelectorCarpeta(tipoId){
       .setCallback(function(data){
         if(data.action === google.picker.Action.PICKED){
           var carpeta = data.docs[0];
-          var esperado = CARPETAS_PILOTO[tipoId];
-          localStorage.setItem('drive_real_'+tipoId, JSON.stringify({id: carpeta.id, nombre: carpeta.name}));
-          if(esperado && carpeta.id !== esperado.idEsperado){
-            mostrarAviso('Vinculada la carpeta "'+carpeta.name+'". Ojo: no coincide con el ID que nos habías pasado para '+esperado.nombre+' — si fue sin querer, vuelve a pulsar "Conectar" y elige la correcta.', '⚠️');
-          } else {
-            mostrarAviso('Carpeta "'+carpeta.name+'" vinculada correctamente. Cargando su contenido…', '✅');
+          var idReal = carpeta.id;
+          var nombreReal = carpeta.name;
+          // Si lo elegido es un acceso directo (shortcut), seguimos hasta la carpeta real de destino
+          // en vez de quedarnos con el ID del acceso directo (que no tiene contenido propio).
+          if((carpeta.mimeType === 'application/vnd.google-apps.shortcut' || carpeta.type === 'shortcut') && carpeta.shortcutDetails && carpeta.shortcutDetails.targetId){
+            idReal = carpeta.shortcutDetails.targetId;
           }
-          cargarContenidoRealEnCarpetaActual(tipoId, carpeta.id, carpeta.name);
+          var esperado = CARPETAS_PILOTO[tipoId];
+          localStorage.setItem('drive_real_'+tipoId, JSON.stringify({id: idReal, nombre: nombreReal}));
+          if(esperado && idReal !== esperado.idEsperado){
+            mostrarAviso('Vinculada la carpeta "'+nombreReal+'". Ojo: no coincide con el ID que nos habías pasado para '+esperado.nombre+' — si fue sin querer, vuelve a pulsar "Conectar" y elige la correcta.', '⚠️');
+          } else {
+            mostrarAviso('Carpeta "'+nombreReal+'" vinculada correctamente. Cargando su contenido…', '✅');
+          }
+          cargarContenidoRealEnCarpetaActual(tipoId, idReal, nombreReal);
         }
       })
       .build();
