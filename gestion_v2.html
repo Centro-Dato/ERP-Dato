@@ -970,6 +970,7 @@ var CARPETAS_PILOTO = {
 var _gapiListo = false;
 var _tokenClient = null;
 var _tokenActual = null;
+var _esperandoToken = false;
 
 function cargarGapi(cb){
   if(_gapiListo){ cb(); return; }
@@ -988,12 +989,21 @@ function cargarGapi(cb){
 
 function autorizarGoogleDrive(callback){
   cargarGapi(function(){
+    // Si ya tenemos un token válido de esta misma sesión, lo reutilizamos directamente
+    // en vez de volver a pedirlo — pedirlo de nuevo cada vez puede quedarse colgado en
+    // algunos navegadores (por ejemplo, con las cookies de terceros bloqueadas).
+    if(_tokenActual){
+      gapi.client.setToken({access_token: _tokenActual});
+      callback();
+      return;
+    }
     if(typeof google === 'undefined' || !google.accounts){ mostrarAviso('No se pudo cargar el inicio de sesión de Google. Inténtalo de nuevo en unos segundos.', '⚠️'); return; }
     if(!_tokenClient){
       _tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: GOOGLE_SCOPES,
         callback: function(resp){
+          _esperandoToken = false;
           if(resp.error){ mostrarAviso('No se pudo autorizar el acceso a Google Drive: '+resp.error, '⚠️'); return; }
           _tokenActual = resp.access_token;
           gapi.client.setToken({access_token: _tokenActual});
@@ -1001,7 +1011,17 @@ function autorizarGoogleDrive(callback){
         }
       });
     }
-    _tokenClient.requestAccessToken({prompt: _tokenActual ? '' : 'consent'});
+    _esperandoToken = true;
+    _tokenClient.requestAccessToken({prompt: 'consent'});
+    // Red de seguridad: si Google no responde en 20s (por ejemplo, la ventana de permiso
+    // se cerró o se bloqueó), avisamos en vez de dejarlo cargando para siempre.
+    setTimeout(function(){
+      if(_esperandoToken){
+        _esperandoToken = false;
+        mostrarAviso('Google no ha respondido al permiso de acceso (puede que se cerrara la ventana de inicio de sesión, o que el navegador la bloqueara). Vuelve a intentarlo.', '⚠️');
+        rerenderCarpetaDriveActual();
+      }
+    }, 20000);
   });
 }
 
@@ -1050,14 +1070,19 @@ function listarArchivosRealesDrive(tipoId, callback){
   var vinculo = carpetaRealVinculada(tipoId);
   if(!vinculo){ callback(null, 'no_vinculada'); return; }
   autorizarGoogleDrive(function(){
-    gapi.client.drive.files.list({
-      q: "'"+vinculo.id+"' in parents and trashed = false",
-      fields: 'files(id, name, mimeType, webViewLink, modifiedTime)',
-      orderBy: 'name_natural',
-      supportsAllDrives: true,
-      includeItemsFromAllDrives: true
-    }).then(function(resp){ callback(resp.result.files, null); },
-      function(err){ callback(null, err); });
+    try {
+      if(!gapi.client.drive){ callback(null, 'drive_no_cargado'); return; }
+      gapi.client.drive.files.list({
+        q: "'"+vinculo.id+"' in parents and trashed = false",
+        fields: 'files(id, name, mimeType, webViewLink, modifiedTime)',
+        orderBy: 'name_natural',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      }).then(function(resp){ callback(resp.result.files, null); },
+        function(err){ callback(null, err); });
+    } catch(e){
+      callback(null, e);
+    }
   });
 }
 
