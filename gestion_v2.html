@@ -1088,7 +1088,8 @@ var GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.goog
 var CARPETAS_PILOTO = {
   transporte: { nombre: 'Transporte', idEsperado: '1Yw-ako8Un8ZwTQl7MJiLd4xqhMa_y-aQ' },
   horarios:   { nombre: 'Horarios',   idEsperado: '1-XmXxxCHkNd4UP42FF7EXgfLqot0rxYB' },
-  ocio:       { nombre: 'Ocio (2025-2026)', idEsperado: '1AvkI3WD6g2aI3677zi9locXBP0gz9L-8' }
+  ocio:       { nombre: 'Ocio (2025-2026)', idEsperado: '1AvkI3WD6g2aI3677zi9locXBP0gz9L-8' },
+  registros:  { nombre: 'Registros Digitales', idEsperado: '1CjucnKhtbQTTYrrKfx6E5j44kx0vLMih' }
 };
 
 var _gapiListo = false;
@@ -1521,6 +1522,182 @@ function guardarAsistenciaEnHojaConcreta(hoja){
   });
 }
 
+/* ===================== REGISTROS DIGITALES: GUARDADO REAL (General + pestaña por usuario) ===================== */
+var REGISTRO_COLOR = {
+  actividades:'7E22CE', caidas:'DC2626', cambios_posturales:'059669', comunicacion_familias:'2563EB',
+  sanitario:'DB2777', control_dietas:'16A34A', crisis_epilepticas:'EA580C', desaparicion_usuarios:'991B1B',
+  entradas_salidas:'0EA5E9', hidratacion:'0891B2', higiene:'15803D', incontinencias:'7C3AED',
+  limpieza:'64748B', medicacion:'9333EA', abvd:'0D9488', quejas_sugerencias:'CA8A04',
+  recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA', solicitud_menus:'C2410C',
+  temperaturas_catering:'B45309', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9'
+};
+
+// Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
+// Si el registro tiene un campo de selección de usuario(s), genera UNA FILA POR PERSONA (misma
+// convención que en el resto del programa), tanto para "General" como para su pestaña individual.
+function recogerValoresFormulario(tipo){
+  var headers = [];
+  var campoUsuarioKey = null;
+  var valorPorCampo = {};
+  var aspectosPorAlumno = null;
+
+  tipo.fields.forEach(function(campo){
+    var id = 'f_'+tipo.id+'_'+campo.k;
+    headers.push(campo.label);
+    if(campo.type==='checkboxes' && campo.opts==='BD'){
+      campoUsuarioKey = campo.k;
+      var seleccion = [];
+      document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ seleccion.push(chk.value); });
+      valorPorCampo[campo.k] = seleccion;
+    } else if(campo.type==='checkboxes'){
+      var marcados = [];
+      document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
+      valorPorCampo[campo.k] = marcados.join(', ');
+    } else if(campo.type==='aspectos-actividad'){
+      aspectosPorAlumno = {};
+      document.querySelectorAll('#wrap-aspectos-actividad .aspectos-matriz-tabla tbody tr').forEach(function(fila){
+        var alumno = fila.getAttribute('data-fila-alumno')||'';
+        var marcadosF = [];
+        fila.querySelectorAll('input[type=checkbox]:checked').forEach(function(chk){ marcadosF.push(chk.getAttribute('data-aspecto')); });
+        aspectosPorAlumno[alumno] = marcadosF.join(', ');
+      });
+      valorPorCampo[campo.k] = '';
+    } else if(campo.type==='matriz-radio'){
+      var partes = [];
+      campo.filas.forEach(function(fila, i){
+        var nombreGrupo = id+'_fila'+i;
+        var marcadoR = document.querySelector('input[name="'+nombreGrupo+'"]:checked');
+        partes.push(fila+': '+(marcadoR?marcadoR.value:'—'));
+      });
+      valorPorCampo[campo.k] = partes.join(' | ');
+    } else {
+      var el = document.getElementById(id);
+      valorPorCampo[campo.k] = el ? el.value : '';
+    }
+  });
+
+  var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : [];
+  var filas = [];
+  if(usuarios.length>0){
+    usuarios.forEach(function(nombreUsuario){
+      var fila = tipo.fields.map(function(campo){
+        if(campo.k===campoUsuarioKey) return nombreUsuario;
+        if(campo.type==='aspectos-actividad') return aspectosPorAlumno ? (aspectosPorAlumno[nombreUsuario]||'') : '';
+        return valorPorCampo[campo.k];
+      });
+      filas.push({usuario: nombreUsuario, valores: fila});
+    });
+  } else {
+    filas.push({usuario: null, valores: tipo.fields.map(function(campo){ return valorPorCampo[campo.k]; })});
+  }
+  return {headers: headers, filas: filas};
+}
+
+function obtenerHojaRegistroElegida(tipoId){
+  try{ var raw = localStorage.getItem('drive_hoja_registro_'+tipoId); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+}
+function fijarHojaRegistroElegida(tipoId, hoja){ localStorage.setItem('drive_hoja_registro_'+tipoId, JSON.stringify(hoja)); }
+
+// Busca (o crea si no existe) el archivo de Google Sheets de este tipo de registro, dentro de la
+// carpeta "Registros Digitales" ya conectada.
+function obtenerOCrearHojaRegistro(tipoId, tituloRegistro, callback){
+  var yaElegida = obtenerHojaRegistroElegida(tipoId);
+  if(yaElegida){ callback(yaElegida, null); return; }
+  var vinculo = carpetaRealVinculada('registros');
+  if(!vinculo){ callback(null, 'no_conectada'); return; }
+  autorizarGoogleDrive(function(){
+    try{
+      gapi.client.drive.files.list({
+        q: "'"+vinculo.id+"' in parents and mimeType='application/vnd.google-apps.spreadsheet' and name='"+tituloRegistro.replace(/'/g,"")+"' and trashed=false",
+        fields: 'files(id,name)', supportsAllDrives:true, includeItemsFromAllDrives:true
+      }).then(function(resp){
+        if(resp.result.files && resp.result.files.length>0){
+          var hoja = {id: resp.result.files[0].id, name: resp.result.files[0].name};
+          fijarHojaRegistroElegida(tipoId, hoja);
+          callback(hoja, null);
+          return;
+        }
+        gapi.client.drive.files.create({
+          resource: {name: tituloRegistro, mimeType: 'application/vnd.google-apps.spreadsheet', parents: [vinculo.id]},
+          fields: 'id,name', supportsAllDrives: true
+        }).then(function(resp2){
+          var hoja = {id: resp2.result.id, name: resp2.result.name};
+          fijarHojaRegistroElegida(tipoId, hoja);
+          callback(hoja, null);
+        }, function(err){ callback(null, err); });
+      }, function(err){ callback(null, err); });
+    } catch(e){ callback(null, e); }
+  });
+}
+
+// Se asegura de que exista una pestaña con ese nombre; si no existe, la crea con la cabecera y
+// el color propio de ese tipo de registro. Si ya existía, no la toca (solo devuelve su sheetId).
+function asegurarPestanaConEncabezado(spreadsheetId, nombrePestana, headers, colorHex, callback){
+  autorizarGoogleDrive(function(){
+    try{
+      gapi.client.sheets.spreadsheets.get({spreadsheetId: spreadsheetId}).then(function(resp){
+        var existente = (resp.result.sheets||[]).filter(function(s){ return s.properties.title === nombrePestana; })[0];
+        if(existente){ callback(null, existente.properties.sheetId); return; }
+        gapi.client.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: spreadsheetId, resource: {requests: [{addSheet:{properties:{title: nombrePestana}}}]}
+        }).then(function(resp2){
+          var sheetId = resp2.result.replies[0].addSheet.properties.sheetId;
+          gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: spreadsheetId, range: "'"+nombrePestana+"'!A1", valueInputOption:'RAW', resource:{values:[headers]}
+          }).then(function(){
+            var color = hexAColorSheets(colorHex);
+            var reqs = [
+              {repeatCell:{range:{sheetId:sheetId, startRowIndex:0, endRowIndex:1, startColumnIndex:0, endColumnIndex:headers.length},
+                cell:{userEnteredFormat:{backgroundColor:color, textFormat:{bold:true, foregroundColor:{red:1,green:1,blue:1}}}},
+                fields:'userEnteredFormat(backgroundColor,textFormat)'}},
+              {updateSheetProperties:{properties:{sheetId:sheetId, gridProperties:{frozenRowCount:1}}, fields:'gridProperties(frozenRowCount)'}}
+            ];
+            gapi.client.sheets.spreadsheets.batchUpdate({spreadsheetId:spreadsheetId, resource:{requests:reqs}})
+              .then(function(){ callback(null, sheetId); }, function(err){ callback(err); });
+          }, function(err){ callback(err); });
+        }, function(err){ callback(err); });
+      }, function(err){ callback(err); });
+    } catch(e){ callback(e); }
+  });
+}
+function anadirFilaAPestana(spreadsheetId, nombrePestana, fila, callback){
+  autorizarGoogleDrive(function(){
+    try{
+      gapi.client.sheets.spreadsheets.values.append({
+        spreadsheetId: spreadsheetId, range: "'"+nombrePestana+"'!A1",
+        valueInputOption: 'RAW', insertDataOption: 'INSERT_ROWS', resource: {values: [fila]}
+      }).then(function(){ callback(null); }, function(err){ callback(err); });
+    } catch(e){ callback(e); }
+  });
+}
+
+// Guarda de verdad en Drive: añade la(s) fila(s) a "General" y, para cada persona implicada,
+// también a su propia pestaña (creándola con el color del registro si es la primera vez que
+// aparece). Nunca sobrescribe filas anteriores — siempre añade al final (registro histórico).
+function guardarRegistroEnDriveReal(tipo, datos, callback){
+  var vinculo = carpetaRealVinculada('registros');
+  if(!vinculo){ callback('no_conectada'); return; }
+  obtenerOCrearHojaRegistro(tipo.id, tipo.titulo, function(hoja, errHoja){
+    if(errHoja){ callback(errHoja); return; }
+    var color = REGISTRO_COLOR[tipo.id] || '2563EB';
+    asegurarPestanaConEncabezado(hoja.id, 'General', datos.headers, color, function(errG){
+      if(errG){ callback(errG); return; }
+      var pendientes = datos.filas.length;
+      var huboError = null;
+      function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
+      datos.filas.forEach(function(f){
+        anadirFilaAPestana(hoja.id, 'General', f.valores, function(errFilaGeneral){
+          if(!f.usuario){ unaMenos(errFilaGeneral); return; }
+          asegurarPestanaConEncabezado(hoja.id, f.usuario, datos.headers, color, function(errPestanaUsuario){
+            if(errPestanaUsuario){ unaMenos(errPestanaUsuario); return; }
+            anadirFilaAPestana(hoja.id, f.usuario, f.valores, function(errFilaUsuario){ unaMenos(errFilaUsuario); });
+          });
+        });
+      });
+    });
+  });
+}
+
 // Refresca la ficha de Drive que esté abierta AHORA MISMO con el contenido real de la carpeta recién
 // vinculada (o ya vinculada). Se usa tanto justo después de elegirla en el selector como al reconectar.
 function cargarContenidoRealEnCarpetaActual(tipoId, folderId, folderNombre){
@@ -1612,17 +1789,19 @@ function estadoTextoCarpetaPiloto(tipoId, nombre){
 function renderEstadoCarpetasPiloto(){
   var el = document.getElementById('estado-carpetas-piloto');
   if(!el) return;
-  el.innerHTML = estadoTextoCarpetaPiloto('horarios','Horarios') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('transporte','Transporte') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('ocio','Ocio');
+  el.innerHTML = estadoTextoCarpetaPiloto('horarios','Horarios') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('transporte','Transporte') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('ocio','Ocio') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('registros','Registros Digitales');
 }
 function reiniciarConexionesDrivePiloto(){
   localStorage.removeItem('drive_real_horarios');
   localStorage.removeItem('drive_real_transporte');
   localStorage.removeItem('drive_real_ocio');
+  localStorage.removeItem('drive_real_registros');
   olvidarHojaOcioElegida();
+  REGISTRO_TIPOS.forEach(function(t){ localStorage.removeItem('drive_hoja_registro_'+t.id); });
   _tokenActual = null;
   _tokenClient = null;
   renderEstadoCarpetasPiloto();
-  mostrarAviso('Conexiones de Horarios, Transporte y Ocio reiniciadas del todo. La próxima vez que conectes cualquiera de ellas, se abrirá el selector desde cero.', '🔄');
+  mostrarAviso('Conexiones de Horarios, Transporte, Ocio y Registros Digitales reiniciadas del todo. La próxima vez que conectes cualquiera, se abrirá el selector desde cero.', '🔄');
 }
 
 /* ===================== BUZÓN DE SUGERENCIAS Y QUEJAS ===================== */
@@ -4083,9 +4262,7 @@ function verCarpetaRegistrosDigitales(vistaOrigen){
   }
   var docs = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return nivelRegistro(r.id)!=='nada'; }), function(r){ return r.titulo; })
     .map(function(r){ return {nombre: r.titulo+'.xlsx', icono: r.icon}; });
-  var driveId = 'd'+(_driveIdSeq++);
-  _driveStore[driveId] = {titulo:'Registros Digitales', docs: docs};
-  verCarpetaDrive(driveId, vistaOrigen || 'config');
+  abrirCarpetaConectable('registros', 'Registros Digitales', vistaOrigen || 'config', docs, false);
 }
 
 // Carpeta pendiente de nombre definitivo (de momento "Medias Transporte")
@@ -4474,6 +4651,15 @@ function guardarRegistroDemo(){
   if(faltantes.length>0){
     mostrarAviso('Faltan campos obligatorios por rellenar:\n\n• '+faltantes.join('\n• '));
     return;
+  }
+  var vinculo = tipo ? carpetaRealVinculada('registros') : null;
+  if(vinculo){
+    var datos = recogerValoresFormulario(tipo);
+    guardarRegistroEnDriveReal(tipo, datos, function(err){
+      if(err){
+        mostrarAviso('El registro se ha validado, pero no se pudo guardar en la hoja de cálculo real (puede que el permiso haya caducado). Prueba a reconectar desde Configuración. No se ha perdido nada, puedes volver a intentarlo.', '⚠️');
+      }
+    });
   }
   document.getElementById('modal-confirmacion-titulo').textContent = '✓ '+_regActualTitulo+' guardado';
   document.getElementById('modal-confirmacion-registro').classList.remove('hidden');
