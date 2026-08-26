@@ -262,15 +262,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   <div class="login-box">
     <div class="login-icon">🗂️</div>
     <div class="login-title">Gestión Centro Dato</div>
-    <div class="login-sub">Accede con tu usuario y contraseña</div>
-    <div id="login-error" class="login-err hidden">Usuario o contraseña incorrectos</div>
-    <div class="form-field"><label>Usuario</label><input type="text" id="inp-user" placeholder="nombre@centro.org"/></div>
-    <div class="form-field"><label>Contraseña</label><input type="password" id="inp-pass" placeholder="••••••••"/></div>
-    <button class="btn-login" id="btn-entrar">Entrar</button>
-    <div class="login-hint">
-      <strong>Admin (Centro Dato):</strong> gestion@centrodato.org / gestion2026<br/>
-      <strong>Empleado:</strong> empleado@centrodato.org / empleado2026
-    </div>
+    <div class="login-sub">Accede con tu cuenta de Google de centrodato.org</div>
+    <div id="login-error" class="login-err hidden"></div>
+    <div id="google-signin-btn" style="display:flex;justify-content:center;margin:18px 0"></div>
+    <div id="google-signin-cargando" style="text-align:center;color:#94a3b8;font-size:13px;margin:18px 0">Cargando inicio de sesión de Google…</div>
     <div style="display:flex;justify-content:center;gap:10px;margin-top:20px">
       <div class="theme-swatch active" data-t="azul" style="background:#0270c4" onclick="cambiarTema('azul',this)" title="Azul Institucional"></div>
       <div class="theme-swatch" data-t="verde" style="background:#059669" onclick="cambiarTema('verde',this)" title="Verde Salud"></div>
@@ -3849,16 +3844,15 @@ var REGISTRO_TIPOS = [
 
 var PERM_LABELS = {todo:'Todo',ver:'Ver',editar:'Editar',nada:'Nada'};
 
-/* ===================== LOGIN ===================== */
-document.getElementById('btn-entrar').onclick = function(){
-  var u = document.getElementById('inp-user').value.trim().toLowerCase();
-  var p = document.getElementById('inp-pass').value;
-  var ok = (u==='gestion@centrodato.org' && p==='gestion2026') || (u==='empleado@centrodato.org' && p==='empleado2026');
-  if(!ok){ document.getElementById('login-error').classList.remove('hidden'); return; }
-  var esAdmin = u === 'gestion@centrodato.org';
-  USUARIO_ACTUAL = esAdmin ? {nombre:'Coordinador',rol:'admin'} : {nombre:'Empleado',rol:'empleado'};
-  var empCoincide = EMPLEADOS.filter(function(e){return e.usuario===u;})[0];
-  PERMISOS_ACTUAL = empCoincide ? empCoincide.permisos : {usuarios:'nada',registros:'nada',paap:'nada',configuracion:'nada'};
+/* ===================== LOGIN REAL CON GOOGLE ===================== */
+// Directorio de personas reales autorizadas a entrar, por su correo real de centrodato.org.
+// Ana: pendiente de confirmar tu correo real para añadirte aquí.
+// Carlos y Tere: pendientes de sus correos reales.
+var PERSONAS_REALES = {
+  // 'nombre@centrodato.org': {nombre:'Ana', rol:'Coordinadora', permisos:{usuarios:'todo',registros:'todo',paap:'todo',configuracion:'todo',puedeVerConexionDrive:true}}
+};
+
+function completarEntradaAlPrograma(email){
   document.getElementById('sb-nm').textContent = USUARIO_ACTUAL.nombre;
   document.getElementById('sb-rl').textContent = USUARIO_ACTUAL.rol;
   document.getElementById('sb-av').textContent = USUARIO_ACTUAL.nombre[0];
@@ -3873,20 +3867,56 @@ document.getElementById('btn-entrar').onclick = function(){
     navConfig.classList.remove('disabled');
     navConfig.onclick = function(){ navTo('config'); };
   }
-  _emailActual = u;
-  cargarTemaGuardado(u);
+  _emailActual = email;
+  cargarTemaGuardado(email);
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app-screen').classList.remove('hidden');
   renderInicio(); renderUsuarios(); renderRegistrosGrid(); renderConfig();
   aplicarPermisosVisuales();
   navTo('inicio');
-};
+}
+function mostrarErrorLogin(msg){
+  var el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+function manejarLoginGoogle(respuesta){
+  try{
+    var partes = respuesta.credential.split('.');
+    var payload = JSON.parse(decodeURIComponent(atob(partes[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(function(c){
+      return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);
+    }).join('')));
+    var email = (payload.email||'').toLowerCase();
+    var dominioOk = email.indexOf('@centrodato.org') === email.length - '@centrodato.org'.length;
+    var persona = PERSONAS_REALES[email];
+    if(!dominioOk || !persona){
+      mostrarErrorLogin('La cuenta '+email+' no tiene acceso al programa. Si crees que es un error, pídele a la coordinación que te dé de alta.');
+      return;
+    }
+    document.getElementById('login-error').classList.add('hidden');
+    USUARIO_ACTUAL = {nombre: persona.nombre, rol: persona.rol, email: email};
+    PERMISOS_ACTUAL = persona.permisos;
+    completarEntradaAlPrograma(email);
+  } catch(e){
+    mostrarErrorLogin('No se pudo verificar la cuenta de Google. Inténtalo de nuevo.');
+  }
+}
+function inicializarLoginGoogle(){
+  if(typeof google === 'undefined' || !google.accounts || !google.accounts.id){
+    setTimeout(inicializarLoginGoogle, 300);
+    return;
+  }
+  document.getElementById('google-signin-cargando').classList.add('hidden');
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle, hd: 'centrodato.org' });
+  google.accounts.id.renderButton(document.getElementById('google-signin-btn'), {theme:'outline', size:'large', text:'signin_with', width:280});
+}
+inicializarLoginGoogle();
 document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
-  document.getElementById('inp-user').value=''; document.getElementById('inp-pass').value='';
   cerrarMenuMovil();
   _medicacionDesbloqueada = false;
+  if(typeof google !== 'undefined' && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
 };
 
 /* ===================== NAVEGACIÓN ===================== */
