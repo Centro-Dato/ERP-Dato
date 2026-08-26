@@ -721,6 +721,13 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
           <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios, Transporte y Ocio</button>
         </div>
+        <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
+          <div style="font-size:13px;color:#475569;margin-bottom:8px">Curso académico de Registros Digitales: <strong id="texto-curso-registros"></strong> — cada curso guarda sus propios archivos, sin tocar los de cursos anteriores.</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" class="form-input" id="input-curso-registros" placeholder="Ej: 2027-2028" style="max-width:160px"/>
+            <button class="btn-secondary btn-sm" onclick="cambiarCursoRegistros()">Cambiar curso</button>
+          </div>
+        </div>
       </div>
 
 
@@ -1594,21 +1601,39 @@ function recogerValoresFormulario(tipo){
 }
 
 function obtenerHojaRegistroElegida(tipoId){
-  try{ var raw = localStorage.getItem('drive_hoja_registro_'+tipoId); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+  try{ var raw = localStorage.getItem('drive_hoja_registro_'+tipoId+'_'+CURSO_REGISTROS_ACTUAL()); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
 }
-function fijarHojaRegistroElegida(tipoId, hoja){ localStorage.setItem('drive_hoja_registro_'+tipoId, JSON.stringify(hoja)); }
+function fijarHojaRegistroElegida(tipoId, hoja){ localStorage.setItem('drive_hoja_registro_'+tipoId+'_'+CURSO_REGISTROS_ACTUAL(), JSON.stringify(hoja)); }
 
-// Busca (o crea si no existe) el archivo de Google Sheets de este tipo de registro, dentro de la
-// carpeta "Registros Digitales" ya conectada.
+// Curso académico actual (Ana lo puede cambiar en Configuración cuando empiece uno nuevo).
+// Cada curso usa sus propios archivos — así septiembre 27-agosto 28 no toca nada de este curso.
+function CURSO_REGISTROS_ACTUAL(){
+  try{ return localStorage.getItem('curso_registros_actual') || '2026-2027'; } catch(e){ return '2026-2027'; }
+}
+function cambiarCursoRegistros(){
+  var actual = CURSO_REGISTROS_ACTUAL();
+  var nuevo = document.getElementById('input-curso-registros').value.trim();
+  if(!nuevo){ mostrarAviso('Escribe el curso, por ejemplo 2027-2028.'); return; }
+  if(!/^\d{4}-\d{4}$/.test(nuevo)){ mostrarAviso('Usa el formato AAAA-AAAA, por ejemplo 2027-2028.'); return; }
+  localStorage.setItem('curso_registros_actual', nuevo);
+  mostrarAviso('Curso actualizado a '+nuevo+'. A partir de ahora, los registros nuevos crearán sus propios archivos para este curso — los del curso '+actual+' se quedan intactos y los puedes ver siempre en Drive.', '✅');
+  renderEstadoCarpetasPiloto();
+  var elCurso = document.getElementById('texto-curso-registros');
+  if(elCurso) elCurso.textContent = nuevo;
+}
+
+// Busca (o crea si no existe) el archivo de Google Sheets de este tipo de registro para el curso
+// académico actual, dentro de la carpeta "Registros Digitales" ya conectada.
 function obtenerOCrearHojaRegistro(tipoId, tituloRegistro, callback){
   var yaElegida = obtenerHojaRegistroElegida(tipoId);
   if(yaElegida){ callback(yaElegida, null); return; }
   var vinculo = carpetaRealVinculada('registros');
   if(!vinculo){ callback(null, 'no_conectada'); return; }
+  var nombreArchivo = tituloRegistro+' '+CURSO_REGISTROS_ACTUAL();
   autorizarGoogleDrive(function(){
     try{
       gapi.client.drive.files.list({
-        q: "'"+vinculo.id+"' in parents and mimeType='application/vnd.google-apps.spreadsheet' and name='"+tituloRegistro.replace(/'/g,"")+"' and trashed=false",
+        q: "'"+vinculo.id+"' in parents and mimeType='application/vnd.google-apps.spreadsheet' and name='"+nombreArchivo.replace(/'/g,"")+"' and trashed=false",
         fields: 'files(id,name)', supportsAllDrives:true, includeItemsFromAllDrives:true
       }).then(function(resp){
         if(resp.result.files && resp.result.files.length>0){
@@ -1618,7 +1643,7 @@ function obtenerOCrearHojaRegistro(tipoId, tituloRegistro, callback){
           return;
         }
         gapi.client.drive.files.create({
-          resource: {name: tituloRegistro, mimeType: 'application/vnd.google-apps.spreadsheet', parents: [vinculo.id]},
+          resource: {name: nombreArchivo, mimeType: 'application/vnd.google-apps.spreadsheet', parents: [vinculo.id]},
           fields: 'id,name', supportsAllDrives: true
         }).then(function(resp2){
           var hoja = {id: resp2.result.id, name: resp2.result.name};
@@ -1660,37 +1685,43 @@ function asegurarPestanaConEncabezado(spreadsheetId, nombrePestana, headers, col
     } catch(e){ callback(e); }
   });
 }
-function anadirFilaAPestana(spreadsheetId, nombrePestana, fila, callback){
+// Inserta la fila justo debajo de la cabecera (fila 2), empujando lo demás hacia abajo — así lo
+// más reciente se ve siempre arriba, sin tener que bajar cuando ya hay muchos registros.
+function insertarFilaArribaEnPestana(spreadsheetId, sheetId, nombrePestana, fila, callback){
   autorizarGoogleDrive(function(){
     try{
-      gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId: spreadsheetId, range: "'"+nombrePestana+"'!A1",
-        valueInputOption: 'RAW', insertDataOption: 'INSERT_ROWS', resource: {values: [fila]}
-      }).then(function(){ callback(null); }, function(err){ callback(err); });
+      gapi.client.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: spreadsheetId,
+        resource: {requests: [{insertDimension:{range:{sheetId:sheetId, dimension:'ROWS', startIndex:1, endIndex:2}, inheritFromBefore:false}}]}
+      }).then(function(){
+        gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: spreadsheetId, range: "'"+nombrePestana+"'!A2", valueInputOption:'RAW', resource:{values:[fila]}
+        }).then(function(){ callback(null); }, function(err){ callback(err); });
+      }, function(err){ callback(err); });
     } catch(e){ callback(e); }
   });
 }
 
-// Guarda de verdad en Drive: añade la(s) fila(s) a "General" y, para cada persona implicada,
-// también a su propia pestaña (creándola con el color del registro si es la primera vez que
-// aparece). Nunca sobrescribe filas anteriores — siempre añade al final (registro histórico).
+// Guarda de verdad en Drive: añade la(s) fila(s) a "General" (arriba del todo) y, para cada
+// persona implicada, también a su propia pestaña (creándola con el color del registro si es la
+// primera vez que aparece). Nunca sobrescribe filas anteriores — siempre queda como histórico.
 function guardarRegistroEnDriveReal(tipo, datos, callback){
   var vinculo = carpetaRealVinculada('registros');
   if(!vinculo){ callback('no_conectada'); return; }
   obtenerOCrearHojaRegistro(tipo.id, tipo.titulo, function(hoja, errHoja){
     if(errHoja){ callback(errHoja); return; }
     var color = REGISTRO_COLOR[tipo.id] || '2563EB';
-    asegurarPestanaConEncabezado(hoja.id, 'General', datos.headers, color, function(errG){
+    asegurarPestanaConEncabezado(hoja.id, 'General', datos.headers, color, function(errG, sheetIdGeneral){
       if(errG){ callback(errG); return; }
       var pendientes = datos.filas.length;
       var huboError = null;
       function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
       datos.filas.forEach(function(f){
-        anadirFilaAPestana(hoja.id, 'General', f.valores, function(errFilaGeneral){
+        insertarFilaArribaEnPestana(hoja.id, sheetIdGeneral, 'General', f.valores, function(errFilaGeneral){
           if(!f.usuario){ unaMenos(errFilaGeneral); return; }
-          asegurarPestanaConEncabezado(hoja.id, f.usuario, datos.headers, color, function(errPestanaUsuario){
+          asegurarPestanaConEncabezado(hoja.id, f.usuario, datos.headers, color, function(errPestanaUsuario, sheetIdUsuario){
             if(errPestanaUsuario){ unaMenos(errPestanaUsuario); return; }
-            anadirFilaAPestana(hoja.id, f.usuario, f.valores, function(errFilaUsuario){ unaMenos(errFilaUsuario); });
+            insertarFilaArribaEnPestana(hoja.id, sheetIdUsuario, f.usuario, f.valores, function(errFilaUsuario){ unaMenos(errFilaUsuario); });
           });
         });
       });
@@ -4707,6 +4738,8 @@ function renderConfig(){
   document.getElementById('tbl-config').innerHTML = h;
   renderBuzonSugerencias();
   renderEstadoCarpetasPiloto();
+  var elCurso = document.getElementById('texto-curso-registros');
+  if(elCurso) elCurso.textContent = CURSO_REGISTROS_ACTUAL();
 }
 /* ---- Interruptor de Conexión con Drive/API (solo visible para quien tenga el permiso) ---- */
 var CONEXION_DRIVE_ACTIVA = false;
