@@ -720,6 +720,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
           <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios, Transporte y Ocio</button>
+          <button class="btn-secondary btn-sm" onclick="crearTodosLosRegistrosDeEjemplo()">🧪 Crear los 23 archivos de Registros con un ejemplo</button>
         </div>
         <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px">Curso académico de Registros Digitales: <strong id="texto-curso-registros"></strong> — cada curso guarda sus propios archivos, sin tocar los de cursos anteriores.</div>
@@ -1726,6 +1727,60 @@ function guardarRegistroEnDriveReal(tipo, datos, callback){
         });
       });
     });
+  });
+}
+
+/* ---- Crear los 23 archivos de golpe, cada uno con una fila de ejemplo (para enseñar el sistema) ---- */
+function generarFilaEjemplo(tipo){
+  var headers = tipo.fields.map(function(c){ return c.label; });
+  var campoUsuarioKey = null;
+  var nombreUsuarioEjemplo = null;
+  var valores = tipo.fields.map(function(campo){
+    if(campo.type==='date'){
+      var hoy = new Date();
+      var dd = String(hoy.getDate()).padStart(2,'0'), mm = String(hoy.getMonth()+1).padStart(2,'0');
+      return dd+'/'+mm+'/'+hoy.getFullYear();
+    }
+    if(campo.type==='time') return '10:30';
+    if(campo.type==='textarea') return 'Ejemplo de '+campo.label.toLowerCase()+' — fila de prueba';
+    if(campo.type==='select'){ var opts = opcionesDeCampo(campo); return opts.length ? opts[0] : 'Ejemplo'; }
+    if(campo.type==='checkboxes' && campo.opts==='BD'){
+      campoUsuarioKey = campo.k;
+      var usuarios = ordenarAlfabetico(USUARIOS, function(u){ return u.nombre+' '+u.apellidos; });
+      nombreUsuarioEjemplo = usuarios.length ? (usuarios[0].nombre+' '+usuarios[0].apellidos) : null;
+      return nombreUsuarioEjemplo;
+    }
+    if(campo.type==='checkboxes'){ var opts2 = opcionesDeCampo(campo); return opts2.length ? opts2[0] : ''; }
+    if(campo.type==='aspectos-actividad') return 'Movilidad, Comunicación — ejemplo';
+    if(campo.type==='matriz-radio'){
+      return campo.filas.map(function(fila){ return fila+': '+(campo.columnas[0]||''); }).join(' | ');
+    }
+    return 'Ejemplo';
+  });
+  var filas = (campoUsuarioKey && nombreUsuarioEjemplo) ? [{usuario: nombreUsuarioEjemplo, valores: valores}] : [{usuario: null, valores: valores}];
+  return {headers: headers, filas: filas};
+}
+function crearTodosLosRegistrosDeEjemplo(){
+  var vinculo = carpetaRealVinculada('registros');
+  if(!vinculo){
+    mostrarAviso('Primero conecta la carpeta de Registros Digitales (botón "Ver Carpeta de Registros Digitales" en la pantalla de Registros).', '🔗');
+    return;
+  }
+  pedirConfirmacion('Crear los 23 archivos con un ejemplo',
+    'Esto crea (o completa) los 23 archivos de Registros Digitales, cada uno con una primera fila de ejemplo — tanto en "General" como en la pestaña de un usuario de muestra. Esa fila se queda ahí a propósito, para que puedas enseñar cómo queda el sistema; bórrala tú misma cuando ya no la necesites. Puede tardar 1-2 minutos en completarse. ¿Continuar?',
+    function(){ ejecutarCreacionEjemplos(0); });
+}
+function ejecutarCreacionEjemplos(indice){
+  var tipos = REGISTRO_TIPOS;
+  if(indice >= tipos.length){
+    mostrarAviso('Listo — creados los '+tipos.length+' archivos de ejemplo en Registros Digitales.', '✅');
+    return;
+  }
+  var tipo = tipos[indice];
+  mostrarAviso('Creando ejemplo '+(indice+1)+' de '+tipos.length+': '+tipo.titulo+'…', '⏳');
+  var datos = generarFilaEjemplo(tipo);
+  guardarRegistroEnDriveReal(tipo, datos, function(){
+    ejecutarCreacionEjemplos(indice+1);
   });
 }
 
