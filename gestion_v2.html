@@ -556,6 +556,11 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-secondary" onclick="verCarpetaHorariosDrive()">📁 Ver carpeta en Drive</button>
         </div>
       </div>
+      <div class="card" style="margin-bottom:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <label class="fl-lbl" style="margin:0" for="input-fecha-horario">📅 Fecha de este horario</label>
+        <input type="date" class="form-input" id="input-fecha-horario" style="max-width:170px" onchange="actualizarFechaHorarioTexto()"/>
+        <strong id="texto-fecha-horario" style="color:#334155"></strong>
+      </div>
       <div class="tabs-bar">
         <button class="tab-btn" id="tab-horarios-area" onclick="cambiarSubvistaHorarios('area')">Por Área</button>
         <button class="tab-btn" id="tab-horarios-individual" onclick="cambiarSubvistaHorarios('individual')">Individuales</button>
@@ -3352,6 +3357,7 @@ var HORARIOS_POR_DIA = {
 };
 
 function renderHorarios(){
+  inicializarFechaHorarioSiHaceFalta();
   renderDiasTabsHorarios();
   renderFranjasDia();
   renderSelectAlumnosHorario();
@@ -3694,8 +3700,32 @@ var HISTORICO_HORARIOS = [];
     if(guardado) HISTORICO_HORARIOS = JSON.parse(guardado);
   }catch(e){ /* localStorage no disponible */ }
 })();
+function textoFechaHorarioFormato(iso){
+  if(!iso) return '';
+  var d = parsearFechaLocalOcio(iso);
+  var dia = DIAS_SEMANA_COMPLETO_OCIO[d.getDay()].toUpperCase();
+  var dd = String(d.getDate()).padStart(2,'0');
+  var mm = String(d.getMonth()+1).padStart(2,'0');
+  return dia+'/'+dd+'/'+mm+'/'+d.getFullYear();
+}
+var _fechaHorarioSeleccionada = '';
+function actualizarFechaHorarioTexto(){
+  var input = document.getElementById('input-fecha-horario');
+  _fechaHorarioSeleccionada = input.value;
+  document.getElementById('texto-fecha-horario').textContent = textoFechaHorarioFormato(_fechaHorarioSeleccionada);
+}
+function inicializarFechaHorarioSiHaceFalta(){
+  var input = document.getElementById('input-fecha-horario');
+  if(!input) return;
+  if(!input.value){
+    var hoy = new Date();
+    input.value = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+  }
+  actualizarFechaHorarioTexto();
+}
 function guardarHorarios(){
-  var snapshot = {fecha: new Date().toLocaleString('es-ES'), datos: JSON.parse(JSON.stringify(HORARIOS_POR_DIA))};
+  var etiquetaFecha = textoFechaHorarioFormato(_fechaHorarioSeleccionada) || new Date().toLocaleString('es-ES');
+  var snapshot = {fecha: etiquetaFecha, datos: JSON.parse(JSON.stringify(HORARIOS_POR_DIA))};
   HISTORICO_HORARIOS.unshift(snapshot);
   try{ localStorage.setItem('historico_horarios', JSON.stringify(HISTORICO_HORARIOS)); }catch(e){}
   mostrarAviso('Horario guardado en el histórico ('+snapshot.fecha+').');
@@ -3711,9 +3741,9 @@ function renderListaHistoricoHorarios(){
   HISTORICO_HORARIOS.forEach(function(snap, idx){
     h += '<div class="doc-item"><div class="doc-ic">🕐</div><div><div class="doc-name">Horario guardado — '+snap.fecha+'</div></div>';
     h += '<div class="doc-actions">';
-    h += '<button class="doc-btn" title="Ver" onclick="verHistoricoHorario('+idx+')">👁 Ver</button>';
+    h += '<button class="btn-secondary btn-sm" title="Ver" onclick="verHistoricoHorario('+idx+')">👁 Ver</button>';
     h += '<button class="btn-secondary btn-sm" title="Recuperarlo tal cual para seguir editándolo" onclick="restaurarHistoricoHorario('+idx+')">✏️ Editar</button>';
-    h += '<button class="doc-btn" title="Eliminar" onclick="eliminarHistoricoHorario('+idx+')">🗑️</button>';
+    h += '<button class="btn-secondary btn-sm" title="Eliminar" onclick="eliminarHistoricoHorario('+idx+')">🗑️ Eliminar</button>';
     h += '</div></div>';
   });
   el.innerHTML = h;
