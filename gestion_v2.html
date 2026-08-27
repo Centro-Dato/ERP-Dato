@@ -278,6 +278,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 
 <!-- ========== APP ========== -->
 <div id="app-screen" class="hidden">
+  <div id="barra-vista-empleado" class="hidden" style="position:sticky;top:0;z-index:500;background:#d97706;color:#fff;padding:10px 18px;display:flex;align-items:center;justify-content:center;gap:14px;font-weight:700;font-size:14px">
+    👁 Estás viendo el programa como lo vería un Empleado
+    <button class="btn-secondary btn-sm" style="background:#fff;color:#d97706" onclick="volverAVistaReal()">Volver a mi vista</button>
+  </div>
   <div class="sidebar">
     <div class="sb-logo" onclick="navTo('inicio');cerrarMenuMovil()" style="cursor:pointer">
       <div class="sb-logo-title">🗂️ Centro Dato</div>
@@ -711,6 +715,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div style="border-top:1px solid #e2e8f0;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
           <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios, Transporte y Ocio</button>
+          <button class="btn-secondary btn-sm" onclick="verComoEmpleado()">👁 Ver como Empleado</button>
         </div>
         <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px">Curso académico de Registros Digitales: <strong id="texto-curso-registros"></strong> — cada curso guarda sus propios archivos, sin tocar los de cursos anteriores.</div>
@@ -3906,6 +3911,38 @@ function completarEntradaAlPrograma(email){
   aplicarPermisosVisuales();
   navTo('inicio');
 }
+
+/* ---- Modo "Ver como Empleado": para enseñar el programa sin necesitar otra cuenta ---- */
+var _vistaEmpleadoActiva = false;
+var _respaldoLoginReal = null;
+var PERMISOS_EMPLEADO_EJEMPLO = {
+  usuarios:'ver', registros:'editar', paap:'nada', horarios:'ver', configuracion:'nada',
+  claveMedicacionActiva:false, puedeVerConexionDrive:false, paapDetalle:{},
+  registrosDetalle:{
+    actividades:'editar',caidas:'editar',cambios_posturales:'editar',comunicacion_familias:'editar',
+    sanitario:'ver',control_dietas:'editar',crisis_epilepticas:'nada',desaparicion_usuarios:'nada',
+    entradas_salidas:'editar',hidratacion:'editar',higiene:'editar',incontinencias:'editar',
+    limpieza:'editar',medicacion:'ver',abvd:'editar',quejas_sugerencias:'editar',
+    recepcion_medicacion:'nada',temperaturas_catering:'editar',transporte:'editar',visitas_centro:'editar'
+  }
+};
+function verComoEmpleado(){
+  if(_vistaEmpleadoActiva) return;
+  _respaldoLoginReal = {usuario: USUARIO_ACTUAL, permisos: PERMISOS_ACTUAL};
+  _vistaEmpleadoActiva = true;
+  USUARIO_ACTUAL = {nombre:'Empleado (ejemplo)', rol:'Empleado/a', email:_emailActual};
+  PERMISOS_ACTUAL = PERMISOS_EMPLEADO_EJEMPLO;
+  document.getElementById('barra-vista-empleado').classList.remove('hidden');
+  completarEntradaAlPrograma(_emailActual);
+}
+function volverAVistaReal(){
+  if(!_vistaEmpleadoActiva || !_respaldoLoginReal) return;
+  USUARIO_ACTUAL = _respaldoLoginReal.usuario;
+  PERMISOS_ACTUAL = _respaldoLoginReal.permisos;
+  _vistaEmpleadoActiva = false;
+  document.getElementById('barra-vista-empleado').classList.add('hidden');
+  completarEntradaAlPrograma(_emailActual);
+}
 function mostrarErrorLogin(msg){
   var el = document.getElementById('login-error');
   el.textContent = msg;
@@ -3946,6 +3983,8 @@ document.getElementById('btn-logout').onclick = function(){
   document.getElementById('login-screen').classList.remove('hidden');
   cerrarMenuMovil();
   _medicacionDesbloqueada = false;
+  _vistaEmpleadoActiva = false;
+  document.getElementById('barra-vista-empleado').classList.add('hidden');
   if(typeof google !== 'undefined' && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
 };
 
