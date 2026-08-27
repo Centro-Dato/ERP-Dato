@@ -683,7 +683,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-primary" onclick="guardarCambiosConfig()">💾 Guardar cambios</button>
         </div>
       </div>
-      <div class="info-banner">ℹ️ Solo Carlos, Tere y tú podéis modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
+      <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
       <div class="table-card">
         <table>
           <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Contraseña<br>Medicación</th><th>Interruptor<br>de Drive</th></tr></thead>
@@ -728,7 +728,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-primary btn-sm" onclick="abrirModalNuevoMensajeBuzon()">+ Nuevo mensaje</button>
         </div>
         <p style="color:#64748b;font-size:13.5px;line-height:1.6;margin-bottom:14px">
-          Solo Carlos, Tere y tú veis estos mensajes. De momento se guardan en este navegador (no se comparten todavía entre dispositivos); cuando conectemos esta carpeta a Drive de verdad, se verán por todo el equipo de coordinación desde cualquier sitio.
+          Solo quien tenga permiso de Configuración: Todo ve estos mensajes. De momento se guardan en este navegador (no se comparten todavía entre dispositivos); cuando conectemos esta carpeta a Drive de verdad, se verán por todo el equipo de coordinación desde cualquier sitio.
         </p>
         <div id="lista-buzon-sugerencias"></div>
       </div>
@@ -1043,7 +1043,7 @@ function irA(modulo){
   var permisoClave = (modulo==='expedientes') ? 'usuarios' : (modulo==='transporte' || modulo==='ocio') ? 'registros' : modulo;
   var permiso = PERMISOS_ACTUAL[permisoClave];
   if(!permiso || permiso==='nada'){
-    mostrarAviso('No tienes acceso a este apartado. Pídele a Carlos, Tere o al Coordinador que te den permiso desde Configuración.');
+    mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso desde Configuración.');
     return;
   }
   if(modulo==='usuarios' || modulo==='expedientes') navTo('usuarios');
@@ -2425,14 +2425,9 @@ var USUARIOS = [
 ];
 
 var EMPLEADOS = [
-  {id:1,nombre:'Coordinador (Centro Dato)',usuario:'gestion@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:2,nombre:'Empleado',usuario:'empleado@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,paapDetalle:{},registrosDetalle:{
-    actividades:'editar',caidas:'editar',cambios_posturales:'editar',comunicacion_familias:'editar',
-    sanitario:'ver',control_dietas:'editar',crisis_epilepticas:'nada',desaparicion_usuarios:'nada',
-    entradas_salidas:'editar',hidratacion:'editar',higiene:'editar',incontinencias:'editar',
-    limpieza:'editar',medicacion:'ver',abvd:'editar',quejas_sugerencias:'editar',
-    recepcion_medicacion:'nada',temperaturas_catering:'editar',transporte:'editar',visitas_centro:'editar'
-  }}}
+  {id:1,nombre:'Ana',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}}
 ];
 
 // Apartados de Proyecto Personal (antes "PAAP"), ya definidos.
@@ -2462,7 +2457,7 @@ function renderPaapGrid(){
   document.getElementById('paap-grid').innerHTML = h;
 }
 function abrirApartadoPaap(id, titulo){
-  if(nivelApartadoPaap(id)==='nada'){ mostrarAviso('No tienes acceso a este apartado. Pídele a Carlos, Tere o al Coordinador que te den permiso.'); return; }
+  if(nivelApartadoPaap(id)==='nada'){ mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.'); return; }
   document.getElementById('paap-detalle-titulo').textContent = titulo;
   var driveId = 'd'+(_driveIdSeq++);
   _driveStore[driveId] = {titulo: titulo, docs: []};
@@ -3883,14 +3878,10 @@ var REGISTRO_TIPOS = [
 var PERM_LABELS = {todo:'Todo',ver:'Ver',editar:'Editar',nada:'Nada'};
 
 /* ===================== LOGIN REAL CON GOOGLE ===================== */
-// Directorio de personas reales autorizadas a entrar, por su correo real de centrodato.org.
-// Ana: pendiente de confirmar tu correo real para añadirte aquí.
-// Carlos y Tere: pendientes de sus correos reales.
-var PERSONAS_REALES = {
-  'a.carrizosa@centrodato.org': {nombre:'Ana', rol:'Coordinadora', permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
-  't.millan@centrodato.org':   {nombre:'Tere', rol:'Coordinadora', permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
-  'c.sanzpacho@centrodato.org':{nombre:'Carlos', rol:'Coordinador', permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}}
-};
+// Quién puede entrar y con qué permisos se decide en la propia tabla de Configuración
+// (la lista EMPLEADOS) — añadir a alguien ahí ya le da acceso real, sin tocar código.
+// No exigimos que el correo sea @centrodato.org: si algún día dais de alta a alguien externo
+// con permiso solo en un apartado (p. ej. Transporte), entra igual con su propia cuenta de Google.
 
 function completarEntradaAlPrograma(email){
   document.getElementById('sb-nm').textContent = USUARIO_ACTUAL.nombre;
@@ -3902,7 +3893,7 @@ function completarEntradaAlPrograma(email){
   if(!puedeAccederConfig){
     navConfig.classList.add('disabled');
     navConfig.setAttribute('title','No tienes acceso a Configuración');
-    navConfig.onclick = function(){ mostrarAviso('No tienes acceso a Configuración. Pídele a Carlos, Tere o al Coordinador que te den permiso.'); };
+    navConfig.onclick = function(){ mostrarAviso('No tienes acceso a Configuración. Pídele a un Coordinador que te dé permiso.'); };
   } else {
     navConfig.classList.remove('disabled');
     navConfig.onclick = function(){ navTo('config'); };
@@ -3927,14 +3918,13 @@ function manejarLoginGoogle(respuesta){
       return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);
     }).join('')));
     var email = (payload.email||'').toLowerCase();
-    var dominioOk = email.indexOf('@centrodato.org') === email.length - '@centrodato.org'.length;
-    var persona = PERSONAS_REALES[email];
-    if(!dominioOk || !persona){
-      mostrarErrorLogin('La cuenta '+email+' no tiene acceso al programa. Si crees que es un error, pídele a la coordinación que te dé de alta.');
+    var persona = EMPLEADOS.filter(function(e){ return e.usuario.toLowerCase()===email; })[0];
+    if(!persona){
+      mostrarErrorLogin('La cuenta '+email+' no tiene acceso al programa. Si crees que es un error, pídele a la coordinación que te dé de alta en Configuración.');
       return;
     }
     document.getElementById('login-error').classList.add('hidden');
-    USUARIO_ACTUAL = {nombre: persona.nombre, rol: persona.rol, email: email};
+    USUARIO_ACTUAL = {nombre: persona.nombre, rol: persona.rol==='admin'?'Coordinador/a':'Empleado/a', email: email};
     PERMISOS_ACTUAL = persona.permisos;
     completarEntradaAlPrograma(email);
   } catch(e){
@@ -3947,7 +3937,7 @@ function inicializarLoginGoogle(){
     return;
   }
   document.getElementById('google-signin-cargando').classList.add('hidden');
-  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle, hd: 'centrodato.org' });
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle });
   google.accounts.id.renderButton(document.getElementById('google-signin-btn'), {theme:'outline', size:'large', text:'signin_with', width:280});
 }
 inicializarLoginGoogle();
@@ -4075,7 +4065,7 @@ function darDeBajaUsuarioActual(){
 var _expActual = null, _tabActual = 'identificacion';
 function abrirExpediente(id){
   if(PERMISOS_ACTUAL.usuarios==='nada'){
-    mostrarAviso('No tienes acceso a los Expedientes. Pídele a Carlos, Tere o al Coordinador que te den permiso.');
+    mostrarAviso('No tienes acceso a los Expedientes. Pídele a un Coordinador que te dé permiso.');
     return;
   }
   _expActual = USUARIOS.filter(function(u){return u.id===id;})[0];
@@ -4395,7 +4385,7 @@ function verCarpetaRegistrosDeUsuario(userId, vistaOrigen){
   var usuario = USUARIOS.filter(function(u){return u.id===userId;})[0];
   if(!usuario) return;
   if(PERMISOS_ACTUAL.registros==='nada'){
-    mostrarAviso('No tienes acceso a los Registros. Pídele a Carlos, Tere o al Coordinador que te den permiso.');
+    mostrarAviso('No tienes acceso a los Registros. Pídele a un Coordinador que te dé permiso.');
     return;
   }
   var nombreCompleto = usuario.nombre+' '+usuario.apellidos;
@@ -4413,7 +4403,7 @@ function verCarpetaRegistrosDeUsuario(userId, vistaOrigen){
 // con las filas de todos los usuarios dentro de ese mismo archivo.
 function verCarpetaRegistrosDigitales(vistaOrigen){
   if(PERMISOS_ACTUAL.registros==='nada'){
-    mostrarAviso('No tienes acceso a los Registros. Pídele a Carlos, Tere o al Coordinador que te den permiso.');
+    mostrarAviso('No tienes acceso a los Registros. Pídele a un Coordinador que te dé permiso.');
     return;
   }
   var docs = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return nivelRegistro(r.id)!=='nada'; }), function(r){ return r.titulo; })
@@ -4853,7 +4843,7 @@ function renderConfig(){
       '<option value="no" '+(!emp.permisos.claveMedicacionActiva?'selected':'')+'>No pedir</option>'+
       '<option value="si" '+(emp.permisos.claveMedicacionActiva?'selected':'')+'>Pedir contraseña</option>'+
       '</select></td>';
-    // Ve el interruptor de Conexión con Drive/API (pensado solo para Carlos, Tere y el Coordinador)
+    // Ve el estado de conexión con Drive/API (pensado solo para quien administra el sistema)
     h += '<td><select class="perm-select v-'+(emp.permisos.puedeVerConexionDrive?'todo':'nada')+'" onchange="cambiarPuedeVerConexionDrive('+emp.id+',this)">'+
       '<option value="no" '+(!emp.permisos.puedeVerConexionDrive?'selected':'')+'>No</option>'+
       '<option value="si" '+(emp.permisos.puedeVerConexionDrive?'selected':'')+'>Sí</option>'+
