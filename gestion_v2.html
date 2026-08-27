@@ -2453,6 +2453,19 @@ var EMPLEADOS = [
   {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
   {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}}
 ];
+// Cualquier empleado añadido o modificado desde Configuración se guarda en este navegador para
+// que no se pierda al refrescar. OJO: esto NO se comparte entre ordenadores/personas todavía —
+// para que alguien nuevo pueda entrar desde su propio dispositivo, hay que decírselo a Claude
+// para que lo añada también en el código publicado.
+function guardarEmpleadosLocalStorage(){
+  try{ localStorage.setItem('empleados_guardado', JSON.stringify(EMPLEADOS)); }catch(e){}
+}
+(function cargarEmpleadosGuardado(){
+  try{
+    var guardado = localStorage.getItem('empleados_guardado');
+    if(guardado) EMPLEADOS = JSON.parse(guardado);
+  }catch(e){ /* localStorage no disponible */ }
+})();
 
 // Apartados de Proyecto Personal (antes "PAAP"), ya definidos.
 // Aparecen automáticamente en el detalle de permisos de Configuración.
@@ -4128,6 +4141,7 @@ function crearNuevoEmpleado(){
     ? {usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:false,registrosDetalle:{},paapDetalle:{}}
     : {usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,registrosDetalle:{},paapDetalle:{}};
   EMPLEADOS.push({id:nuevoId, nombre:nombre, usuario:usuario, rol:rol, permisos:permisosBase});
+  guardarEmpleadosLocalStorage();
   cerrarModalNuevoEmpleado();
   renderConfig();
   mostrarAviso('✅ Empleado creado: '+nombre+' ('+usuario+'). Ya aparece en la tabla de abajo con los permisos por defecto de "'+(esAdmin?'Administrador':'Empleado')+'" — ajústalos como necesites.', '👤');
@@ -4977,11 +4991,13 @@ function cambiarPuedeVerConexionDrive(empId, sel){
   var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
   emp.permisos.puedeVerConexionDrive = (sel.value==='si');
   sel.className = 'perm-select v-'+(emp.permisos.puedeVerConexionDrive?'todo':'nada');
+  guardarEmpleadosLocalStorage();
 }
 function cambiarClaveMedicacionActiva(empId, sel){
   var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
   emp.permisos.claveMedicacionActiva = (sel.value==='si');
   sel.className = 'perm-select v-'+(emp.permisos.claveMedicacionActiva?'todo':'nada');
+  guardarEmpleadosLocalStorage();
 }
 function permSelectHtml(emp, mod){
   var val = emp.permisos[mod];
@@ -4997,6 +5013,7 @@ function cambiarPermiso(empId, modulo, sel){
   var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
   emp.permisos[modulo] = sel.value;
   sel.className = 'perm-select v-'+sel.value;
+  guardarEmpleadosLocalStorage();
 }
 
 /* ---- Detalle de permisos por tipo de registro (20 tipos) ---- */
@@ -5025,6 +5042,7 @@ function renderTablaDetalleRegistros(){
 function cambiarDetalleRegistro(tipoId, sel){
   _empDetalleActual.permisos.registrosDetalle[tipoId] = sel.value;
   sel.className = 'perm-select v-'+sel.value;
+  guardarEmpleadosLocalStorage();
 }
 function aplicarTodosDetalle(){
   var sel = document.getElementById('detalle-aplicar-todos');
@@ -5032,6 +5050,7 @@ function aplicarTodosDetalle(){
   REGISTRO_TIPOS.forEach(function(r){ _empDetalleActual.permisos.registrosDetalle[r.id] = sel.value; });
   renderTablaDetalleRegistros();
   sel.value = '';
+  guardarEmpleadosLocalStorage();
 }
 function cerrarModalDetalleRegistros(){
   document.getElementById('modal-registros-detalle').classList.add('hidden');
@@ -5067,6 +5086,7 @@ function renderTablaDetallePaap(){
 function cambiarDetallePaap(apartadoId, sel){
   _empDetallePaapActual.permisos.paapDetalle[apartadoId] = sel.value;
   sel.className = 'perm-select v-'+sel.value;
+  guardarEmpleadosLocalStorage();
 }
 function aplicarTodosDetallePaap(){
   var sel = document.getElementById('detalle-paap-aplicar-todos');
@@ -5074,12 +5094,14 @@ function aplicarTodosDetallePaap(){
   PAAP_APARTADOS.forEach(function(a){ _empDetallePaapActual.permisos.paapDetalle[a.id] = sel.value; });
   renderTablaDetallePaap();
   sel.value = '';
+  guardarEmpleadosLocalStorage();
 }
 function cerrarModalDetallePaap(){
   document.getElementById('modal-paap-detalle').classList.add('hidden');
 }
 function guardarCambiosConfig(){
-  mostrarAviso('Cambios realizados correctamente.', '✅');
+  guardarEmpleadosLocalStorage();
+  mostrarAviso('Cambios guardados en este navegador.', '✅');
 }
 </script>
 </body>
