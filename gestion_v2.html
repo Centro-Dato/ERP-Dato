@@ -552,6 +552,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-secondary" onclick="descargarHorarios()">⬇ Descargar</button>
           <button class="btn-secondary" onclick="imprimirHtml(generarHtmlHorarioSemana(), true)">🖨 Imprimir</button>
           <button class="btn-secondary" onclick="abrirHistoricoHorarios()">🕐 Histórico</button>
+          <button class="btn-secondary" onclick="abrirModalCopiarDia()">📋 Copiar día</button>
           <button class="btn-secondary" onclick="verCarpetaHorariosDrive()">📁 Ver carpeta en Drive</button>
         </div>
       </div>
@@ -795,6 +796,22 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cerrarModalNuevaPestanaOcio()">Cancelar</button>
       <button class="btn-primary" onclick="crearNuevaPestanaOcio()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: COPIAR DÍA DE HORARIOS ===== -->
+<div id="modal-copiar-dia" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalCopiarDia()">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-title">📋 Copiar día</div>
+    <div class="modal-sub">Copia todas las franjas y actividades de un día a otro</div>
+    <label class="form-lbl" for="copiar-dia-origen">Desde</label>
+    <select class="form-input" id="copiar-dia-origen" style="margin-bottom:12px"></select>
+    <label class="form-lbl" for="copiar-dia-destino">Hasta</label>
+    <select class="form-input" id="copiar-dia-destino" style="margin-bottom:16px"></select>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="cerrarModalCopiarDia()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarCopiarDia()">Copiar</button>
     </div>
   </div>
 </div>
@@ -3328,7 +3345,8 @@ function cargarMammoth(callback){
 var DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 var _diaHorarioActual = 'Miércoles';
 var _subvistaHorarios = 'area';
-var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
+var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','COMIDA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','HIDRATACIÓN','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
+var ACTIVIDADES_TODOS_LOS_USUARIOS = ['HIDRATACIÓN','COMIDA'];
 var HORARIOS_POR_DIA = {
   'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': []
 };
@@ -3358,6 +3376,39 @@ function cambiarDiaHorario(dia){
   _diaHorarioActual = dia;
   renderDiasTabsHorarios();
   renderFranjasDia();
+}
+
+/* ---- Copiar un día completo de Horarios a otro ---- */
+function abrirModalCopiarDia(){
+  var selOrigen = document.getElementById('copiar-dia-origen');
+  var selDestino = document.getElementById('copiar-dia-destino');
+  var opciones = DIAS_SEMANA.map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
+  selOrigen.innerHTML = opciones;
+  selDestino.innerHTML = opciones;
+  selOrigen.value = _diaHorarioActual;
+  var otro = DIAS_SEMANA.filter(function(d){ return d!==_diaHorarioActual; })[0];
+  selDestino.value = otro || _diaHorarioActual;
+  document.getElementById('modal-copiar-dia').classList.remove('hidden');
+}
+function cerrarModalCopiarDia(){
+  document.getElementById('modal-copiar-dia').classList.add('hidden');
+}
+function confirmarCopiarDia(){
+  var origen = document.getElementById('copiar-dia-origen').value;
+  var destino = document.getElementById('copiar-dia-destino').value;
+  if(origen===destino){ mostrarAviso('Elige dos días distintos.'); return; }
+  function copiarAhora(){
+    HORARIOS_POR_DIA[destino] = JSON.parse(JSON.stringify(HORARIOS_POR_DIA[origen] || []));
+    cerrarModalCopiarDia();
+    if(_diaHorarioActual===destino) renderFranjasDia();
+    mostrarAviso('Copiado el horario de '+origen+' a '+destino+'.', '✅');
+  }
+  var destinoTieneAlgo = (HORARIOS_POR_DIA[destino]||[]).length>0;
+  if(destinoTieneAlgo){
+    pedirConfirmacion('Sobrescribir '+destino, 'El día "'+destino+'" ya tiene un horario. Si continúas, se sustituye por el de "'+origen+'". ¿Continuar?', copiarAhora);
+  } else {
+    copiarAhora();
+  }
 }
 function alumnosDisponiblesEnFranja(idxFranja, aIdxActual){
   var franja = HORARIOS_POR_DIA[_diaHorarioActual][idxFranja];
@@ -3397,6 +3448,9 @@ function renderFranjasDia(){
       h += '</select>';
       h += '<input type="text" class="form-input" placeholder="Profesional" style="margin-bottom:8px;font-size:12.5px;color:#64748b" value="'+esc(a.profesional||'')+'" oninput="cambiarProfesionalTexto('+idx+','+aIdx+',this.value)"/>';
       h += '<div class="fl-lbl" style="margin-bottom:4px">Alumnos</div>';
+      if(ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)>-1){
+        h += '<div style="font-size:12.5px;color:#64748b;font-style:italic;margin-bottom:6px">👥 Todos los usuarios</div>';
+      } else {
       h += '<div class="chk-group" style="max-height:190px;overflow-y:auto;flex-direction:column;gap:4px">';
       var coloresAlumnos = a.coloresAlumnos || {};
       alumnosDisponiblesEnFranja(idx, aIdx).forEach(function(n){
@@ -3406,6 +3460,7 @@ function renderFranjasDia(){
         h += '<label class="chk-item" style="'+estiloLabel+'"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleAlumnoArea('+idx+','+aIdx+',\''+n.replace(/'/g,"")+'\',this.checked)"/> '+n+'</label>';
       });
       h += '</div>';
+      }
       if((a.alumnos||[]).length>0){
         h += '<div class="fl-lbl" style="margin-top:10px;margin-bottom:4px">🎨 Resaltar en esta caja</div>';
         h += '<select multiple id="resaltar-sel-'+idx+'-'+aIdx+'" class="form-input" style="height:80px;margin-bottom:6px">';
@@ -3460,6 +3515,12 @@ function eliminarArea(idx, aIdx){
 }
 function cambiarCampoArea(idx, aIdx, campo, valor){
   HORARIOS_POR_DIA[_diaHorarioActual][idx].areas[aIdx][campo] = valor;
+  if(campo==='nombre'){
+    if(ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(valor)>-1){
+      HORARIOS_POR_DIA[_diaHorarioActual][idx].areas[aIdx].alumnos = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;});
+    }
+    renderFranjasDia();
+  }
 }
 function cambiarProfesionalTexto(idx, aIdx, valor){
   HORARIOS_POR_DIA[_diaHorarioActual][idx].areas[aIdx].profesional = valor;
