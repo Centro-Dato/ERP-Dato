@@ -716,6 +716,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
           <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios, Transporte y Ocio</button>
           <button class="btn-secondary btn-sm" onclick="crearTodosLosRegistrosDeEjemplo()">🧪 Crear los 23 archivos de Registros con un ejemplo</button>
+          <button class="btn-secondary btn-sm" onclick="limpiarPestanasHoja1Sobrantes()">🧹 Quitar pestañas "Hoja 1" sobrantes</button>
         </div>
         <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px">Curso académico de Registros Digitales: <strong id="texto-curso-registros"></strong> — cada curso guarda sus propios archivos, sin tocar los de cursos anteriores.</div>
@@ -1633,7 +1634,7 @@ function obtenerOCrearHojaRegistro(tipoId, tituloRegistro, callback){
         fields: 'files(id,name)', supportsAllDrives:true, includeItemsFromAllDrives:true
       }).then(function(resp){
         if(resp.result.files && resp.result.files.length>0){
-          var hoja = {id: resp.result.files[0].id, name: resp.result.files[0].name};
+          var hoja = {id: resp.result.files[0].id, name: resp.result.files[0].name, nuevo:false};
           fijarHojaRegistroElegida(tipoId, hoja);
           callback(hoja, null);
           return;
@@ -1642,9 +1643,19 @@ function obtenerOCrearHojaRegistro(tipoId, tituloRegistro, callback){
           resource: {name: nombreArchivo, mimeType: 'application/vnd.google-apps.spreadsheet', parents: [vinculo.id]},
           fields: 'id,name', supportsAllDrives: true
         }).then(function(resp2){
-          var hoja = {id: resp2.result.id, name: resp2.result.name};
-          fijarHojaRegistroElegida(tipoId, hoja);
-          callback(hoja, null);
+          // Google crea el archivo con una pestaña "Hoja 1" por defecto — la renombramos a
+          // "General" en vez de dejarla suelta y crear otra pestaña aparte.
+          gapi.client.sheets.spreadsheets.get({spreadsheetId: resp2.result.id}).then(function(getResp){
+            var sheetIdDefault = getResp.result.sheets[0].properties.sheetId;
+            gapi.client.sheets.spreadsheets.batchUpdate({
+              spreadsheetId: resp2.result.id,
+              resource: {requests: [{updateSheetProperties:{properties:{sheetId:sheetIdDefault, title:'General'}, fields:'title'}}]}
+            }).then(function(){
+              var hoja = {id: resp2.result.id, name: resp2.result.name, nuevo:true};
+              fijarHojaRegistroElegida(tipoId, hoja);
+              callback(hoja, null);
+            }, function(err){ callback(null, err); });
+          }, function(err){ callback(null, err); });
         }, function(err){ callback(null, err); });
       }, function(err){ callback(null, err); });
     } catch(e){ callback(null, e); }
@@ -1652,17 +1663,15 @@ function obtenerOCrearHojaRegistro(tipoId, tituloRegistro, callback){
 }
 
 // Se asegura de que exista una pestaña con ese nombre; si no existe, la crea con la cabecera y
-// el color propio de ese tipo de registro. Si ya existía, no la toca (solo devuelve su sheetId).
-function asegurarPestanaConEncabezado(spreadsheetId, nombrePestana, headers, colorHex, callback){
+// el color propio de ese tipo de registro. Si ya existía, no la toca (salvo que forzarFormato
+// sea true — se usa justo cuando la pestaña "General" viene de renombrar la de por defecto,
+// que existe pero todavía no tiene ni cabecera ni color).
+function asegurarPestanaConEncabezado(spreadsheetId, nombrePestana, headers, colorHex, callback, forzarFormato){
   autorizarGoogleDrive(function(){
     try{
       gapi.client.sheets.spreadsheets.get({spreadsheetId: spreadsheetId}).then(function(resp){
         var existente = (resp.result.sheets||[]).filter(function(s){ return s.properties.title === nombrePestana; })[0];
-        if(existente){ callback(null, existente.properties.sheetId); return; }
-        gapi.client.sheets.spreadsheets.batchUpdate({
-          spreadsheetId: spreadsheetId, resource: {requests: [{addSheet:{properties:{title: nombrePestana}}}]}
-        }).then(function(resp2){
-          var sheetId = resp2.result.replies[0].addSheet.properties.sheetId;
+        function escribirCabeceraYColor(sheetId){
           gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: spreadsheetId, range: "'"+nombrePestana+"'!A1", valueInputOption:'RAW', resource:{values:[headers]}
           }).then(function(){
@@ -1676,6 +1685,13 @@ function asegurarPestanaConEncabezado(spreadsheetId, nombrePestana, headers, col
             gapi.client.sheets.spreadsheets.batchUpdate({spreadsheetId:spreadsheetId, resource:{requests:reqs}})
               .then(function(){ callback(null, sheetId); }, function(err){ callback(err); });
           }, function(err){ callback(err); });
+        }
+        if(existente && !forzarFormato){ callback(null, existente.properties.sheetId); return; }
+        if(existente && forzarFormato){ escribirCabeceraYColor(existente.properties.sheetId); return; }
+        gapi.client.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: spreadsheetId, resource: {requests: [{addSheet:{properties:{title: nombrePestana}}}]}
+        }).then(function(resp2){
+          escribirCabeceraYColor(resp2.result.replies[0].addSheet.properties.sheetId);
         }, function(err){ callback(err); });
       }, function(err){ callback(err); });
     } catch(e){ callback(e); }
@@ -1721,7 +1737,7 @@ function guardarRegistroEnDriveReal(tipo, datos, callback){
           });
         });
       });
-    });
+    }, hoja.nuevo);
   });
 }
 
@@ -1776,6 +1792,35 @@ function ejecutarCreacionEjemplos(indice){
   var datos = generarFilaEjemplo(tipo);
   guardarRegistroEnDriveReal(tipo, datos, function(){
     ejecutarCreacionEjemplos(indice+1);
+  });
+}
+
+/* ---- Limpieza: quita la pestaña "Hoja 1" sobrante de los archivos ya creados antes del arreglo ---- */
+function limpiarPestanasHoja1Sobrantes(){
+  var vinculo = carpetaRealVinculada('registros');
+  if(!vinculo){ mostrarAviso('Primero conecta la carpeta de Registros Digitales.', '🔗'); return; }
+  var candidatos = REGISTRO_TIPOS.map(function(t){ return {tipo:t, hoja: obtenerHojaRegistroElegida(t.id)}; }).filter(function(c){ return c.hoja; });
+  if(candidatos.length===0){ mostrarAviso('No hay ningún archivo de Registros creado todavía en este navegador.', 'ℹ️'); return; }
+  pedirConfirmacion('Quitar pestañas "Hoja 1" sobrantes',
+    'Voy a revisar los archivos de Registros ya creados y, si alguno tiene la pestaña "Hoja 1" de más (junto a "General"), la elimino. No toca nada más. ¿Continuar?',
+    function(){ ejecutarLimpiezaHoja1(candidatos, 0, 0); });
+}
+function ejecutarLimpiezaHoja1(candidatos, indice, contadorLimpiados){
+  if(indice >= candidatos.length){
+    mostrarAviso('Listo — revisados '+candidatos.length+' archivos, '+contadorLimpiados+' con "Hoja 1" quitada.', '✅');
+    return;
+  }
+  var hoja = candidatos[indice].hoja;
+  autorizarGoogleDrive(function(){
+    gapi.client.sheets.spreadsheets.get({spreadsheetId: hoja.id}).then(function(resp){
+      var hoja1 = (resp.result.sheets||[]).filter(function(s){ return s.properties.title === 'Hoja 1' || s.properties.title === 'Sheet1'; })[0];
+      var tieneGeneral = (resp.result.sheets||[]).some(function(s){ return s.properties.title === 'General'; });
+      if(!hoja1 || !tieneGeneral){ ejecutarLimpiezaHoja1(candidatos, indice+1, contadorLimpiados); return; }
+      gapi.client.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: hoja.id, resource: {requests: [{deleteSheet:{sheetId: hoja1.properties.sheetId}}]}
+      }).then(function(){ ejecutarLimpiezaHoja1(candidatos, indice+1, contadorLimpiados+1); },
+        function(){ ejecutarLimpiezaHoja1(candidatos, indice+1, contadorLimpiados); });
+    }, function(){ ejecutarLimpiezaHoja1(candidatos, indice+1, contadorLimpiados); });
   });
 }
 
