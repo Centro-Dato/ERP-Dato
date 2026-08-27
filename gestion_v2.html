@@ -695,6 +695,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Contraseña<br>Medicación</th><th>Interruptor<br>de Drive</th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
+        <button class="btn-secondary btn-sm" style="margin-top:10px" onclick="restablecerListaEmpleadosOficial()">🔄 Sincronizar con la lista oficial (descarta cambios solo de este navegador)</button>
       </div>
 
       <div class="card" style="margin-top:24px">
@@ -2448,17 +2449,32 @@ var USUARIOS = [
   }
 ];
 
-var EMPLEADOS = [
+var EMPLEADOS_OFICIAL = [
   {id:1,nombre:'Ana',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
   {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}}
+  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:4,nombre:'Mª Jose',usuario:'mj.bermejo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:5,nombre:'Marcial',usuario:'marcial@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:6,nombre:'Patri',usuario:'patricia@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:7,nombre:'Ana de Frutos',usuario:'t.ocupacional@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,registrosDetalle:{},paapDetalle:{}}}
 ];
+var EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
 // Cualquier empleado añadido o modificado desde Configuración se guarda en este navegador para
 // que no se pierda al refrescar. OJO: esto NO se comparte entre ordenadores/personas todavía —
 // para que alguien nuevo pueda entrar desde su propio dispositivo, hay que decírselo a Claude
 // para que lo añada también en el código publicado.
 function guardarEmpleadosLocalStorage(){
   try{ localStorage.setItem('empleados_guardado', JSON.stringify(EMPLEADOS)); }catch(e){}
+}
+function restablecerListaEmpleadosOficial(){
+  pedirConfirmacion('Sincronizar con la lista oficial',
+    'Esto descarta cualquier empleado o cambio de permisos que solo estuviera guardado en este navegador, y vuelve a cargar la lista tal como está publicada en el programa. ¿Continuar?',
+    function(){
+      EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
+      try{ localStorage.removeItem('empleados_guardado'); }catch(e){}
+      renderConfig();
+      mostrarAviso('Lista de empleados sincronizada con la oficial.', '✅');
+    });
 }
 (function cargarEmpleadosGuardado(){
   try{
