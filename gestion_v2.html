@@ -708,10 +708,11 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="card" style="margin-top:24px" id="tarjeta-conexion-drive">
         <div class="card-header">
           <div class="card-title">🔌 Conexión con Google Drive</div>
+          <button class="btn-secondary btn-sm" id="btn-toggle-drive" onclick="alternarConexionDrive()">Cambiar</button>
         </div>
-        <p style="color:#64748b;font-size:13.5px;line-height:1.6;margin-bottom:14px">
-          Estado real de las carpetas conectadas a vuestra cuenta de Google Drive:
-        </p>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <span id="estado-conexion-drive-badge" class="sync-badge">🟢 Activada</span>
+        </div>
         <div style="border-top:1px solid #e2e8f0;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
           <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios, Transporte y Ocio</button>
@@ -1077,6 +1078,7 @@ function aplicarPermisosVisuales(){
   var tarjetaDrive = document.getElementById('tarjeta-conexion-drive');
   if(tarjetaDrive){
     tarjetaDrive.style.display = PERMISOS_ACTUAL.puedeVerConexionDrive ? '' : 'none';
+    actualizarBadgeConexionDrive();
   }
 }
 /* ===================== CONEXIÓN REAL CON GOOGLE DRIVE (piloto: Horarios y Transporte) ===================== */
@@ -4894,6 +4896,28 @@ function renderConfig(){
   renderEstadoCarpetasPiloto();
   var elCurso = document.getElementById('texto-curso-registros');
   if(elCurso) elCurso.textContent = CURSO_REGISTROS_ACTUAL();
+}
+
+/* ---- Interruptor de Conexión con Drive/API (solo visible para quien tenga el permiso) ---- */
+var CONEXION_DRIVE_ACTIVA = true;
+(function cargarEstadoConexionDrive(){
+  try{
+    var guardado = localStorage.getItem('conexion_drive_activa');
+    if(guardado!==null) CONEXION_DRIVE_ACTIVA = (guardado==='true');
+  }catch(e){ /* localStorage no disponible */ }
+})();
+function actualizarBadgeConexionDrive(){
+  var badge = document.getElementById('estado-conexion-drive-badge');
+  if(!badge) return;
+  badge.textContent = CONEXION_DRIVE_ACTIVA ? '🟢 Activada' : '🔴 Desactivada';
+  badge.style.background = CONEXION_DRIVE_ACTIVA ? '#f0fdf4' : '#fef2f2';
+  badge.style.color = CONEXION_DRIVE_ACTIVA ? '#15803d' : '#b91c1c';
+  badge.style.borderColor = CONEXION_DRIVE_ACTIVA ? '#bbf7d0' : '#fecaca';
+}
+function alternarConexionDrive(){
+  CONEXION_DRIVE_ACTIVA = !CONEXION_DRIVE_ACTIVA;
+  try{ localStorage.setItem('conexion_drive_activa', CONEXION_DRIVE_ACTIVA); }catch(e){}
+  actualizarBadgeConexionDrive();
 }
 
 function cambiarPuedeVerConexionDrive(empId, sel){
