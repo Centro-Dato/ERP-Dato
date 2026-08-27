@@ -3739,7 +3739,7 @@ function renderListaHistoricoHorarios(){
   if(HISTORICO_HORARIOS.length===0){ el.innerHTML = '<div class="empty-state">Todavía no has guardado ningún horario. Pulsa "💾 Guardar" en Horarios para crear el primero.</div>'; return; }
   var h = '';
   HISTORICO_HORARIOS.forEach(function(snap, idx){
-    h += '<div class="doc-item"><div class="doc-ic">🕐</div><div><div class="doc-name">Horario guardado — '+snap.fecha+'</div></div>';
+    h += '<div class="doc-item"><div class="doc-ic">🕐</div><div><div class="doc-name">'+snap.fecha+'</div></div>';
     h += '<div class="doc-actions">';
     h += '<button class="btn-secondary btn-sm" title="Ver" onclick="verHistoricoHorario('+idx+')">👁 Ver</button>';
     h += '<button class="btn-secondary btn-sm" title="Recuperarlo tal cual para seguir editándolo" onclick="restaurarHistoricoHorario('+idx+')">✏️ Editar</button>';
