@@ -3345,8 +3345,8 @@ function cargarMammoth(callback){
 var DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 var _diaHorarioActual = 'Miércoles';
 var _subvistaHorarios = 'area';
-var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','COMIDA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','HIDRATACIÓN','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
-var ACTIVIDADES_TODOS_LOS_USUARIOS = ['HIDRATACIÓN','COMIDA'];
+var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','COMIDA','DESAYUNO','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
+var ACTIVIDADES_TODOS_LOS_USUARIOS = ['DESAYUNO','COMIDA'];
 var HORARIOS_POR_DIA = {
   'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': []
 };
@@ -3461,7 +3461,7 @@ function renderFranjasDia(){
       });
       h += '</div>';
       }
-      if((a.alumnos||[]).length>0){
+      if((a.alumnos||[]).length>0 && ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)===-1){
         h += '<div class="fl-lbl" style="margin-top:10px;margin-bottom:4px">🎨 Resaltar en esta caja</div>';
         h += '<select multiple id="resaltar-sel-'+idx+'-'+aIdx+'" class="form-input" style="height:80px;margin-bottom:6px">';
         (a.alumnos||[]).forEach(function(n){ h += '<option value="'+n+'">'+n+'</option>'; });
@@ -3711,8 +3711,8 @@ function renderListaHistoricoHorarios(){
   HISTORICO_HORARIOS.forEach(function(snap, idx){
     h += '<div class="doc-item"><div class="doc-ic">🕐</div><div><div class="doc-name">Horario guardado — '+snap.fecha+'</div></div>';
     h += '<div class="doc-actions">';
-    h += '<button class="doc-btn" title="Ver" onclick="verHistoricoHorario('+idx+')">👁</button>';
-    h += '<button class="doc-btn" title="Restaurar esta versión" onclick="restaurarHistoricoHorario('+idx+')">↺</button>';
+    h += '<button class="doc-btn" title="Ver" onclick="verHistoricoHorario('+idx+')">👁 Ver</button>';
+    h += '<button class="btn-secondary btn-sm" title="Recuperarlo tal cual para seguir editándolo" onclick="restaurarHistoricoHorario('+idx+')">✏️ Editar</button>';
     h += '<button class="doc-btn" title="Eliminar" onclick="eliminarHistoricoHorario('+idx+')">🗑️</button>';
     h += '</div></div>';
   });
@@ -3733,7 +3733,7 @@ function restaurarHistoricoHorario(idx){
   var snap = HISTORICO_HORARIOS[idx];
   if(!snap) return;
   HORARIOS_POR_DIA = JSON.parse(JSON.stringify(snap.datos));
-  mostrarAviso('Horario restaurado a la versión guardada el '+snap.fecha+'.');
+  mostrarAviso('Horario del '+snap.fecha+' recuperado — ya lo tienes cargado aquí para seguir editándolo.', '✏️');
   renderHorarios();
   navTo('horarios');
 }
