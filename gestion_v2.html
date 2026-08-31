@@ -1185,12 +1185,16 @@ function autorizarGoogleDrive(callback){
 // concreta que quiere vincular. El permiso queda limitado solo a esa carpeta (y lo de dentro).
 function abrirSelectorCarpeta(tipoId){
   autorizarGoogleDrive(function(){
+    var vistaNormal = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+      .setIncludeFolders(true)
+      .setSelectFolderEnabled(true);
+    var vistaUnidadesCompartidas = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+      .setIncludeFolders(true)
+      .setSelectFolderEnabled(true)
+      .setEnableDrives(true);
     var picker = new google.picker.PickerBuilder()
-      .addView(new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-        .setIncludeFolders(true)
-        .setSelectFolderEnabled(true)
-        .setMimeTypes('application/vnd.google-apps.folder')
-        .setEnableDrives(true))
+      .addView(vistaNormal)
+      .addView(vistaUnidadesCompartidas)
       .setOAuthToken(_tokenActual)
       .setDeveloperKey(GOOGLE_API_KEY)
       .setTitle('Elige la carpeta de '+((CARPETAS_PILOTO[tipoId]||{}).nombre||tipoId))
