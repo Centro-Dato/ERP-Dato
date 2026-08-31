@@ -4530,29 +4530,44 @@ function cargarDocsRealesTab(tabKey, folderIdUsuario, contenedorId){
         abrirSelectorArchivoParaSubir(carpetaCategoria.id, function(){ cargarDocsRealesTab(tabKey, folderIdUsuario, contenedorId); });
       };
     }
-    listarHijosDeCarpeta(carpetaCategoria.id, function(archivos, err2){
-      var cont2 = document.getElementById(contenedorId);
-      if(!cont2) return;
-      if(err2){ cont2.innerHTML = '<div class="empty-state">⚠️ No se pudieron leer los archivos.</div>'; return; }
-      if(!archivos || archivos.length===0){ cont2.innerHTML = '<div class="empty-state">Sin documentos todavía en esta carpeta de Drive ("'+esc(carpetaCategoria.name)+'").</div>'; return; }
-      var h = '';
-      archivos.forEach(function(a){
-        var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
-        var icono = esCarpeta ? '📁' : iconoPorExtension(a.name);
-        var nombreSeguro = a.name.replace(/'/g,"\\'");
-        h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">'+formatearFechaModificacion(a.modifiedTime)+'</div></div>';
-        if(esCarpeta){
-          h += '<div class="doc-actions"><button class="doc-btn" title="Abrir en Drive" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">👁</button></div></div>';
-        } else {
-          h += '<div class="doc-actions">';
-          h += '<button class="doc-btn" title="Vista previa" onclick="abrirPreviewDrive(\''+a.id+'\',\''+nombreSeguro+'\')">👁</button>';
-          h += '<button class="doc-btn" title="Descargar" onclick="window.open(\'https://drive.google.com/uc?export=download&id='+a.id+'\',\'_blank\')">⬇</button>';
-          h += '<button class="doc-btn" title="Ver en Drive" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">🔗</button>';
-          h += '</div></div>';
-        }
-      });
+    renderContenidoCarpetaExpediente(carpetaCategoria.id, carpetaCategoria.name, contenedorId, null);
+  });
+}
+// Lista el contenido de una carpeta real dentro de un hueco fijo del Expediente. Al hacer clic
+// en una subcarpeta, navega dentro de ella EN LA MISMA TARJETA (sin salir a Drive); "⬅ Volver"
+// regresa al nivel anterior.
+function renderContenidoCarpetaExpediente(folderId, folderNombre, contenedorId, folderAnteriorId){
+  var cont = document.getElementById(contenedorId);
+  if(cont) cont.innerHTML = '<div class="empty-state">⏳ Cargando…</div>';
+  listarHijosDeCarpeta(folderId, function(archivos, err){
+    var cont2 = document.getElementById(contenedorId);
+    if(!cont2) return;
+    if(err){ cont2.innerHTML = '<div class="empty-state">⚠️ No se pudieron leer los archivos.</div>'; return; }
+    var h = '';
+    if(folderAnteriorId){
+      h += '<button class="btn-secondary btn-sm" style="margin-bottom:10px" onclick="renderContenidoCarpetaExpediente(\''+folderAnteriorId+'\',\'\',\''+contenedorId+'\',null)">⬅ Volver</button>';
+    }
+    if(!archivos || archivos.length===0){
+      h += '<div class="empty-state">Sin documentos todavía en esta carpeta de Drive'+(folderNombre?(' ("'+esc(folderNombre)+'")'):'')+'.</div>';
       cont2.innerHTML = h;
+      return;
+    }
+    archivos.forEach(function(a){
+      var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
+      var icono = esCarpeta ? '📁' : iconoPorExtension(a.name);
+      var nombreSeguro = a.name.replace(/'/g,"\\'");
+      h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">'+(esCarpeta?'Carpeta':formatearFechaModificacion(a.modifiedTime))+'</div></div>';
+      if(esCarpeta){
+        h += '<div class="doc-actions"><button class="doc-btn" title="Entrar" onclick="renderContenidoCarpetaExpediente(\''+a.id+'\',\''+nombreSeguro+'\',\''+contenedorId+'\',\''+folderId+'\')">📂</button></div></div>';
+      } else {
+        h += '<div class="doc-actions">';
+        h += '<button class="doc-btn" title="Vista previa" onclick="abrirPreviewDrive(\''+a.id+'\',\''+nombreSeguro+'\')">👁</button>';
+        h += '<button class="doc-btn" title="Descargar" onclick="window.open(\'https://drive.google.com/uc?export=download&id='+a.id+'\',\'_blank\')">⬇</button>';
+        h += '<button class="doc-btn" title="Ver en Drive" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">🔗</button>';
+        h += '</div></div>';
+      }
     });
+    cont2.innerHTML = h;
   });
 }
 function renderDocsCardConSlots(titulo, tabKey, nombresSlots){
@@ -4616,8 +4631,10 @@ function renderTabPersonales(){
   asegurarEstructuraPersonales(d);
   var puedeEditar = PERMISOS_ACTUAL.usuarios==='editar' || PERMISOS_ACTUAL.usuarios==='todo';
   var h = '<div class="card"><div class="card-header"><div class="card-title">Datos Personales y Personas de Referencia</div>';
+  h += '<div style="display:flex;gap:8px">';
   if(puedeEditar) h += '<button class="btn-secondary btn-sm" onclick="anadirPersonaReferencia()">+ Añadir persona</button>';
-  h += '</div>';
+  if(puedeEditar) h += '<button class="btn-primary btn-sm" onclick="guardarDatosPersonales()">💾 Guardar</button>';
+  h += '</div></div>';
   d.personales.personas.forEach(function(persona, i){
     h += '<div class="card" style="padding:16px;margin-bottom:12px;background:#f8fafc">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
@@ -4651,11 +4668,23 @@ function renderTabPersonales(){
     h += '</div>';
   });
   h += '<div class="fl-lbl" style="margin-top:6px">Domicilio</div>';
+  h += '<div style="display:flex;gap:8px;align-items:center">';
   h += puedeEditar
-    ? '<input class="form-input" value="'+esc(d.personales.domicilio)+'" onchange="cambiarDomicilioPersonales(this.value)"/>'
-    : '<div class="fl-val">'+(d.personales.domicilio||'-')+'</div>';
+    ? '<input class="form-input" style="flex:1" value="'+esc(d.personales.domicilio)+'" onchange="cambiarDomicilioPersonales(this.value)"/>'
+    : '<div class="fl-val" style="flex:1">'+(d.personales.domicilio||'-')+'</div>';
+  h += '<button class="btn-secondary btn-sm" onclick="verDomicilioEnMapa()">📍 Ver en mapa</button>';
+  h += '</div>';
   h += '</div>';
   return h;
+}
+function verDomicilioEnMapa(){
+  var domicilio = (_expActual.exp.personales && _expActual.exp.personales.domicilio) || '';
+  if(!domicilio.trim()){ mostrarAviso('Escribe primero el domicilio para poder verlo en el mapa.'); return; }
+  window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(domicilio), '_blank');
+}
+function guardarDatosPersonales(){
+  renderUsuarios();
+  mostrarAviso('Datos personales guardados.', '✅');
 }
 function anadirPersonaReferencia(){
   _expActual.exp.personales.personas.push({nombreApellidos:'',tutorRepresentante:'',noProcedeTutor:false,telefonos:['']});
