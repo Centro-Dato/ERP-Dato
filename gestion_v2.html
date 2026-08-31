@@ -862,6 +862,22 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   </div>
 </div>
 
+<!-- ===== MODAL: VISTA PREVIA DE ARCHIVO REAL DE DRIVE ===== -->
+<div id="modal-preview-drive" class="modal-overlay hidden" onclick="if(event.target===this)cerrarPreviewDrive()">
+  <div class="modal-box" style="max-width:900px;width:92vw">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="modal-title" id="preview-drive-nombre" style="margin:0">Documento</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary btn-sm" id="btn-preview-descargar">⬇ Descargar</button>
+        <button class="btn-secondary btn-sm" id="btn-preview-imprimir">🖨 Imprimir</button>
+        <button class="btn-secondary btn-sm" id="btn-preview-drive">🔗 Ver en Drive</button>
+        <button class="btn-secondary btn-sm" onclick="cerrarPreviewDrive()">✕ Cerrar</button>
+      </div>
+    </div>
+    <iframe id="preview-drive-iframe" src="" style="width:100%;height:70vh;border:1px solid #e2e8f0;border-radius:10px" allow="autoplay"></iframe>
+  </div>
+</div>
+
 <!-- ===== MODAL CONFIRMACIÓN REGISTRO GUARDADO ===== -->
 <!-- ===== MODAL AVISO (sustituye a mostrarAviso(), que puede quedar bloqueado en algunos entornos) ===== -->
 <div id="modal-aviso" class="modal-overlay hidden" onclick="if(event.target===this)cerrarAviso()">
@@ -1869,6 +1885,26 @@ function listarHijosDeCarpeta(folderId, callback){
 }
 // Convierte los archivos/carpetas devueltos por Drive en "docs" para la tabla: las carpetas
 // navegan dentro del propio programa; los archivos se abren en una pestaña nueva de Drive.
+/* ---- Vista previa en el propio programa de un archivo real de Drive ---- */
+function abrirPreviewDrive(fileId, nombreArchivo){
+  document.getElementById('preview-drive-nombre').textContent = nombreArchivo;
+  document.getElementById('preview-drive-iframe').src = 'https://drive.google.com/file/d/'+fileId+'/preview';
+  document.getElementById('btn-preview-descargar').onclick = function(){
+    window.open('https://drive.google.com/uc?export=download&id='+fileId, '_blank');
+  };
+  document.getElementById('btn-preview-imprimir').onclick = function(){
+    window.open('https://drive.google.com/file/d/'+fileId+'/view', '_blank');
+    mostrarAviso('Se ha abierto el documento en Drive — usa el icono de imprimir de ahí arriba, o Ctrl+P.', '🖨');
+  };
+  document.getElementById('btn-preview-drive').onclick = function(){
+    window.open('https://drive.google.com/file/d/'+fileId+'/view', '_blank');
+  };
+  document.getElementById('modal-preview-drive').classList.remove('hidden');
+}
+function cerrarPreviewDrive(){
+  document.getElementById('modal-preview-drive').classList.add('hidden');
+  document.getElementById('preview-drive-iframe').src = '';
+}
 function formatearFechaModificacion(iso){
   if(!iso) return 'Archivo real de Drive';
   try{
@@ -1894,8 +1930,8 @@ function construirDocsDesdeArchivos(archivos, driveId){
       nombre: a.name,
       icono: esSheet ? '📊' : iconoPorExtension(a.name),
       sub: formatearFechaModificacion(a.modifiedTime),
-      accionPreview: "window.open('"+(a.webViewLink||'')+"','_blank')",
-      accionDescargar: "window.open('"+(a.webViewLink||'')+"','_blank')"
+      accionPreview: "abrirPreviewDrive('"+a.id+"','"+nombreSeguro+"')",
+      accionDescargar: "window.open('https://drive.google.com/uc?export=download&id="+a.id+"','_blank')"
     };
   });
 }
@@ -4435,8 +4471,17 @@ function cargarDocsRealesTab(tabKey, folderIdUsuario, contenedorId){
       archivos.forEach(function(a){
         var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
         var icono = esCarpeta ? '📁' : iconoPorExtension(a.name);
+        var nombreSeguro = a.name.replace(/'/g,"\\'");
         h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">'+formatearFechaModificacion(a.modifiedTime)+'</div></div>';
-        h += '<div class="doc-actions"><button class="doc-btn" title="Abrir" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">👁</button></div></div>';
+        if(esCarpeta){
+          h += '<div class="doc-actions"><button class="doc-btn" title="Abrir en Drive" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">👁</button></div></div>';
+        } else {
+          h += '<div class="doc-actions">';
+          h += '<button class="doc-btn" title="Vista previa" onclick="abrirPreviewDrive(\''+a.id+'\',\''+nombreSeguro+'\')">👁</button>';
+          h += '<button class="doc-btn" title="Descargar" onclick="window.open(\'https://drive.google.com/uc?export=download&id='+a.id+'\',\'_blank\')">⬇</button>';
+          h += '<button class="doc-btn" title="Ver en Drive" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">🔗</button>';
+          h += '</div></div>';
+        }
       });
       cont2.innerHTML = h;
     });
