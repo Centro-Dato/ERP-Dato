@@ -1851,38 +1851,91 @@ function ejecutarLimpiezaHoja1(candidatos, indice, contadorLimpiados){
 
 // Refresca la ficha de Drive que esté abierta AHORA MISMO con el contenido real de la carpeta recién
 // vinculada (o ya vinculada). Se usa tanto justo después de elegirla en el selector como al reconectar.
-function cargarContenidoRealEnCarpetaActual(tipoId, folderId, folderNombre){
-  var driveId = _driveIdActual;
-  if(!driveId || !_driveStore[driveId]) return;
+// Lista el contenido de una carpeta cualquiera, dado su ID directamente (sirve tanto para la
+// carpeta ya vinculada como para navegar dentro de sus subcarpetas).
+function listarHijosDeCarpeta(folderId, callback){
+  autorizarGoogleDrive(function(){
+    try{
+      if(!gapi.client.drive){ callback(null, 'drive_no_cargado'); return; }
+      gapi.client.drive.files.list({
+        q: "'"+folderId+"' in parents and trashed = false",
+        fields: 'files(id, name, mimeType, webViewLink, modifiedTime)',
+        orderBy: 'folder,name_natural',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      }).then(function(resp){ callback(resp.result.files, null); }, function(err){ callback(null, err); });
+    } catch(e){ callback(null, e); }
+  });
+}
+// Convierte los archivos/carpetas devueltos por Drive en "docs" para la tabla: las carpetas
+// navegan dentro del propio programa; los archivos se abren en una pestaña nueva de Drive.
+function construirDocsDesdeArchivos(archivos, driveId){
+  return (archivos||[]).map(function(a){
+    var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
+    var esSheet = a.mimeType && a.mimeType.indexOf('spreadsheet')>-1;
+    var nombreSeguro = a.name.replace(/'/g,"\\'");
+    if(esCarpeta){
+      return {
+        nombre: a.name,
+        icono: '📁',
+        accionPreview: "navegarCarpetaDrive('"+driveId+"','"+a.id+"','"+nombreSeguro+"')",
+        accionDescargar: "navegarCarpetaDrive('"+driveId+"','"+a.id+"','"+nombreSeguro+"')"
+      };
+    }
+    return {
+      nombre: a.name,
+      icono: esSheet ? '📊' : iconoPorExtension(a.name),
+      accionPreview: "window.open('"+(a.webViewLink||'')+"','_blank')",
+      accionDescargar: "window.open('"+(a.webViewLink||'')+"','_blank')"
+    };
+  });
+}
+// Navega dentro de una subcarpeta, dentro de la misma tabla (sin salir a Drive), guardando el
+// camino recorrido para poder volver hacia atrás.
+function navegarCarpetaDrive(driveId, folderId, folderNombre){
   var info = _driveStore[driveId];
+  if(!info) return;
+  info.pila = info.pila || [];
+  info.pila.push({id: info.folderIdReal, nombre: info.folderActualNombre || ''});
+  cargarCarpetaRealPorId(driveId, folderId, folderNombre);
+}
+function subirNivelCarpetaDrive(driveId){
+  var info = _driveStore[driveId];
+  if(!info || !info.pila || info.pila.length===0) return;
+  var anterior = info.pila.pop();
+  cargarCarpetaRealPorId(driveId, anterior.id, anterior.nombre);
+}
+// Carga (o recarga) el contenido de una carpeta real concreta, por su ID, dentro de la tabla.
+function cargarCarpetaRealPorId(driveId, folderId, folderNombre){
+  var info = _driveStore[driveId];
+  if(!info) return;
   info.noConectada = false;
   info.error = false;
   info.cargando = true;
-  info.tipoId = tipoId;
   info.folderIdReal = folderId;
-  if(folderNombre) info.titulo = info.tituloBase ? (info.tituloBase+' — '+folderNombre+' (Drive real)') : info.titulo;
+  info.folderActualNombre = folderNombre;
+  if(info.tituloBase) info.titulo = info.tituloBase+' — '+folderNombre;
   verCarpetaDrive(driveId, _driveVistaAnterior);
-  listarArchivosRealesDrive(tipoId, function(archivos, err){
+  listarHijosDeCarpeta(folderId, function(archivos, err){
     if(_driveIdActual !== driveId) return;
     info.cargando = false;
     if(err){
       info.error = true;
       verCarpetaDrive(driveId, _driveVistaAnterior);
-      mostrarAviso('No se pudo leer la carpeta real de Drive. Puede que el permiso haya caducado — prueba a conectar de nuevo desde el botón de arriba.', '⚠️');
+      mostrarAviso('No se pudo leer esta carpeta. Puede que el permiso haya caducado — prueba a conectar de nuevo.', '⚠️');
       return;
     }
-    info.docs = (archivos||[]).map(function(a){
-      var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
-      var esSheet = a.mimeType && a.mimeType.indexOf('spreadsheet')>-1;
-      return {
-        nombre: a.name,
-        icono: esCarpeta ? '📁' : (esSheet ? '📊' : iconoPorExtension(a.name)),
-        accionPreview: "window.open('"+(a.webViewLink||'')+"','_blank')",
-        accionDescargar: "window.open('"+(a.webViewLink||'')+"','_blank')"
-      };
-    });
+    info.docs = construirDocsDesdeArchivos(archivos, driveId);
     verCarpetaDrive(driveId, _driveVistaAnterior);
   });
+}
+function cargarContenidoRealEnCarpetaActual(tipoId, folderId, folderNombre){
+  var driveId = _driveIdActual;
+  if(!driveId || !_driveStore[driveId]) return;
+  var info = _driveStore[driveId];
+  info.tipoId = tipoId;
+  info.pila = [];
+  cargarCarpetaRealPorId(driveId, folderId, folderNombre);
 }
 
 // Abre una carpeta que puede estar (a) ya vinculada a Drive real, (b) solo simulada todavía.
@@ -1890,9 +1943,9 @@ function abrirCarpetaConectable(tipoId, tituloBase, vistaOrigen, docsSimuladosFa
   var vinculo = carpetaRealVinculada(tipoId);
   var driveId = 'd'+(_driveIdSeq++);
   if(vinculo){
-    _driveStore[driveId] = {titulo: tituloBase+' — '+vinculo.nombre+' (Drive real)', tituloBase: tituloBase, docs: [], cargando:true, tipoId: tipoId, folderIdReal: vinculo.id};
+    _driveStore[driveId] = {titulo: tituloBase+' — '+vinculo.nombre, tituloBase: tituloBase, docs: [], cargando:true, tipoId: tipoId, folderIdReal: vinculo.id, folderActualNombre: vinculo.nombre, pila: []};
     verCarpetaDrive(driveId, vistaOrigen);
-    listarArchivosRealesDrive(tipoId, function(archivos, err){
+    listarHijosDeCarpeta(vinculo.id, function(archivos, err){
       if(_driveIdActual !== driveId) return;
       if(err){
         _driveStore[driveId].cargando = false;
@@ -1902,16 +1955,7 @@ function abrirCarpetaConectable(tipoId, tituloBase, vistaOrigen, docsSimuladosFa
         return;
       }
       _driveStore[driveId].cargando = false;
-      _driveStore[driveId].docs = (archivos||[]).map(function(a){
-        var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
-        var esSheet = a.mimeType && a.mimeType.indexOf('spreadsheet')>-1;
-        return {
-          nombre: a.name,
-          icono: esCarpeta ? '📁' : (esSheet ? '📊' : iconoPorExtension(a.name)),
-          accionPreview: "window.open('"+(a.webViewLink||'')+"','_blank')",
-          accionDescargar: "window.open('"+(a.webViewLink||'')+"','_blank')"
-        };
-      });
+      _driveStore[driveId].docs = construirDocsDesdeArchivos(archivos, driveId);
       verCarpetaDrive(driveId, vistaOrigen);
     });
   } else {
@@ -4717,7 +4761,8 @@ function verCarpetaDrive(driveId, vistaOrigenExplicita){
   } else if(info.error){
     bannerEl.innerHTML = '<div class="info-banner">⚠️ No se pudo cargar el contenido real de esta carpeta. <button class="btn-secondary btn-sm" style="margin-left:8px" onclick="abrirSelectorCarpeta(\''+info.tipoId+'\')">🔗 Reconectar</button></div>';
   } else if(info.folderIdReal){
-    bannerEl.innerHTML = '<div class="info-banner">✅ Conectada a la carpeta real de Google Drive. <button class="btn-secondary btn-sm" style="margin-left:8px" onclick="desvincularCarpetaReal(\''+info.tipoId+'\')">Desvincular</button></div>';
+    var botonSubir = (info.pila && info.pila.length>0) ? '<button class="btn-secondary btn-sm" style="margin-left:8px" onclick="subirNivelCarpetaDrive(\''+driveId+'\')">⬅ Subir un nivel</button>' : '';
+    bannerEl.innerHTML = '<div class="info-banner">✅ Conectada a la carpeta real de Google Drive. Haz clic en una carpeta para entrar en ella.'+botonSubir+' <button class="btn-secondary btn-sm" style="margin-left:8px" onclick="desvincularCarpetaReal(\''+info.tipoId+'\')">Desvincular</button></div>';
   } else {
     bannerEl.innerHTML = '<div class="info-banner">📁 Esta es una <strong>simulación</strong> de cómo se vería la carpeta sincronizada de Google Drive.</div>';
   }
