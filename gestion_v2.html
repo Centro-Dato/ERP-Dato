@@ -4350,6 +4350,18 @@ function contactoPrincipal(u){
   }
   return u.contacto;
 }
+// Para el listado principal: nombre y teléfono de cada persona de referencia (no el tutor).
+function resumenPersonasContacto(u){
+  var personas = u.exp && u.exp.personales && u.exp.personales.personas;
+  if(!personas || personas.length===0) return (u.contacto.tutor||'-')+' · '+(u.contacto.tel||'-');
+  var partes = personas.map(function(p){
+    var nombre = p.nombreApellidos || '(sin nombre)';
+    var telsValidos = (p.telefonos||[]).filter(function(t){ return t; });
+    var tel = telsValidos.length>0 ? telsValidos.join(', ') : '-';
+    return nombre+' · '+tel;
+  });
+  return partes.join(' &nbsp;|&nbsp; ');
+}
 function renderUsuarios(filtro){
   var tbody = document.getElementById('tbl-usuarios');
   var h = '';
@@ -4359,7 +4371,7 @@ function renderUsuarios(filtro){
     if(filtro && full.indexOf(filtro.toLowerCase())===-1) return;
     h += '<tr onclick="abrirExpediente('+us.id+')">';
     h += '<td><div class="name-cell"><div class="avatar">'+us.nombre[0]+'</div><div class="name-text">'+us.nombre+' '+us.apellidos+'</div></div></td>';
-    h += '<td>'+contactoPrincipal(us).tutor+' · '+contactoPrincipal(us).tel+'</td>';
+    h += '<td>'+resumenPersonasContacto(us)+'</td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirExpediente('+us.id+')">📁 Ver expediente</button></td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();verCarpetaRegistrosDeUsuario('+us.id+')">📊 Carpeta de Registros</button></td>';
     h += '</tr>';
@@ -4622,10 +4634,12 @@ function asegurarEstructuraPersonales(d){
       nombreApellidos: p.nombre || '',
       tutorRepresentante: p.tutor || '',
       noProcedeTutor: false,
+      parentesco: '',
       telefonos: p.tel ? [p.tel] : ['']
     }];
     d.personales.domicilio = p.dom || '';
   }
+  d.personales.personas.forEach(function(p){ if(p.parentesco===undefined) p.parentesco = ''; });
 }
 function renderTabPersonales(){
   var d = _expActual.exp;
@@ -4646,6 +4660,10 @@ function renderTabPersonales(){
     h += '<div><div class="fl-lbl">Nombre y Apellidos</div>'+(puedeEditar
       ? '<input class="form-input" value="'+esc(persona.nombreApellidos)+'" onchange="cambiarCampoPersona('+i+',\'nombreApellidos\',this.value)"/>'
       : '<div class="fl-val">'+(persona.nombreApellidos||'-')+'</div>')+'</div>';
+    h += '<div><div class="fl-lbl">Parentesco</div>'+(puedeEditar
+      ? '<input class="form-input" placeholder="Ej: Madre, Hermano, Tutor legal..." value="'+esc(persona.parentesco)+'" onchange="cambiarCampoPersona('+i+',\'parentesco\',this.value)"/>'
+      : '<div class="fl-val">'+(persona.parentesco||'-')+'</div>')+'</div>';
+    h += '</div><div class="grid2">';
     h += '<div><div class="fl-lbl">Tutor/Representante</div>';
     if(puedeEditar){
       h += '<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12.5px;font-weight:600"><input type="checkbox" '+(persona.noProcedeTutor?'checked':'')+' onchange="cambiarNoProcedeTutor('+i+',this.checked)"/> No procede</label>';
@@ -4688,7 +4706,7 @@ function guardarDatosPersonales(){
   mostrarAviso('Datos personales guardados.', '✅');
 }
 function anadirPersonaReferencia(){
-  _expActual.exp.personales.personas.push({nombreApellidos:'',tutorRepresentante:'',noProcedeTutor:false,telefonos:['']});
+  _expActual.exp.personales.personas.push({nombreApellidos:'',tutorRepresentante:'',noProcedeTutor:false,parentesco:'',telefonos:['']});
   renderExpContent();
 }
 function quitarPersonaReferencia(i){
