@@ -113,9 +113,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .docs-grid.docs-list{grid-template-columns:1fr}
 .docs-grid.docs-list .doc-item{width:100%}
 .doc-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;border:2px solid #14141a;background:#f8fafc;flex-wrap:wrap;row-gap:8px}
+.doc-item>div+div{min-width:0;flex:1 1 160px}
 .doc-ic{width:38px;height:38px;border-radius:9px;background:var(--primary-light);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-.doc-name{font-weight:700;font-size:13.5px;color:#1e293b}
-.doc-sub{font-size:11.5px;color:#94a3b8;margin-top:1px}
+.doc-name{font-weight:700;font-size:13.5px;color:#1e293b;overflow-wrap:break-word;word-break:break-word}
+.doc-sub{font-size:11.5px;color:#94a3b8;margin-top:1px;overflow-wrap:break-word;word-break:break-word}
 .doc-actions{display:flex;gap:6px;margin-left:auto}
 .doc-btn{width:32px;height:32px;border-radius:8px;border:2px solid #14141a;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
 .doc-btn:hover{background:var(--primary-light);border-color:var(--primary)}
