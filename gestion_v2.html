@@ -1869,6 +1869,13 @@ function listarHijosDeCarpeta(folderId, callback){
 }
 // Convierte los archivos/carpetas devueltos por Drive en "docs" para la tabla: las carpetas
 // navegan dentro del propio programa; los archivos se abren en una pestaña nueva de Drive.
+function formatearFechaModificacion(iso){
+  if(!iso) return 'Archivo real de Drive';
+  try{
+    var d = new Date(iso);
+    return 'Modificado el '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  } catch(e){ return 'Archivo real de Drive'; }
+}
 function construirDocsDesdeArchivos(archivos, driveId){
   return (archivos||[]).map(function(a){
     var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
@@ -1878,6 +1885,7 @@ function construirDocsDesdeArchivos(archivos, driveId){
       return {
         nombre: a.name,
         icono: '📁',
+        sub: 'Carpeta',
         accionPreview: "navegarCarpetaDrive('"+driveId+"','"+a.id+"','"+nombreSeguro+"')",
         accionDescargar: "navegarCarpetaDrive('"+driveId+"','"+a.id+"','"+nombreSeguro+"')"
       };
@@ -1885,6 +1893,7 @@ function construirDocsDesdeArchivos(archivos, driveId){
     return {
       nombre: a.name,
       icono: esSheet ? '📊' : iconoPorExtension(a.name),
+      sub: formatearFechaModificacion(a.modifiedTime),
       accionPreview: "window.open('"+(a.webViewLink||'')+"','_blank')",
       accionDescargar: "window.open('"+(a.webViewLink||'')+"','_blank')"
     };
@@ -4349,7 +4358,79 @@ function archivoSlotSeleccionado(evento){
   renderExpContent();
   mostrarAviso('"'+archivo.name+'" subido a "'+_slotPendienteSubida.nombreSlot+'" (simulado; cuando conectemos Drive de verdad, se guardará ahí directamente).');
 }
+var PALABRAS_CLAVE_TAB_ORDEN = ['ingresobaja','identificacion','personales','discapacidad','docs_sujeciones','docs_programa','docs_informes','docs_medicacion','docs_otros','docs_autorizaciones','docs_ingreso'];
+var PALABRAS_CLAVE_TAB = {
+  identificacion: ['IDENTIFICACION'],
+  ingresobaja: ['INGRESO BAJA','INGRESOBAJA','INGRESO-BAJA'],
+  personales: ['PERSONALES','REFERENCIA'],
+  discapacidad: ['DISCAPACIDAD'],
+  docs_ingreso: ['INGRESO'],
+  docs_sujeciones: ['DISPOSITIVO','POSTURAL','SUJECION'],
+  docs_programa: ['PROGRAMA'],
+  docs_informes: ['INFORME'],
+  docs_medicacion: ['MEDICACION'],
+  docs_otros: ['OTROS'],
+  docs_autorizaciones: ['AUTORIZACION']
+};
+function normalizarTextoCategoria(t){
+  return (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+}
+function tabIdParaNombreCarpeta(nombreCarpeta){
+  var norm = normalizarTextoCategoria(nombreCarpeta);
+  for(var i=0;i<PALABRAS_CLAVE_TAB_ORDEN.length;i++){
+    var tabId = PALABRAS_CLAVE_TAB_ORDEN[i];
+    var claves = PALABRAS_CLAVE_TAB[tabId];
+    for(var j=0;j<claves.length;j++){
+      if(norm.indexOf(claves[j])>-1) return tabId;
+    }
+  }
+  return null;
+}
+// Carpeta real de usuario conectada (de momento, solo la del piloto de prueba) que coincide con
+// el usuario cuyo expediente se está viendo ahora mismo.
+function carpetaRealDelUsuarioActual(){
+  var vinculo = carpetaRealVinculada('usuario_piloto');
+  if(!vinculo || !_expActual) return null;
+  var nombreCompleto = normalizarTextoCategoria((_expActual.nombre+' '+_expActual.apellidos).trim());
+  var nombreCarpeta = normalizarTextoCategoria(vinculo.nombre||'');
+  if(nombreCarpeta.indexOf(nombreCompleto)>-1 || nombreCompleto.indexOf(nombreCarpeta)>-1) return vinculo;
+  return null;
+}
+function cargarDocsRealesTab(tabKey, folderIdUsuario, contenedorId){
+  listarHijosDeCarpeta(folderIdUsuario, function(hijos, err){
+    var cont = document.getElementById(contenedorId);
+    if(!cont) return;
+    if(err){ cont.innerHTML = '<div class="empty-state">⚠️ No se pudo leer la carpeta real.</div>'; return; }
+    var carpetaCategoria = (hijos||[]).filter(function(h){
+      return h.mimeType && h.mimeType.indexOf('folder')>-1 && tabIdParaNombreCarpeta(h.name)===tabKey;
+    })[0];
+    if(!carpetaCategoria){ cont.innerHTML = '<div class="empty-state">No se ha encontrado, dentro de Drive, la subcarpeta que corresponde a esta sección.</div>'; return; }
+    listarHijosDeCarpeta(carpetaCategoria.id, function(archivos, err2){
+      var cont2 = document.getElementById(contenedorId);
+      if(!cont2) return;
+      if(err2){ cont2.innerHTML = '<div class="empty-state">⚠️ No se pudieron leer los archivos.</div>'; return; }
+      if(!archivos || archivos.length===0){ cont2.innerHTML = '<div class="empty-state">Sin documentos todavía en esta carpeta de Drive.</div>'; return; }
+      var h = '';
+      archivos.forEach(function(a){
+        var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
+        var icono = esCarpeta ? '📁' : iconoPorExtension(a.name);
+        h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">'+formatearFechaModificacion(a.modifiedTime)+'</div></div>';
+        h += '<div class="doc-actions"><button class="doc-btn" title="Abrir" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">👁</button></div></div>';
+      });
+      cont2.innerHTML = h;
+    });
+  });
+}
 function renderDocsCardConSlots(titulo, tabKey, nombresSlots){
+  var carpetaReal = carpetaRealDelUsuarioActual();
+  if(carpetaReal){
+    var contenedorId = 'docs-real-'+tabKey;
+    var h2 = '<div class="card"><div class="card-header"><div class="card-title">'+titulo+' <span style="font-size:11px;color:#16a34a;font-weight:700">🔗 Drive real</span></div>';
+    h2 += '<button class="btn-secondary btn-sm" onclick="window.open(\'https://drive.google.com/drive/folders/'+carpetaReal.id+'\',\'_blank\')">📁 Abrir carpeta del usuario</button>';
+    h2 += '</div><div class="docs-grid" id="'+contenedorId+'"><div class="empty-state">⏳ Cargando desde Drive…</div></div></div>';
+    setTimeout(function(){ cargarDocsRealesTab(tabKey, carpetaReal.id, contenedorId); }, 0);
+    return h2;
+  }
   if(!_expActual.exp.slots) _expActual.exp.slots = {};
   if(!_expActual.exp.slots[tabKey]) _expActual.exp.slots[tabKey] = {};
   var slotsData = _expActual.exp.slots[tabKey];
@@ -4783,7 +4864,7 @@ function verCarpetaDrive(driveId, vistaOrigenExplicita){
       var accionImprimir = (typeof doc === 'object' && doc.accionImprimir) ? doc.accionImprimir : null;
       var accionEliminar = (typeof doc === 'object' && doc.accionEliminar) ? doc.accionEliminar : null;
       var docSafe = nombre.replace(/'/g,"");
-      h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+nombre+'</div><div class="doc-sub">Modificado hace 2 días (simulado)</div></div>';
+      h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+nombre+'</div><div class="doc-sub">'+((typeof doc === 'object' && doc.sub) ? doc.sub : 'Modificado hace 2 días (simulado)')+'</div></div>';
       h += '<div class="doc-actions">';
       if(accionPreview){
         h += '<button class="doc-btn" title="Vista previa" onclick="'+accionPreview+'">👁</button>';
