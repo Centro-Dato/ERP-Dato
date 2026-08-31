@@ -4252,6 +4252,17 @@ function crearNuevoEmpleado(){
   mostrarAviso('✅ Empleado creado: '+nombre+' ('+usuario+'). Ya aparece en la tabla de abajo con los permisos por defecto de "'+(esAdmin?'Administrador':'Empleado')+'" — ajústalos como necesites.', '👤');
 }
 
+function contactoPrincipal(u){
+  var personas = u.exp && u.exp.personales && u.exp.personales.personas;
+  if(personas && personas.length>0){
+    var p = personas[0];
+    var tutor = p.noProcedeTutor ? 'No procede' : (p.tutorRepresentante || u.contacto.tutor || '-');
+    var telsValidos = (p.telefonos||[]).filter(function(t){ return t; });
+    var tel = telsValidos.length>0 ? telsValidos.join(', ') : (u.contacto.tel || '-');
+    return {tutor: tutor, tel: tel};
+  }
+  return u.contacto;
+}
 function renderUsuarios(filtro){
   var tbody = document.getElementById('tbl-usuarios');
   var h = '';
@@ -4261,7 +4272,7 @@ function renderUsuarios(filtro){
     if(filtro && full.indexOf(filtro.toLowerCase())===-1) return;
     h += '<tr onclick="abrirExpediente('+us.id+')">';
     h += '<td><div class="name-cell"><div class="avatar">'+us.nombre[0]+'</div><div class="name-text">'+us.nombre+' '+us.apellidos+'</div></div></td>';
-    h += '<td>'+us.contacto.tutor+' · '+us.contacto.tel+'</td>';
+    h += '<td>'+contactoPrincipal(us).tutor+' · '+contactoPrincipal(us).tel+'</td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirExpediente('+us.id+')">📁 Ver expediente</button></td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();verCarpetaRegistrosDeUsuario('+us.id+')">📊 Carpeta de Registros</button></td>';
     h += '</tr>';
@@ -4287,7 +4298,7 @@ function abrirExpediente(id){
   document.getElementById('exp-av').textContent = _expActual.nombre[0];
   document.getElementById('exp-nombre').textContent = _expActual.nombre+' '+_expActual.apellidos;
   document.getElementById('exp-dni').textContent = 'DNI: '+_expActual.dni;
-  document.getElementById('exp-tutor').textContent = 'Tutor: '+_expActual.contacto.tutor;
+  document.getElementById('exp-tutor').textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
   var btnBaja = document.getElementById('btn-dar-de-baja');
   if(btnBaja) btnBaja.style.display = (PERMISOS_ACTUAL.configuracion==='todo') ? '' : 'none';
   renderExpTabs(); renderExpContent();
@@ -4531,10 +4542,14 @@ function quitarPersonaReferencia(i){
 }
 function cambiarCampoPersona(i, campo, valor){
   _expActual.exp.personales.personas[i][campo] = valor;
+  if(i===0 && (campo==='tutorRepresentante' || campo==='telefonos')){
+    document.getElementById('exp-tutor').textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
+  }
 }
 function cambiarNoProcedeTutor(i, marcado){
   _expActual.exp.personales.personas[i].noProcedeTutor = marcado;
   renderExpContent();
+  document.getElementById('exp-tutor').textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
 }
 function anadirTelefonoPersona(i){
   _expActual.exp.personales.personas[i].telefonos.push('');
@@ -4546,6 +4561,7 @@ function quitarTelefonoPersona(i, ti){
 }
 function cambiarTelefonoPersona(i, ti, valor){
   _expActual.exp.personales.personas[i].telefonos[ti] = valor;
+  if(i===0) document.getElementById('exp-tutor').textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
 }
 function cambiarDomicilioPersonales(valor){
   _expActual.exp.personales.domicilio = valor;
