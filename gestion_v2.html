@@ -359,7 +359,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
       <div class="page-header">
         <div><div class="page-title">Usuarios</div><div class="page-subtitle">Listado de usuarios y sus expedientes</div></div>
-        <button class="btn-primary" id="btn-nuevo-usuario" onclick="abrirModalNuevoUsuario()">+ Nuevo usuario</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" onclick="probarCarpetaUsuarioPiloto()">🔗 Probar con un usuario (piloto)</button>
+          <button class="btn-primary" id="btn-nuevo-usuario" onclick="abrirModalNuevoUsuario()">+ Nuevo usuario</button>
+        </div>
       </div>
       <div class="filters-row">
         <input class="search-box" placeholder="Buscar por nombre..." oninput="filtrarUsuarios(this.value)"/>
@@ -2744,6 +2747,13 @@ function pedirConfirmacion(titulo, sub, callback){
     callback();
   };
   document.getElementById('modal-confirmar-accion').classList.remove('hidden');
+}
+
+/* ---- Piloto: probar la conexión real con la carpeta de UN solo usuario, sin tocar el resto ---- */
+function probarCarpetaUsuarioPiloto(){
+  var driveId = 'd'+(_driveIdSeq++);
+  _driveStore[driveId] = {titulo:'Piloto: carpeta de un usuario', docs: [], noConectada:true, tipoId:'usuario_piloto'};
+  verCarpetaDrive(driveId, 'usuarios');
 }
 
 /* ---- Ver la carpeta real de Ocio en Drive (enlace directo, sin pasar por la API) ---- */
