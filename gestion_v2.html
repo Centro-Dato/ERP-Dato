@@ -4401,7 +4401,18 @@ function cambiarTabExp(id){ _tabActual = id; _editandoTabExp = false; renderExpT
 
 var _driveStore = {};
 var _driveIdSeq = 1;
-function renderDocsCard(titulo, docs, permitirAdjuntar){
+function renderDocsCard(titulo, docs, permitirAdjuntar, tabKeyReal){
+  var carpetaReal = tabKeyReal ? carpetaRealDelUsuarioActual() : null;
+  if(carpetaReal){
+    var contenedorId = 'docs-real-'+tabKeyReal;
+    var h2 = '<div class="card"><div class="card-header"><div class="card-title">'+titulo+' <span style="font-size:11px;color:#16a34a;font-weight:700">🔗 Drive real</span></div>';
+    h2 += '<div style="display:flex;gap:8px">';
+    h2 += '<button class="btn-secondary btn-sm" id="btn-subir-real-'+tabKeyReal+'" style="display:none">⬆ Subir archivo</button>';
+    h2 += '<button class="btn-secondary btn-sm" onclick="window.open(\'https://drive.google.com/drive/folders/'+carpetaReal.id+'\',\'_blank\')">📁 Abrir carpeta del usuario</button>';
+    h2 += '</div></div><div class="docs-grid" id="'+contenedorId+'"><div class="empty-state">⏳ Cargando desde Drive…</div></div></div>';
+    setTimeout(function(){ cargarDocsRealesTab(tabKeyReal, carpetaReal.id, contenedorId); }, 0);
+    return h2;
+  }
   var puedeEditar = PERMISOS_ACTUAL.usuarios==='editar' || PERMISOS_ACTUAL.usuarios==='todo';
   var driveId = 'd'+(_driveIdSeq++);
   _driveStore[driveId] = {titulo: titulo, docs: docs||[]};
@@ -4693,7 +4704,7 @@ function renderExpContent(){
   var tabInfo = TABS.filter(function(t){return t.id===_tabActual;})[0];
 
   if(_tabActual==='personales'){
-    el.innerHTML = renderTabPersonales() + renderDocsCard(tabInfo.label+' — Documentos', d['docs_personales'], true);
+    el.innerHTML = renderTabPersonales() + renderDocsCard(tabInfo.label+' — Documentos', d['docs_personales'], true, 'personales');
     return;
   }
 
@@ -4722,7 +4733,7 @@ function renderExpContent(){
     var slotsCampos = DOCUMENTOS_POR_TAB[_tabActual];
     h += slotsCampos
       ? renderDocsCardConSlots(tabInfo.label+' — Documentos', _tabActual, slotsCampos)
-      : renderDocsCard(tabInfo.label+' — Documentos', d['docs_'+_tabActual], true);
+      : renderDocsCard(tabInfo.label+' — Documentos', d['docs_'+_tabActual], true, _tabActual);
     el.innerHTML = h;
     return;
   }
@@ -4730,7 +4741,7 @@ function renderExpContent(){
   var slotsDocsOnly = DOCUMENTOS_POR_TAB[_tabActual];
   el.innerHTML = slotsDocsOnly
     ? renderDocsCardConSlots(tabInfo.label, _tabActual, slotsDocsOnly)
-    : renderDocsCard(tabInfo.label, d[_tabActual], true);
+    : renderDocsCard(tabInfo.label, d[_tabActual], true, _tabActual);
 }
 function activarEdicionExp(){
   _editandoTabExp = true;
