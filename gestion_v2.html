@@ -3453,6 +3453,20 @@ function alumnosDisponiblesEnFranja(idxFranja, aIdxActual){
   var todos = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;});
   return todos.filter(function(n){ return !usadosEnOtras[n]; });
 }
+function usuariosSinAsignarEnDia(){
+  var asignados = {};
+  var todosCubiertos = false;
+  (HORARIOS_POR_DIA[_diaHorarioActual] || []).forEach(function(f){
+    (f.areas||[]).forEach(function(a){
+      if(ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)>-1){ todosCubiertos = true; }
+      (a.alumnos||[]).forEach(function(n){ asignados[n] = true; });
+    });
+  });
+  if(todosCubiertos) return [];
+  return ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;})
+    .map(function(u){ return u.nombre+' '+u.apellidos; })
+    .filter(function(n){ return !asignados[n]; });
+}
 function renderFranjasDia(){
   var franjas = HORARIOS_POR_DIA[_diaHorarioActual] || [];
   var el = document.getElementById('horarios-area-contenido');
@@ -3461,6 +3475,10 @@ function renderFranjasDia(){
     return;
   }
   var h = '';
+  var sinAsignar = usuariosSinAsignarEnDia();
+  if(sinAsignar.length>0){
+    h += '<div class="info-banner" style="background:#fef3c7;border-color:#fde68a;color:#92400e">⚠️ Todavía sin asignar en ningún área hoy ('+sinAsignar.length+'): '+sinAsignar.join(', ')+'</div>';
+  }
   franjas.forEach(function(f, idx){
     h += '<div class="card" style="margin-bottom:16px">';
     h += '<div class="card-header" style="flex-wrap:wrap;gap:10px">';
