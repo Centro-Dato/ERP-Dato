@@ -4384,7 +4384,8 @@ var PALABRAS_CLAVE_TAB = {
   docs_autorizaciones: ['AUTORIZACION']
 };
 function normalizarTextoCategoria(t){
-  return (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  return (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g,' ').trim();
 }
 function tabIdParaNombreCarpeta(nombreCarpeta){
   var norm = normalizarTextoCategoria(nombreCarpeta);
@@ -4392,7 +4393,7 @@ function tabIdParaNombreCarpeta(nombreCarpeta){
     var tabId = PALABRAS_CLAVE_TAB_ORDEN[i];
     var claves = PALABRAS_CLAVE_TAB[tabId];
     for(var j=0;j<claves.length;j++){
-      if(norm.indexOf(claves[j])>-1) return tabId;
+      if(norm.indexOf(normalizarTextoCategoria(claves[j]))>-1) return tabId;
     }
   }
   return null;
@@ -4412,15 +4413,24 @@ function cargarDocsRealesTab(tabKey, folderIdUsuario, contenedorId){
     var cont = document.getElementById(contenedorId);
     if(!cont) return;
     if(err){ cont.innerHTML = '<div class="empty-state">⚠️ No se pudo leer la carpeta real.</div>'; return; }
-    var carpetaCategoria = (hijos||[]).filter(function(h){
-      return h.mimeType && h.mimeType.indexOf('folder')>-1 && tabIdParaNombreCarpeta(h.name)===tabKey;
-    })[0];
-    if(!carpetaCategoria){ cont.innerHTML = '<div class="empty-state">No se ha encontrado, dentro de Drive, la subcarpeta que corresponde a esta sección.</div>'; return; }
+    var carpetasVistas = (hijos||[]).filter(function(h){ return h.mimeType && h.mimeType.indexOf('folder')>-1; });
+    var coincidencias = carpetasVistas.filter(function(h){ return tabIdParaNombreCarpeta(h.name)===tabKey; });
+    if(coincidencias.length===0){
+      var listado = carpetasVistas.map(function(h){ return esc(h.name); }).join(', ') || '(no hay ninguna subcarpeta aquí)';
+      cont.innerHTML = '<div class="empty-state">No he encontrado, dentro de Drive, la subcarpeta de esta sección. Carpetas que sí hay en este usuario: '+listado+'</div>';
+      return;
+    }
+    if(coincidencias.length>1){
+      var listado2 = coincidencias.map(function(h){ return esc(h.name); }).join(', ');
+      cont.innerHTML = '<div class="empty-state">⚠️ Hay '+coincidencias.length+' carpetas que podrían ser esta sección: '+listado2+'. Dime cuál es la correcta para que no haya confusión.</div>';
+      return;
+    }
+    var carpetaCategoria = coincidencias[0];
     listarHijosDeCarpeta(carpetaCategoria.id, function(archivos, err2){
       var cont2 = document.getElementById(contenedorId);
       if(!cont2) return;
       if(err2){ cont2.innerHTML = '<div class="empty-state">⚠️ No se pudieron leer los archivos.</div>'; return; }
-      if(!archivos || archivos.length===0){ cont2.innerHTML = '<div class="empty-state">Sin documentos todavía en esta carpeta de Drive.</div>'; return; }
+      if(!archivos || archivos.length===0){ cont2.innerHTML = '<div class="empty-state">Sin documentos todavía en esta carpeta de Drive ("'+esc(carpetaCategoria.name)+'").</div>'; return; }
       var h = '';
       archivos.forEach(function(a){
         var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
