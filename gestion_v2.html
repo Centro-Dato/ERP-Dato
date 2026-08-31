@@ -4257,6 +4257,7 @@ function navTo(view){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
+  if(view==='usuarios') renderUsuarios();
 }
 
 /* ===================== INICIO ===================== */
