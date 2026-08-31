@@ -3380,6 +3380,7 @@ var DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 var _diaHorarioActual = 'Miércoles';
 var _subvistaHorarios = 'area';
 var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','COMIDA','DESAYUNO','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
+var PROFESIONALES_HORARIO = ['Ana','Marcial','Mª Jose','Patri','Tere'];
 var ACTIVIDADES_TODOS_LOS_USUARIOS = ['DESAYUNO','COMIDA'];
 var HORARIOS_POR_DIA = {
   'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': []
@@ -3481,7 +3482,10 @@ function renderFranjasDia(){
       h += '<option value="">— Elige actividad —</option>';
       ACTIVIDADES_HORARIO.forEach(function(act){ h += '<option value="'+act+'" '+(a.nombre===act?'selected':'')+'>'+act+'</option>'; });
       h += '</select>';
-      h += '<input type="text" class="form-input" placeholder="Profesional" style="margin-bottom:8px;font-size:12.5px;color:#64748b" value="'+esc(a.profesional||'')+'" oninput="cambiarProfesionalTexto('+idx+','+aIdx+',this.value)"/>';
+      h += '<select class="form-input" style="margin-bottom:8px;font-size:12.5px;color:#64748b" onchange="cambiarProfesionalTexto('+idx+','+aIdx+',this.value)">';
+      h += '<option value="">— Profesional —</option>';
+      PROFESIONALES_HORARIO.forEach(function(p){ h += '<option value="'+p+'" '+(a.profesional===p?'selected':'')+'>'+p+'</option>'; });
+      h += '</select>';
       h += '<div class="fl-lbl" style="margin-bottom:4px">Alumnos</div>';
       if(ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)>-1){
         h += '<div style="font-size:12.5px;color:#64748b;font-style:italic;margin-bottom:6px">👥 Todos los usuarios</div>';
