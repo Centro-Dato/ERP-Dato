@@ -451,7 +451,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <div class="card-title" id="formreg-titulo">Registro</div>
           <div style="display:flex;gap:8px;align-items:center">
             <button class="btn-secondary btn-sm" id="btn-drive-registro">📁 Ver carpeta en Drive</button>
-            <span class="sync-badge">🔗 Se guardará en la hoja del usuario</span>
+            <span class="sync-badge" id="badge-sync-registro">🔗 Se guardará en la hoja del usuario</span>
           </div>
         </div>
         <div class="form-grid" id="formreg-campos"></div>
@@ -5245,6 +5245,10 @@ function abrirFormRegistro(id, titulo){
   var tipo = REGISTRO_TIPOS.filter(function(t){return t.id===id;})[0];
   _regActualId = id; _regActualTitulo = titulo;
   renderCamposFormulario(tipo);
+  var esGeneral = REGISTROS_NO_LIGADOS_A_USUARIO.indexOf(id)>-1;
+  document.getElementById('badge-sync-registro').textContent = esGeneral
+    ? '🔗 Se guardará en el archivo general'
+    : '🔗 Se guardará en la hoja del usuario';
   var nivel = nivelRegistro(id);
   var puedeGuardar = (id==='medicacion' && PERMISOS_ACTUAL.claveMedicacionActiva) ? _medicacionDesbloqueada : (nivel==='editar' || nivel==='todo');
   var btnGuardar = document.getElementById('btn-guardar-registro');
