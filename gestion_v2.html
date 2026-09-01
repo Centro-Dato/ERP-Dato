@@ -4459,8 +4459,13 @@ function renderDocsCard(titulo, docs, permitirAdjuntar, tabKeyReal){
     h2 += '<div style="display:flex;gap:8px">';
     h2 += '<button class="btn-secondary btn-sm" id="btn-subir-real-'+tabKeyReal+'" style="display:none">⬆ Subir archivo</button>';
     h2 += '<button class="btn-secondary btn-sm" onclick="window.open(\'https://drive.google.com/drive/folders/'+carpetaReal.id+'\',\'_blank\')">📁 Abrir carpeta del usuario</button>';
-    h2 += '</div></div><div class="docs-grid" id="'+contenedorId+'"><div class="empty-state">⏳ Cargando desde Drive…</div></div></div>';
-    setTimeout(function(){ cargarDocsRealesTab(tabKeyReal, carpetaReal.id, contenedorId); }, 0);
+    h2 += '</div></div><div class="docs-grid" id="'+contenedorId+'">';
+    if(_tokenActual){
+      h2 += '<div class="empty-state">⏳ Cargando desde Drive…</div></div></div>';
+      setTimeout(function(){ cargarDocsRealesTab(tabKeyReal, carpetaReal.id, contenedorId); }, 0);
+    } else {
+      h2 += '<div class="empty-state">Pulsa para ver los documentos reales de esta sección. <button class="btn-primary btn-sm" style="margin-left:8px" onclick="autorizarGoogleDrive(function(){cargarDocsRealesTab(\''+tabKeyReal+'\',\''+carpetaReal.id+'\',\''+contenedorId+'\')})">🔗 Conectar y ver</button></div></div></div>';
+    }
     return h2;
   }
   var puedeEditar = PERMISOS_ACTUAL.usuarios==='editar' || PERMISOS_ACTUAL.usuarios==='todo';
@@ -4628,8 +4633,13 @@ function renderDocsCardConSlots(titulo, tabKey, nombresSlots){
     h2 += '<div style="display:flex;gap:8px">';
     h2 += '<button class="btn-secondary btn-sm" id="btn-subir-real-'+tabKey+'" style="display:none">⬆ Subir archivo</button>';
     h2 += '<button class="btn-secondary btn-sm" onclick="window.open(\'https://drive.google.com/drive/folders/'+carpetaReal.id+'\',\'_blank\')">📁 Abrir carpeta del usuario</button>';
-    h2 += '</div></div><div class="docs-grid" id="'+contenedorId+'"><div class="empty-state">⏳ Cargando desde Drive…</div></div></div>';
-    setTimeout(function(){ cargarDocsRealesTab(tabKey, carpetaReal.id, contenedorId); }, 0);
+    h2 += '</div></div><div class="docs-grid" id="'+contenedorId+'">';
+    if(_tokenActual){
+      h2 += '<div class="empty-state">⏳ Cargando desde Drive…</div></div></div>';
+      setTimeout(function(){ cargarDocsRealesTab(tabKey, carpetaReal.id, contenedorId); }, 0);
+    } else {
+      h2 += '<div class="empty-state">Pulsa para ver los documentos reales de esta sección. <button class="btn-primary btn-sm" style="margin-left:8px" onclick="autorizarGoogleDrive(function(){cargarDocsRealesTab(\''+tabKey+'\',\''+carpetaReal.id+'\',\''+contenedorId+'\')})">🔗 Conectar y ver</button></div></div></div>';
+    }
     return h2;
   }
   if(!_expActual.exp.slots) _expActual.exp.slots = {};
