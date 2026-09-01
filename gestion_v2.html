@@ -4232,13 +4232,29 @@ function manejarLoginGoogle(respuesta){
   }
 }
 var COLORES_AVATAR_EQUIPO = ['#0270c4','#059669','#c2410c','#7c3aed','#0891b2','#be185d','#65a30d','#9333ea'];
+function segundaInicialNombre(nombre){
+  var partes = nombre.trim().split(/\s+/).slice(1);
+  var candidato = partes.filter(function(p){ return p.length > 2; })[0] || partes[0];
+  return candidato ? candidato[0].toUpperCase() : '';
+}
 function renderAvataresEquipoLogin(){
   var cont = document.getElementById('login-avatares-equipo');
   if(!cont) return;
   var lista = ordenarAlfabetico(EMPLEADOS, function(e){ return e.nombre; });
+  var conteoInicial = {};
+  lista.forEach(function(e){
+    var ini = e.nombre[0].toUpperCase();
+    conteoInicial[ini] = (conteoInicial[ini]||0) + 1;
+  });
   cont.innerHTML = lista.map(function(e, i){
     var color = COLORES_AVATAR_EQUIPO[i % COLORES_AVATAR_EQUIPO.length];
-    return '<div title="'+esc(e.nombre)+'" style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center">'+e.nombre[0].toUpperCase()+'</div>';
+    var ini = e.nombre[0].toUpperCase();
+    var texto = ini;
+    if(conteoInicial[ini] > 1){
+      var segunda = segundaInicialNombre(e.nombre);
+      if(segunda) texto += segunda;
+    }
+    return '<div title="'+esc(e.nombre)+'" style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;font-size:'+(texto.length>1?'10.5px':'12.5px')+';font-weight:700;display:flex;align-items:center;justify-content:center">'+texto+'</div>';
   }).join('');
 }
 renderAvataresEquipoLogin();
