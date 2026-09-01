@@ -1576,7 +1576,8 @@ var REGISTRO_COLOR = {
   entradas_salidas:'0EA5E9', hidratacion:'0891B2', higiene:'15803D', incontinencias:'7C3AED',
   limpieza:'64748B', medicacion:'9333EA', abvd:'0D9488', quejas_sugerencias:'CA8A04',
   recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA', solicitud_menus:'C2410C',
-  temperaturas_catering:'B45309', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9'
+  temperaturas_catering:'B45309', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9',
+  temperaturas_nevera:'1D4ED8'
 };
 
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
@@ -4132,6 +4133,13 @@ var REGISTRO_TIPOS = [
     {k:'fechaFin',label:'Fecha fin (si es temporal)',type:'date'},
     {k:'solicitadoPor',label:'Solicitado por',type:'text'}
    ]},
+  {id:'temperaturas_nevera',titulo:'Registro Temperaturas Nevera',icon:'🧊',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Control diario de temperatura de la nevera',
+   fields:[
+    {k:'correo',label:'Correo',type:'text',req:true},
+    {k:'fecha',label:'Fecha',type:'date',req:true},
+    {k:'temp_maxima',label:'Temperatura Máxima',type:'text',req:true},
+    {k:'temp_minima',label:'Temperatura Mínima',type:'text',req:true}
+   ]},
   {id:'temperaturas_catering',titulo:'Registro Temperaturas Catering',icon:'🌡️',color:'#fff7ed',iconColor:'#7c2d12',desc:'Control de temperatura de comidas',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
@@ -4878,7 +4886,7 @@ function verPreviaCartaOcio(mes){
 
 // Tipos de registro que NO están ligados a un usuario concreto (son generales del centro)
 // y por tanto no deben aparecer en la carpeta de Registros de un usuario individual.
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_catering','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_catering','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal'];
 
 function verCarpetaRegistrosUsuario(){
   if(!_expActual) return;
