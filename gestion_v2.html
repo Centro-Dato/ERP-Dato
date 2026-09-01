@@ -263,9 +263,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   <div class="login-box">
     <div class="login-icon">🗂️</div>
     <div class="login-title">Gestión Centro Dato</div>
-    <div class="login-sub">Accede con tu cuenta de Google de centrodato.org</div>
+    <div class="login-sub">Elige tu cuenta para entrar</div>
     <div id="login-error" class="login-err hidden"></div>
-    <div id="google-signin-btn" style="display:flex;justify-content:center;margin:18px 0"></div>
+    <div id="login-avatares-equipo" style="display:flex;justify-content:center;gap:8px;margin:16px 0;flex-wrap:wrap"></div>
+    <div id="google-signin-btn" style="display:flex;justify-content:center;margin:14px 0"></div>
     <div id="google-signin-cargando" style="text-align:center;color:#94a3b8;font-size:13px;margin:18px 0">Cargando inicio de sesión de Google…</div>
     <div style="display:flex;justify-content:center;gap:10px;margin-top:20px">
       <div class="theme-swatch active" data-t="azul" style="background:#0270c4" onclick="cambiarTema('azul',this)" title="Azul Institucional"></div>
@@ -4230,6 +4231,17 @@ function manejarLoginGoogle(respuesta){
     mostrarErrorLogin('No se pudo verificar la cuenta de Google. Inténtalo de nuevo.');
   }
 }
+var COLORES_AVATAR_EQUIPO = ['#0270c4','#059669','#c2410c','#7c3aed','#0891b2','#be185d','#65a30d','#9333ea'];
+function renderAvataresEquipoLogin(){
+  var cont = document.getElementById('login-avatares-equipo');
+  if(!cont) return;
+  var lista = ordenarAlfabetico(EMPLEADOS, function(e){ return e.nombre; });
+  cont.innerHTML = lista.map(function(e, i){
+    var color = COLORES_AVATAR_EQUIPO[i % COLORES_AVATAR_EQUIPO.length];
+    return '<div title="'+esc(e.nombre)+'" style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center">'+e.nombre[0].toUpperCase()+'</div>';
+  }).join('');
+}
+renderAvataresEquipoLogin();
 function inicializarLoginGoogle(){
   if(typeof google === 'undefined' || !google.accounts || !google.accounts.id){
     setTimeout(inicializarLoginGoogle, 300);
