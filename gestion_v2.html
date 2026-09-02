@@ -441,9 +441,9 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
       <div class="page-header">
         <div><div class="page-title">Registros</div><div class="page-subtitle">Selecciona el tipo de registro que quieres rellenar</div></div>
-        <button class="btn-secondary" onclick="verCarpetaRegistrosDigitales('registros')">📁 Ver Carpeta de Registros Digitales</button>
+        <button class="btn-secondary" id="btn-registros-carpeta-drive-principal" onclick="verCarpetaRegistrosDigitales('registros')">📁 Ver Carpeta de Registros Digitales</button>
       </div>
-      <div class="info-banner">ℹ️ Cada registro que rellenes se guarda automáticamente en la hoja de cálculo individual de ese usuario, dentro de su carpeta en Drive. En "📁 Ver Carpeta de Registros Digitales" puedes ver, para cada tipo, el archivo con todos los usuarios juntos (actividades de todos, caídas de todos, sanitario de todos...).</div>
+      <div class="info-banner" id="banner-registros-drive">ℹ️ Cada registro que rellenes se guarda automáticamente en la hoja de cálculo individual de ese usuario, dentro de su carpeta en Drive. En "📁 Ver Carpeta de Registros Digitales" puedes ver, para cada tipo, el archivo con todos los usuarios juntos (actividades de todos, caídas de todos, sanitario de todos...).</div>
       <div class="reg-grid" id="reg-grid"></div>
     </div>
 
@@ -1110,6 +1110,13 @@ function aplicarPermisosVisuales(){
     var permiso = PERMISOS_ACTUAL[permisoClave];
     btn.style.display = (!permiso || permiso==='nada') ? 'none' : '';
   });
+  // "Documentación CAM": todavía no existe de verdad, así que se rige solo por su permiso
+  // (por defecto "Nada" para todos, hasta que se construya y se le dé acceso a alguien).
+  var btnCamdoc = document.getElementById('home-camdoc');
+  if(btnCamdoc){
+    var tieneCamdoc = PERMISOS_ACTUAL.documentacionCam && PERMISOS_ACTUAL.documentacionCam!=='nada';
+    btnCamdoc.style.display = tieneCamdoc ? '' : 'none';
+  }
   // Botón "+ Nuevo usuario": solo si puede editar
   var btnNuevo = document.getElementById('btn-nuevo-usuario');
   if(btnNuevo){
@@ -1127,10 +1134,11 @@ function aplicarPermisosVisuales(){
   if(tarjetaMedias){
     tarjetaMedias.style.display = PERMISOS_ACTUAL.puedeVerMediasTransporte ? '' : 'none';
   }
-  // Botones de "Ver carpeta en Drive" / "Guardar en hoja de cálculo real": solo para quien
+  // Botones/avisos de "Ver carpeta en Drive" / "Guardar en hoja de cálculo real": solo para quien
   // administra las conexiones de Drive (Coordinadores). Los empleados solo rellenan formularios.
   ['btn-drive-registro','btn-paap-detalle-drive','btn-ocio-carpeta-drive','btn-ocio-cartas-drive',
-   'btn-ocio-guardar-drive','btn-horarios-carpeta-drive','btn-registros-carpeta-drive'].forEach(function(id){
+   'btn-ocio-guardar-drive','btn-horarios-carpeta-drive','btn-registros-carpeta-drive',
+   'btn-registros-carpeta-drive-principal','banner-registros-drive'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = PERMISOS_ACTUAL.puedeVerConexionDrive ? '' : 'none';
   });
