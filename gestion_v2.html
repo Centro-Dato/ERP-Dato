@@ -1803,13 +1803,27 @@ function insertarFilaArribaEnPestana(spreadsheetId, sheetId, nombrePestana, fila
 /* ---- Guardado real de Registros vía Google Apps Script (sin permiso de Drive por persona) ---- */
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1hHFWrdhmT8CkXro_JlpBTIDNg7JUUuZwUVjBIetuBBSxY4u7u1Qm_rrYlDxtVEAR/exec';
 var CARPETA_REGISTROS_DIGITALES_ID = '1CjucnKhtbQTTYrrKfx6E5j44kx0vLMih';
-function guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, fila, color, callback){
+function guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, fila, color, callback, _intento){
+  _intento = _intento || 1;
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify({carpetaId: carpetaId, nombreArchivo: nombreArchivo, pestana: pestana, cabecera: cabecera, fila: fila, color: color})
   }).then(function(r){ return r.json(); })
-    .then(function(data){ (data && data.ok) ? callback(null) : callback((data && data.error) || 'error_desconocido'); })
-    .catch(function(err){ callback(err); });
+    .then(function(data){
+      if(data && data.ok){ callback(null); return; }
+      if(_intento < 3){
+        setTimeout(function(){ guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, fila, color, callback, _intento+1); }, 1200);
+      } else {
+        callback((data && data.error) || 'error_desconocido');
+      }
+    })
+    .catch(function(err){
+      if(_intento < 3){
+        setTimeout(function(){ guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, fila, color, callback, _intento+1); }, 1200);
+      } else {
+        callback(err);
+      }
+    });
 }
 function guardarRegistroEnDriveReal(tipo, datos, callback){
   var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
