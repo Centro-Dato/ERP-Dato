@@ -1620,7 +1620,12 @@ function recogerValoresFormulario(tipo){
       valorPorCampo[campo.k] = partes.join(' | ');
     } else {
       var el = document.getElementById(id);
-      valorPorCampo[campo.k] = el ? el.value : '';
+      var valor = el ? el.value : '';
+      if(campo.type==='date' && valor){
+        var partesFecha = valor.split('-');
+        valor = partesFecha[2]+'/'+partesFecha[1]+'/'+partesFecha[0];
+      }
+      valorPorCampo[campo.k] = valor;
     }
   });
 
@@ -1780,13 +1785,16 @@ function guardarRegistroEnDriveReal(tipo, datos, callback){
     tareas.push({pestana: 'General', valores: f.valores});
     if(f.usuario) tareas.push({pestana: f.usuario, valores: f.valores});
   });
-  var pendientes = tareas.length;
+  if(tareas.length===0){ callback(null); return; }
   var huboError = null;
-  if(pendientes===0){ callback(null); return; }
-  function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
-  tareas.forEach(function(t){
-    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, t.pestana, datos.headers, t.valores, color, unaMenos);
-  });
+  function procesarSiguiente(i){
+    if(i >= tareas.length){ callback(huboError); return; }
+    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, tareas[i].pestana, datos.headers, tareas[i].valores, color, function(err){
+      if(err) huboError = err;
+      procesarSiguiente(i+1);
+    });
+  }
+  procesarSiguiente(0);
 }
 
 /* ---- Crear los 23 archivos de golpe, cada uno con una fila de ejemplo (para enseñar el sistema) ---- */
