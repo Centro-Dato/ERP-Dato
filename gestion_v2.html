@@ -1108,7 +1108,7 @@ function aplicarPermisosVisuales(){
     if(!btn) return;
     var permisoClave = (mod==='expedientes') ? 'usuarios' : (mod==='transporte') ? 'registros' : mod;
     var permiso = PERMISOS_ACTUAL[permisoClave];
-    btn.classList.toggle('disabled', !permiso || permiso==='nada');
+    btn.style.display = (!permiso || permiso==='nada') ? 'none' : '';
   });
   // Botón "+ Nuevo usuario": solo si puede editar
   var btnNuevo = document.getElementById('btn-nuevo-usuario');
@@ -4403,6 +4403,7 @@ function navTo(view){
   });
   document.getElementById('view-'+view).classList.remove('hidden');
   if(view==='usuarios') renderUsuarios();
+  aplicarPermisosVisuales();
 }
 
 /* ===================== INICIO ===================== */
