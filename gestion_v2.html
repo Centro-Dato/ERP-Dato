@@ -1630,16 +1630,18 @@ function recogerValoresFormulario(tipo){
   });
 
   var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : [];
+  var headersIndividual = campoUsuarioKey
+    ? tipo.fields.filter(function(c){ return c.k!==campoUsuarioKey; }).map(function(c){ return c.label; })
+    : headers;
   var filas = [];
   var filaGeneral;
   if(usuarios.length>0){
     usuarios.forEach(function(nombreUsuario){
-      var fila = tipo.fields.map(function(campo){
-        if(campo.k===campoUsuarioKey) return nombreUsuario;
+      var filaIndividual = tipo.fields.filter(function(campo){ return campo.k!==campoUsuarioKey; }).map(function(campo){
         if(campo.type==='aspectos-actividad') return aspectosPorAlumno ? (aspectosPorAlumno[nombreUsuario]||'') : '';
         return valorPorCampo[campo.k];
       });
-      filas.push({usuario: nombreUsuario, valores: fila});
+      filas.push({usuario: nombreUsuario, valores: filaIndividual});
     });
     filaGeneral = tipo.fields.map(function(campo){
       if(campo.k===campoUsuarioKey) return usuarios.join(', ');
@@ -1653,7 +1655,7 @@ function recogerValoresFormulario(tipo){
     filas.push({usuario: null, valores: filaUnica});
     filaGeneral = filaUnica;
   }
-  return {headers: headers, filas: filas, filaGeneral: filaGeneral};
+  return {headers: headers, headersIndividual: headersIndividual, filas: filas, filaGeneral: filaGeneral};
 }
 
 function obtenerHojaRegistroElegida(tipoId){
@@ -1790,15 +1792,15 @@ function guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, f
 function guardarRegistroEnDriveReal(tipo, datos, callback){
   var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
   var color = '#'+(REGISTRO_COLOR[tipo.id] || '2563EB');
-  var tareas = [{pestana: 'General', valores: datos.filaGeneral}];
+  var tareas = [{pestana: 'General', valores: datos.filaGeneral, cabecera: datos.headers}];
   datos.filas.forEach(function(f){
-    if(f.usuario) tareas.push({pestana: f.usuario, valores: f.valores});
+    if(f.usuario) tareas.push({pestana: f.usuario, valores: f.valores, cabecera: datos.headersIndividual});
   });
   var pendientes = tareas.length;
   var huboError = null;
   function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
   tareas.forEach(function(t){
-    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, t.pestana, datos.headers, t.valores, color, unaMenos);
+    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, t.pestana, t.cabecera, t.valores, color, unaMenos);
   });
 }
 
