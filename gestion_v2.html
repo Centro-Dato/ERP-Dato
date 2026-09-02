@@ -2193,8 +2193,8 @@ function renderAccesoRegistroEnArea(contenedorId, tipoId){
   var t = REGISTRO_TIPOS.filter(function(r){return r.id===tipoId;})[0];
   if(!t){ el.innerHTML=''; return; }
   var nivel = nivelRegistro(tipoId);
-  var sinAcceso = nivel==='nada';
-  var h = '<div class="reg-btn'+(sinAcceso?' disabled':'')+'" '+(sinAcceso?'':'onclick="abrirFormRegistro(\''+t.id+'\',\''+t.titulo+'\')"')+'>';
+  if(nivel==='nada'){ el.innerHTML=''; return; }
+  var h = '<div class="reg-btn" onclick="abrirFormRegistro(\''+t.id+'\',\''+t.titulo+'\')">';
   h += '<div class="reg-ic" style="background:'+t.color+';color:'+t.iconColor+'">'+t.icon+'</div>';
   h += '<div><div class="reg-title">'+t.titulo+'</div><div class="reg-sub">'+t.desc+'</div></div>';
   h += '</div>';
@@ -5153,12 +5153,15 @@ function renderRegistrosGrid(){
   var lista = ordenarAlfabetico(REGISTRO_TIPOS, function(r){ return r.titulo; });
   lista.forEach(function(r){
     var nivel = nivelRegistro(r.id);
-    var sinAcceso = nivel==='nada';
-    h += '<div class="reg-btn'+(sinAcceso?' disabled':'')+'" '+(sinAcceso?'':'onclick="abrirFormRegistro(\''+r.id+'\',\''+r.titulo+'\')"')+'>';
+    if(nivel==='nada') return;
+    h += '<div class="reg-btn" onclick="abrirFormRegistro(\''+r.id+'\',\''+r.titulo+'\')">';
     h += '<div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div>';
     h += '<div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div>';
     h += '</div>';
   });
+  if(!h){
+    h = '<div class="empty-state">No tienes acceso a ningún tipo de registro. Pídele a un Coordinador que te dé permiso en Configuración.</div>';
+  }
   document.getElementById('reg-grid').innerHTML = h;
 }
 // Aspectos trabajados según el área de actividad elegida (antes iban todos mezclados en una sola lista)
