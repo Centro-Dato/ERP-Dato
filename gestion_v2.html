@@ -691,7 +691,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div><div class="page-title">Configuración</div><div class="page-subtitle">Gestiona el acceso de cada profesional a cada apartado</div></div>
         <div style="display:flex;gap:8px">
           <button class="btn-primary" onclick="abrirModalNuevoEmpleado()">+ Nuevo empleado</button>
-          <button class="btn-primary" onclick="guardarCambiosConfig()">💾 Guardar cambios</button>
+          <button class="btn-primary" onclick="guardarCambiosConfig()">💾 Probar en este navegador</button>
         </div>
       </div>
       <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
@@ -5537,7 +5537,7 @@ function cerrarModalDetallePaap(){
 }
 function guardarCambiosConfig(){
   guardarEmpleadosLocalStorage();
-  mostrarAviso('Cambios guardados en este navegador.', '✅');
+  mostrarAviso('Guardado solo para probarlo en este navegador tuyo. Nadie más lo verá todavía — para que sea permanente y lo vea todo el equipo, dile a Claude qué has cambiado.', '💾');
 }
 </script>
 </body>
