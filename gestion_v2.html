@@ -266,6 +266,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div class="login-sub">Elige tu cuenta para entrar</div>
     <div id="login-error" class="login-err hidden"></div>
     <div id="login-avatares-equipo" style="display:flex;justify-content:center;gap:8px;margin:16px 0;flex-wrap:wrap"></div>
+    <div style="text-align:center;font-size:11.5px;color:#94a3b8;margin-bottom:4px">— toca tu inicial, o entra con el botón —</div>
     <div id="google-signin-btn" style="display:flex;justify-content:center;margin:14px 0"></div>
     <div id="google-signin-cargando" style="text-align:center;color:#94a3b8;font-size:13px;margin:18px 0">Cargando inicio de sesión de Google…</div>
     <div style="display:flex;justify-content:center;gap:10px;margin-top:20px">
@@ -4286,8 +4287,13 @@ function renderAvataresEquipoLogin(){
       var segunda = segundaInicialNombre(e.nombre);
       if(segunda) texto += segunda;
     }
-    return '<div title="'+esc(e.nombre)+'" style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;font-size:'+(texto.length>1?'10.5px':'12.5px')+';font-weight:700;display:flex;align-items:center;justify-content:center">'+texto+'</div>';
+    return '<div title="'+esc(e.nombre)+'" onclick="iniciarSesionDesdeAvatar()" style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;font-size:'+(texto.length>1?'10.5px':'12.5px')+';font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer">'+texto+'</div>';
   }).join('');
+}
+function iniciarSesionDesdeAvatar(){
+  if(typeof google !== 'undefined' && google.accounts && google.accounts.id){
+    google.accounts.id.prompt();
+  }
 }
 renderAvataresEquipoLogin();
 function inicializarLoginGoogle(){
