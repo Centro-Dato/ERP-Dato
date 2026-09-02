@@ -44,7 +44,7 @@ button{font-family:inherit}
 .sb-nav-item{display:flex;align-items:center;gap:14px;padding:18px 18px;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.72);margin-bottom:6px;transition:background .15s}
 .sb-nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
 .sb-nav-item.active{background:var(--primary);color:#fff}
-.sb-nav-item.disabled{opacity:.3;cursor:default}
+.sb-nav-item.disabled{opacity:.3;cursor:default;pointer-events:none}
 .sb-nav-ic{font-size:24px;opacity:1;filter:saturate(1.3) brightness(1.15)}
 .sb-section{font-size:10px;font-weight:800;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em;padding:16px 16px 7px}
 .sb-user{padding:18px 18px;border-top:1px solid rgba(255,255,255,.12)}
@@ -131,7 +131,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .reg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
 .reg-btn{background:#fff;border:2.5px solid #14141a;border-radius:18px;padding:26px 22px;cursor:pointer;text-align:left;transition:all .18s;display:flex;flex-direction:column;gap:14px}
 .reg-btn:hover{box-shadow:6px 6px 0 #14141a;transform:translateY(-3px)}
-.reg-btn.disabled{opacity:.5;cursor:default}
+.reg-btn.disabled{opacity:.5;cursor:default;pointer-events:none}
 .reg-btn.disabled:hover{box-shadow:none;transform:none}
 .reg-ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}
 .reg-title{font-size:15.5px;font-weight:800;color:#1e293b}
@@ -208,7 +208,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .home-btn.c-mostaza{background:#f4c430}
 .home-btn.c-pistacho{background:#3ea86e}
 .home-btn.c-rojo{background:#e2574c}
-.home-btn.disabled{opacity:.55;cursor:default}
+.home-btn.disabled{opacity:.55;cursor:default;pointer-events:none}
 .home-btn.disabled:hover{transform:none;box-shadow:none}
 @media(max-width:640px){.home-grid{grid-template-columns:1fr}}
 /* STATS */
@@ -510,12 +510,12 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
       <div class="page-header">
         <div><div class="page-title">Actividades de Ocio</div><div class="page-subtitle">Registro, cartas y asistencia de las salidas de ocio</div></div>
-        <button class="btn-secondary" onclick="abrirCarpetaOcioDrive()">📁 Ver carpeta en Drive</button>
+        <button class="btn-secondary" id="btn-ocio-carpeta-drive" onclick="abrirCarpetaOcioDrive()">📁 Ver carpeta en Drive</button>
       </div>
       <div class="card" style="margin-bottom:18px">
         <div class="card-header">
           <div class="card-title">📁 Cartas</div>
-          <button class="btn-secondary btn-sm" onclick="verCarpetaCartasOcio()">📁 Ver carpeta</button>
+          <button class="btn-secondary btn-sm" id="btn-ocio-cartas-drive" onclick="verCarpetaCartasOcio()">📁 Ver carpeta</button>
         </div>
         <p style="color:#64748b;font-size:13.5px;line-height:1.6">Carpeta con las cartas de autorización que se envían a las familias para cada salida.</p>
       </div>
@@ -535,7 +535,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('ocio')">← Volver a Actividades de Ocio</button>
       <div class="page-header">
         <div><div class="page-title">Asistencia</div><div class="page-subtitle" id="ocio-anio-titulo">Archivo 2026 — una pestaña por mes</div></div>
-        <button class="btn-primary" onclick="guardarAsistenciaOcioEnDriveReal()">💾 Guardar en hoja de cálculo real</button>
+        <button class="btn-primary" id="btn-ocio-guardar-drive" onclick="guardarAsistenciaOcioEnDriveReal()">💾 Guardar en hoja de cálculo real</button>
         <button class="btn-secondary btn-sm" onclick="abrirHojaOcioEnDrive()">📊 Abrir hoja en Drive</button>
         <button class="btn-secondary btn-sm" onclick="aplicarFormatoHojaOcioActual()">🎨 Aplicar formato de colores</button>
         <button class="btn-secondary btn-sm" onclick="cambiarHojaOcioElegida()">🔗 Usar hoja de cálculo por enlace</button>
@@ -559,7 +559,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-secondary" onclick="imprimirHtml(generarHtmlHorarioSemana(), true)">🖨 Imprimir</button>
           <button class="btn-secondary" onclick="abrirHistoricoHorarios()">🕐 Histórico</button>
           <button class="btn-secondary" onclick="abrirModalCopiarDia()">📋 Copiar día</button>
-          <button class="btn-secondary" onclick="verCarpetaHorariosDrive()">📁 Ver carpeta en Drive</button>
+          <button class="btn-secondary" id="btn-horarios-carpeta-drive" onclick="verCarpetaHorariosDrive()">📁 Ver carpeta en Drive</button>
         </div>
       </div>
       <div class="card" style="margin-bottom:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -698,7 +698,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
       <div class="table-card">
         <table>
-          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Contraseña<br>Medicación</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Documentación<br>CAM</th><th>Contraseña<br>Medicación</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
       </div>
@@ -706,7 +706,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="card" style="margin-top:24px">
         <div class="card-header">
           <div class="card-title">📊 Carpeta de Registros Digitales</div>
-          <button class="btn-secondary btn-sm" onclick="verCarpetaRegistrosDigitales()">📁 Ver carpeta</button>
+          <button class="btn-secondary btn-sm" id="btn-registros-carpeta-drive" onclick="verCarpetaRegistrosDigitales()">📁 Ver carpeta</button>
         </div>
         <p style="color:#64748b;font-size:13.5px;line-height:1.6">
           Aquí se enlaza la carpeta de Drive "Registros Digitales": dentro hay un archivo por cada tipo de registro (Actividades, Caídas, Medicación, etc.), y cada archivo recoge las filas de todos los usuarios y todos los profesionales. No hay un archivo distinto por usuario ni por empleado.
@@ -1085,7 +1085,7 @@ function irA(modulo){
   // también puedes pulsar el botón de Expediente de esa misma lista.
   // Transporte y Actividades de Ocio reutilizan el permiso de Registros, porque están
   // ligados a sus registros correspondientes.
-  var permisoClave = (modulo==='expedientes') ? 'usuarios' : (modulo==='transporte' || modulo==='ocio') ? 'registros' : modulo;
+  var permisoClave = (modulo==='expedientes') ? 'usuarios' : (modulo==='transporte') ? 'registros' : modulo;
   var permiso = PERMISOS_ACTUAL[permisoClave];
   if(!permiso || permiso==='nada'){
     mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso desde Configuración.');
@@ -1103,7 +1103,7 @@ function aplicarPermisosVisuales(){
   ['usuarios','registros','paap','transporte','ocio','horarios'].forEach(function(mod){
     var btn = document.getElementById('home-'+mod);
     if(!btn) return;
-    var permisoClave = (mod==='expedientes') ? 'usuarios' : (mod==='transporte' || mod==='ocio') ? 'registros' : mod;
+    var permisoClave = (mod==='expedientes') ? 'usuarios' : (mod==='transporte') ? 'registros' : mod;
     var permiso = PERMISOS_ACTUAL[permisoClave];
     btn.classList.toggle('disabled', !permiso || permiso==='nada');
   });
@@ -1124,6 +1124,13 @@ function aplicarPermisosVisuales(){
   if(tarjetaMedias){
     tarjetaMedias.style.display = PERMISOS_ACTUAL.puedeVerMediasTransporte ? '' : 'none';
   }
+  // Botones de "Ver carpeta en Drive" / "Guardar en hoja de cálculo real": solo para quien
+  // administra las conexiones de Drive (Coordinadores). Los empleados solo rellenan formularios.
+  ['btn-drive-registro','btn-paap-detalle-drive','btn-ocio-carpeta-drive','btn-ocio-cartas-drive',
+   'btn-ocio-guardar-drive','btn-horarios-carpeta-drive','btn-registros-carpeta-drive'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = PERMISOS_ACTUAL.puedeVerConexionDrive ? '' : 'none';
+  });
 }
 /* ===================== CONEXIÓN REAL CON GOOGLE DRIVE (piloto: Horarios y Transporte) ===================== */
 var GOOGLE_CLIENT_ID = '496228924695-amquf0pghvq40ra9k81uv84t9v297n3d.apps.googleusercontent.com';
@@ -2623,13 +2630,13 @@ var USUARIOS = [
 ];
 
 var EMPLEADOS_OFICIAL = [
-  {id:1,nombre:'Ana',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:4,nombre:'Mª Jose',usuario:'mj.bermejo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:5,nombre:'Marcial',usuario:'marcial@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:6,nombre:'Patri',usuario:'patricia@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:7,nombre:'Ana de Frutos',usuario:'t.ocupacional@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}}
+  {id:1,nombre:'Ana',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:4,nombre:'Mª Jose',usuario:'mj.bermejo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:5,nombre:'Marcial',usuario:'marcial@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:6,nombre:'Patri',usuario:'patricia@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:7,nombre:'Ana de Frutos',usuario:'t.ocupacional@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}}
 ];
 var EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
 var _empleadosCargadosDeVerdad = false;
@@ -2663,25 +2670,42 @@ function restablecerListaEmpleadosOficial(){
 // Carga la lista real y compartida de empleados desde la hoja de cálculo (a través de Apps
 // Script) antes de dejar entrar a nadie. Si la hoja está vacía todavía (primera vez), la
 // sembramos con la lista oficial para que a partir de ahora todos lean del mismo sitio.
+var _intentosCargaEmpleados = 0;
 function cargarEmpleadosDeVerdad(callback){
-  try{
-    var guardado = localStorage.getItem('empleados_guardado');
-    if(guardado) EMPLEADOS = JSON.parse(guardado);
-  }catch(e){ /* localStorage no disponible */ }
   fetch(APPS_SCRIPT_URL + '?accion=empleados')
     .then(function(r){ return r.json(); })
     .then(function(data){
-      if(data && data.ok && data.empleados && data.empleados.length>0){
+      if(data && data.ok===true && Array.isArray(data.empleados) && data.empleados.length>0){
         EMPLEADOS = data.empleados;
         _empleadosCargadosDeVerdad = true;
-      } else {
+        _intentosCargaEmpleados = 0;
+        callback();
+      } else if(data && data.ok===true && Array.isArray(data.empleados) && data.empleados.length===0){
+        // La hoja existe de verdad y está vacía (primera vez de todas) -> la sembramos.
         guardarEmpleadosEnAppsScript(EMPLEADOS_OFICIAL, function(){});
         EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
         _empleadosCargadosDeVerdad = true;
+        _intentosCargaEmpleados = 0;
+        callback();
+      } else {
+        reintentarOFallarCargaEmpleados(callback);
       }
-      callback();
     })
-    .catch(function(){ callback(); });
+    .catch(function(){ reintentarOFallarCargaEmpleados(callback); });
+}
+function reintentarOFallarCargaEmpleados(callback){
+  _intentosCargaEmpleados++;
+  if(_intentosCargaEmpleados <= 3){
+    setTimeout(function(){ cargarEmpleadosDeVerdad(callback); }, 1500);
+    return;
+  }
+  // No arrancamos con permisos por defecto (podría dar de más o de menos acceso del real):
+  // nos negamos a entrar y lo dejamos clarísimo, en vez de fallar en silencio.
+  var elCargando = document.getElementById('google-signin-cargando');
+  if(elCargando){
+    elCargando.classList.remove('hidden');
+    elCargando.innerHTML = '⚠️ No se ha podido comprobar quién puede entrar (fallo de conexión). No se puede continuar por seguridad.<br/><button class="btn-primary btn-sm" style="margin-top:10px" onclick="_intentosCargaEmpleados=0;cargarEmpleadosDeVerdad(function(){renderAvataresEquipoLogin();inicializarLoginGoogle();})">🔄 Reintentar</button>';
+  }
 }
 
 // Apartados de Proyecto Personal (antes "PAAP"), ya definidos.
@@ -4426,8 +4450,8 @@ function crearNuevoEmpleado(){
   var esAdmin = rol==='admin';
   var nuevoId = Math.max.apply(null, EMPLEADOS.map(function(e){return e.id;}).concat([0])) + 1;
   var permisosBase = esAdmin
-    ? {usuarios:'todo',registros:'todo',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}
-    : {usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}};
+    ? {usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}
+    : {usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}};
   EMPLEADOS.push({id:nuevoId, nombre:nombre, usuario:usuario, rol:rol, permisos:permisosBase});
   guardarEmpleadosLocalStorage();
   cerrarModalNuevoEmpleado();
@@ -5418,6 +5442,8 @@ function renderConfig(){
     // Registros (nivel general) + botón detalle
     h += '<td>'+permSelectHtml(emp,'registros')+'</td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetalleRegistros('+emp.id+')">⚙ Detalle</button></td>';
+    // Ocio (permiso independiente, ya no depende de Registros)
+    h += permSelectCelda(emp, 'ocio');
     // PAAP (nivel general) + botón detalle
     h += '<td>'+permSelectHtml(emp,'paap')+'</td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetallePaap('+emp.id+')">⚙ Detalle</button></td>';
@@ -5425,6 +5451,8 @@ function renderConfig(){
     h += permSelectCelda(emp, 'horarios');
     // Configuración (por si en el futuro alguien más además de Carlos/Tere/Coordinador necesita acceso)
     h += permSelectCelda(emp, 'configuracion');
+    // Documentación CAM (apartado todavía sin construir; el permiso ya se deja preparado)
+    h += permSelectCelda(emp, 'documentacionCam');
     // Contraseña de Medicación: activar o no que se pida al entrar al registro
     h += '<td><select class="perm-select v-'+(emp.permisos.claveMedicacionActiva?'todo':'nada')+'" onchange="cambiarClaveMedicacionActiva('+emp.id+',this)">'+
       '<option value="no" '+(!emp.permisos.claveMedicacionActiva?'selected':'')+'>No pedir</option>'+
