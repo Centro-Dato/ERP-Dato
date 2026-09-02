@@ -1631,6 +1631,7 @@ function recogerValoresFormulario(tipo){
 
   var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : [];
   var filas = [];
+  var filaGeneral;
   if(usuarios.length>0){
     usuarios.forEach(function(nombreUsuario){
       var fila = tipo.fields.map(function(campo){
@@ -1640,10 +1641,19 @@ function recogerValoresFormulario(tipo){
       });
       filas.push({usuario: nombreUsuario, valores: fila});
     });
+    filaGeneral = tipo.fields.map(function(campo){
+      if(campo.k===campoUsuarioKey) return usuarios.join(', ');
+      if(campo.type==='aspectos-actividad'){
+        return usuarios.map(function(u){ return u+': '+((aspectosPorAlumno && aspectosPorAlumno[u])||''); }).join(' | ');
+      }
+      return valorPorCampo[campo.k];
+    });
   } else {
-    filas.push({usuario: null, valores: tipo.fields.map(function(campo){ return valorPorCampo[campo.k]; })});
+    var filaUnica = tipo.fields.map(function(campo){ return valorPorCampo[campo.k]; });
+    filas.push({usuario: null, valores: filaUnica});
+    filaGeneral = filaUnica;
   }
-  return {headers: headers, filas: filas};
+  return {headers: headers, filas: filas, filaGeneral: filaGeneral};
 }
 
 function obtenerHojaRegistroElegida(tipoId){
@@ -1780,21 +1790,16 @@ function guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, f
 function guardarRegistroEnDriveReal(tipo, datos, callback){
   var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
   var color = '#'+(REGISTRO_COLOR[tipo.id] || '2563EB');
-  var tareas = [];
+  var tareas = [{pestana: 'General', valores: datos.filaGeneral}];
   datos.filas.forEach(function(f){
-    tareas.push({pestana: 'General', valores: f.valores});
     if(f.usuario) tareas.push({pestana: f.usuario, valores: f.valores});
   });
-  if(tareas.length===0){ callback(null); return; }
+  var pendientes = tareas.length;
   var huboError = null;
-  function procesarSiguiente(i){
-    if(i >= tareas.length){ callback(huboError); return; }
-    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, tareas[i].pestana, datos.headers, tareas[i].valores, color, function(err){
-      if(err) huboError = err;
-      procesarSiguiente(i+1);
-    });
-  }
-  procesarSiguiente(0);
+  function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
+  tareas.forEach(function(t){
+    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, t.pestana, datos.headers, t.valores, color, unaMenos);
+  });
 }
 
 /* ---- Crear los 23 archivos de golpe, cada uno con una fila de ejemplo (para enseñar el sistema) ---- */
