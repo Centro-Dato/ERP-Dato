@@ -701,7 +701,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Contraseña<br>Medicación</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
-        <button class="btn-secondary btn-sm" style="margin-top:10px" onclick="restablecerListaEmpleadosOficial()">🔄 Sincronizar con la lista oficial (descarta cambios solo de este navegador)</button>
       </div>
 
       <div class="card" style="margin-top:24px">
@@ -5418,7 +5417,7 @@ function renderConfig(){
     h += permSelectCelda(emp, 'usuarios');
     // Registros (nivel general) + botón detalle
     h += '<td>'+permSelectHtml(emp,'registros')+'</td>';
-    h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetalleRegistros('+emp.id+')">⚙ Detalle (20 tipos)</button></td>';
+    h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetalleRegistros('+emp.id+')">⚙ Detalle</button></td>';
     // PAAP (nivel general) + botón detalle
     h += '<td>'+permSelectHtml(emp,'paap')+'</td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetallePaap('+emp.id+')">⚙ Detalle</button></td>';
