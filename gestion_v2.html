@@ -692,7 +692,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div><div class="page-title">Configuración</div><div class="page-subtitle">Gestiona el acceso de cada profesional a cada apartado</div></div>
         <div style="display:flex;gap:8px">
           <button class="btn-primary" onclick="abrirModalNuevoEmpleado()">+ Nuevo empleado</button>
-          <button class="btn-primary" onclick="guardarCambiosConfig()">💾 Probar en este navegador</button>
+          <button class="btn-primary" onclick="guardarCambiosConfig()">💾 Confirmar guardado</button>
         </div>
       </div>
       <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
@@ -2633,29 +2633,57 @@ var EMPLEADOS_OFICIAL = [
   {id:7,nombre:'Ana de Frutos',usuario:'t.ocupacional@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}}
 ];
 var EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
-// Cualquier empleado añadido o modificado desde Configuración se guarda en este navegador para
-// que no se pierda al refrescar. OJO: esto NO se comparte entre ordenadores/personas todavía —
-// para que alguien nuevo pueda entrar desde su propio dispositivo, hay que decírselo a Claude
-// para que lo añada también en el código publicado.
+var _empleadosCargadosDeVerdad = false;
+// Los empleados se guardan de verdad (compartido para todo el equipo) en una hoja de cálculo,
+// a través de Apps Script. localStorage se usa solo como caché rápida mientras carga.
 function guardarEmpleadosLocalStorage(){
   try{ localStorage.setItem('empleados_guardado', JSON.stringify(EMPLEADOS)); }catch(e){}
+  guardarEmpleadosEnAppsScript(EMPLEADOS, function(err){
+    if(err) mostrarAviso('Se guardó en este navegador, pero no se pudo compartir con todo el equipo (revisa la conexión). Vuelve a intentarlo.', '⚠️');
+  });
+}
+function guardarEmpleadosEnAppsScript(lista, callback){
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'guardarEmpleados', empleados: lista})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){ callback((data && data.ok) ? null : ((data && data.error) || 'error_desconocido')); })
+    .catch(function(err){ callback(err); });
 }
 function restablecerListaEmpleadosOficial(){
   pedirConfirmacion('Sincronizar con la lista oficial',
-    'Esto descarta cualquier empleado o cambio de permisos que solo estuviera guardado en este navegador, y vuelve a cargar la lista tal como está publicada en el programa. ¿Continuar?',
+    'Esto descarta cualquier empleado o cambio de permisos guardado hasta ahora (incluido lo compartido), y vuelve a dejar la lista tal como está publicada en el programa. ¿Continuar?',
     function(){
       EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
       try{ localStorage.removeItem('empleados_guardado'); }catch(e){}
+      guardarEmpleadosEnAppsScript(EMPLEADOS, function(){});
       renderConfig();
-      mostrarAviso('Lista de empleados sincronizada con la oficial.', '✅');
+      mostrarAviso('Lista de empleados sincronizada con la oficial (y compartida con todo el equipo).', '✅');
     });
 }
-(function cargarEmpleadosGuardado(){
+// Carga la lista real y compartida de empleados desde la hoja de cálculo (a través de Apps
+// Script) antes de dejar entrar a nadie. Si la hoja está vacía todavía (primera vez), la
+// sembramos con la lista oficial para que a partir de ahora todos lean del mismo sitio.
+function cargarEmpleadosDeVerdad(callback){
   try{
     var guardado = localStorage.getItem('empleados_guardado');
     if(guardado) EMPLEADOS = JSON.parse(guardado);
   }catch(e){ /* localStorage no disponible */ }
-})();
+  fetch(APPS_SCRIPT_URL + '?accion=empleados')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data && data.ok && data.empleados && data.empleados.length>0){
+        EMPLEADOS = data.empleados;
+        _empleadosCargadosDeVerdad = true;
+      } else {
+        guardarEmpleadosEnAppsScript(EMPLEADOS_OFICIAL, function(){});
+        EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
+        _empleadosCargadosDeVerdad = true;
+      }
+      callback();
+    })
+    .catch(function(){ callback(); });
+}
 
 // Apartados de Proyecto Personal (antes "PAAP"), ya definidos.
 // Aparecen automáticamente en el detalle de permisos de Configuración.
@@ -4295,7 +4323,6 @@ function iniciarSesionDesdeAvatar(){
     google.accounts.id.prompt();
   }
 }
-renderAvataresEquipoLogin();
 function inicializarLoginGoogle(){
   if(typeof google === 'undefined' || !google.accounts || !google.accounts.id){
     setTimeout(inicializarLoginGoogle, 300);
@@ -4305,7 +4332,10 @@ function inicializarLoginGoogle(){
   google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle });
   google.accounts.id.renderButton(document.getElementById('google-signin-btn'), {theme:'outline', size:'large', text:'signin_with', width:280});
 }
-inicializarLoginGoogle();
+cargarEmpleadosDeVerdad(function(){
+  renderAvataresEquipoLogin();
+  inicializarLoginGoogle();
+});
 document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
@@ -5561,7 +5591,7 @@ function cerrarModalDetallePaap(){
 }
 function guardarCambiosConfig(){
   guardarEmpleadosLocalStorage();
-  mostrarAviso('Guardado solo para probarlo en este navegador tuyo. Nadie más lo verá todavía — para que sea permanente y lo vea todo el equipo, dile a Claude qué has cambiado.', '💾');
+  mostrarAviso('Guardado de verdad y compartido con todo el equipo. Ya pueden entrar con estos permisos desde su propio dispositivo.', '✅');
 }
 </script>
 </body>
