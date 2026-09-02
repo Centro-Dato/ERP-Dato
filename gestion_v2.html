@@ -1761,27 +1761,31 @@ function insertarFilaArribaEnPestana(spreadsheetId, sheetId, nombrePestana, fila
 // Guarda de verdad en Drive: añade la(s) fila(s) a "General" (arriba del todo) y, para cada
 // persona implicada, también a su propia pestaña (creándola con el color del registro si es la
 // primera vez que aparece). Nunca sobrescribe filas anteriores — siempre queda como histórico.
+/* ---- Guardado real de Registros vía Google Apps Script (sin permiso de Drive por persona) ---- */
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1hHFWrdhmT8CkXro_JlpBTIDNg7JUUuZwUVjBIetuBBSxY4u7u1Qm_rrYlDxtVEAR/exec';
+var CARPETA_REGISTROS_DIGITALES_ID = '1CjucnKhtbQTTYrrKfx6E5j44kx0vLMih';
+function guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, fila, color, callback){
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({carpetaId: carpetaId, nombreArchivo: nombreArchivo, pestana: pestana, cabecera: cabecera, fila: fila, color: color})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){ (data && data.ok) ? callback(null) : callback((data && data.error) || 'error_desconocido'); })
+    .catch(function(err){ callback(err); });
+}
 function guardarRegistroEnDriveReal(tipo, datos, callback){
-  var vinculo = carpetaRealVinculada('registros');
-  if(!vinculo){ callback('no_conectada'); return; }
-  obtenerOCrearHojaRegistro(tipo.id, tipo.titulo, function(hoja, errHoja){
-    if(errHoja){ callback(errHoja); return; }
-    var color = REGISTRO_COLOR[tipo.id] || '2563EB';
-    asegurarPestanaConEncabezado(hoja.id, 'General', datos.headers, color, function(errG, sheetIdGeneral){
-      if(errG){ callback(errG); return; }
-      var pendientes = datos.filas.length;
-      var huboError = null;
-      function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
-      datos.filas.forEach(function(f){
-        insertarFilaArribaEnPestana(hoja.id, sheetIdGeneral, 'General', f.valores, function(errFilaGeneral){
-          if(!f.usuario){ unaMenos(errFilaGeneral); return; }
-          asegurarPestanaConEncabezado(hoja.id, f.usuario, datos.headers, color, function(errPestanaUsuario, sheetIdUsuario){
-            if(errPestanaUsuario){ unaMenos(errPestanaUsuario); return; }
-            insertarFilaArribaEnPestana(hoja.id, sheetIdUsuario, f.usuario, f.valores, function(errFilaUsuario){ unaMenos(errFilaUsuario); });
-          });
-        });
-      });
-    }, hoja.nuevo);
+  var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
+  var color = '#'+(REGISTRO_COLOR[tipo.id] || '2563EB');
+  var tareas = [];
+  datos.filas.forEach(function(f){
+    tareas.push({pestana: 'General', valores: f.valores});
+    if(f.usuario) tareas.push({pestana: f.usuario, valores: f.valores});
+  });
+  var pendientes = tareas.length;
+  var huboError = null;
+  if(pendientes===0){ callback(null); return; }
+  function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
+  tareas.forEach(function(t){
+    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, t.pestana, datos.headers, t.valores, color, unaMenos);
   });
 }
 
@@ -5324,12 +5328,11 @@ function guardarRegistroDemo(){
     mostrarAviso('Faltan campos obligatorios por rellenar:\n\n• '+faltantes.join('\n• '));
     return;
   }
-  var vinculo = tipo ? carpetaRealVinculada('registros') : null;
-  if(vinculo){
+  if(tipo){
     var datos = recogerValoresFormulario(tipo);
     guardarRegistroEnDriveReal(tipo, datos, function(err){
       if(err){
-        mostrarAviso('El registro se ha validado, pero no se pudo guardar en la hoja de cálculo real (puede que el permiso haya caducado). Prueba a reconectar desde Configuración. No se ha perdido nada, puedes volver a intentarlo.', '⚠️');
+        mostrarAviso('El registro se ha validado, pero no se pudo guardar de verdad en la hoja de cálculo. No se ha perdido nada, puedes volver a intentarlo. Detalle: '+err, '⚠️');
       }
     });
   }
