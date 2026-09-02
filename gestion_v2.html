@@ -171,7 +171,11 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .aspectos-matriz-header{background:var(--primary);color:#fff;font-weight:800;padding:14px 20px;font-size:13.5px;letter-spacing:.03em}
 .aspectos-matriz-body{padding:22px}
 .aspectos-matriz-area{font-weight:800;font-size:15px;margin-bottom:16px;color:#14141a;text-transform:uppercase}
-.aspectos-matriz-tabla{width:100%;border-collapse:collapse}
+.aspectos-matriz-tabla{width:100%;border-collapse:separate;border-spacing:0}
+.tabla-col1-fija{border-collapse:separate;border-spacing:0}
+.tabla-col1-fija th:first-child,.tabla-col1-fija td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:2px 0 4px rgba(0,0,0,.08)}
+.tabla-col1-fija thead th:first-child{z-index:3}
+.tabla-col1-fija tbody tr:nth-child(even) td:first-child{background:#f8fafc}
 .aspectos-matriz-tabla th{font-size:10.5px;font-weight:800;color:#374151;text-transform:uppercase;padding:4px 10px 10px;text-align:center;vertical-align:bottom;letter-spacing:.02em}
 .aspectos-matriz-tabla td{padding:12px 10px;border-top:1.5px solid #e2e8f0}
 .aspectos-matriz-nombre{font-weight:700;font-size:13.5px;color:#1e293b;white-space:nowrap;padding-right:18px!important}
@@ -5302,7 +5306,7 @@ function actualizarMatrizAspectos(){
   h += '<div class="aspectos-matriz-header">ELIGE LOS ASPECTOS TRABAJADOS</div>';
   h += '<div class="aspectos-matriz-body">';
   h += '<div class="aspectos-matriz-area">'+area+'</div>';
-  h += '<div style="overflow-x:auto"><table class="aspectos-matriz-tabla"><thead><tr><th></th>';
+  h += '<div style="overflow-x:auto"><table class="aspectos-matriz-tabla tabla-col1-fija"><thead><tr><th></th>';
   aspectos.forEach(function(a){ h += '<th>'+a+'</th>'; });
   h += '</tr></thead><tbody>';
   alumnos.forEach(function(alumno, idx){
@@ -5335,7 +5339,7 @@ function renderCampoFormulario(tipoId, campo){
   } else if(campo.type==='aspectos-actividad'){
     h += '<div id="wrap-aspectos-actividad"><div class="empty-state" style="padding:16px">Elige primero una actividad/área arriba</div></div>';
   } else if(campo.type==='matriz-radio'){
-    h += '<div class="table-card" id="'+id+'_wrap"><table><thead><tr><th></th>';
+    h += '<div class="table-card" id="'+id+'_wrap"><table class="tabla-col1-fija"><thead><tr><th></th>';
     campo.columnas.forEach(function(col){ h += '<th style="text-align:center">'+col+'</th>'; });
     h += '</tr></thead><tbody>';
     campo.filas.forEach(function(fila, i){
