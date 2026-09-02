@@ -2671,12 +2671,34 @@ function restablecerListaEmpleadosOficial(){
 // Script) antes de dejar entrar a nadie. Si la hoja está vacía todavía (primera vez), la
 // sembramos con la lista oficial para que a partir de ahora todos lean del mismo sitio.
 var _intentosCargaEmpleados = 0;
+function completarPermisosFaltantes(lista){
+  var huboCambios = false;
+  lista.forEach(function(emp){
+    var p = emp.permisos = emp.permisos || {};
+    var esAdmin = emp.rol === 'admin';
+    function completar(clave, valor){ if(p[clave]===undefined){ p[clave]=valor; huboCambios=true; } }
+    completar('ocio', esAdmin ? 'todo' : 'editar');
+    completar('documentacionCam', 'nada');
+    completar('usuarios', esAdmin ? 'todo' : 'ver');
+    completar('registros', esAdmin ? 'todo' : 'editar');
+    completar('paap', esAdmin ? 'todo' : 'nada');
+    completar('horarios', esAdmin ? 'todo' : 'ver');
+    completar('configuracion', esAdmin ? 'todo' : 'nada');
+    completar('claveMedicacionActiva', false);
+    completar('puedeVerConexionDrive', esAdmin);
+    completar('puedeVerMediasTransporte', esAdmin);
+    if(!p.registrosDetalle){ p.registrosDetalle = {}; huboCambios = true; }
+    if(!p.paapDetalle){ p.paapDetalle = {}; huboCambios = true; }
+  });
+  return huboCambios;
+}
 function cargarEmpleadosDeVerdad(callback){
   fetch(APPS_SCRIPT_URL + '?accion=empleados')
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data && data.ok===true && Array.isArray(data.empleados) && data.empleados.length>0){
         EMPLEADOS = data.empleados;
+        if(completarPermisosFaltantes(EMPLEADOS)) guardarEmpleadosEnAppsScript(EMPLEADOS, function(){});
         _empleadosCargadosDeVerdad = true;
         _intentosCargaEmpleados = 0;
         callback();
