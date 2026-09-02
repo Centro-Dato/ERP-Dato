@@ -359,9 +359,9 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="page-subtitle" style="margin-bottom:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;font-size:11.5px;letter-spacing:.06em">Resumen</div>
       <div class="stats-row">
         <div class="stat-card"><div class="stat-num" id="st-usuarios">0</div><div class="stat-lbl">Usuarios activos</div></div>
-        <div class="stat-card"><div class="stat-num" id="st-registros">0</div><div class="stat-lbl">Registros este mes</div></div>
+        <div class="stat-card"><div class="stat-num" id="st-registros">…</div><div class="stat-lbl">Registros guardados</div></div>
         <div class="stat-card"><div class="stat-num" id="st-empleados">0</div><div class="stat-lbl">Empleados con acceso</div></div>
-        <div class="stat-card"><div class="stat-num">100%</div><div class="stat-lbl">Sincronización Drive</div></div>
+        <div class="stat-card"><div class="stat-num" id="st-drive">…</div><div class="stat-lbl">Conexión con Drive</div></div>
       </div>
     </div>
 
@@ -4436,8 +4436,24 @@ function navTo(view){
 /* ===================== INICIO ===================== */
 function renderInicio(){
   document.getElementById('st-usuarios').textContent = USUARIOS.length;
-  document.getElementById('st-registros').textContent = 27;
   document.getElementById('st-empleados').textContent = EMPLEADOS.length;
+  var elReg = document.getElementById('st-registros');
+  var elDrive = document.getElementById('st-drive');
+  fetch(APPS_SCRIPT_URL + '?accion=stats')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data && data.ok){
+        elReg.textContent = data.totalRegistros;
+        elDrive.textContent = '✅';
+      } else {
+        elReg.textContent = '—';
+        elDrive.textContent = '⚠️';
+      }
+    })
+    .catch(function(){
+      elReg.textContent = '—';
+      elDrive.textContent = '⚠️';
+    });
 }
 
 /* ===================== USUARIOS - LISTADO ===================== */
