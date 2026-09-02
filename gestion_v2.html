@@ -76,6 +76,8 @@ button{font-family:inherit}
 .search-box{border:2.5px solid #14141a;border-radius:11px;padding:12px 16px;font-size:14px;outline:none;width:300px}
 .search-box:focus{border-color:var(--primary)}
 .table-card{background:#fff;border-radius:16px;border:2.5px solid #14141a;overflow-x:auto;overflow-y:hidden;scrollbar-width:auto;scrollbar-color:var(--primary) #e2e8f0}
+.tabla-config-sticky th:first-child,.tabla-config-sticky td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:2px 0 4px rgba(0,0,0,.06)}
+.tabla-config-sticky thead th:first-child{z-index:3}
 .table-card::-webkit-scrollbar{height:14px}
 .table-card::-webkit-scrollbar-track{background:#e2e8f0}
 .table-card::-webkit-scrollbar-thumb{background:var(--primary);border-radius:8px;border:3px solid #e2e8f0}
@@ -697,7 +699,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
       <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
       <div class="table-card">
-        <table>
+        <table class="tabla-config-sticky">
           <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Documentación<br>CAM</th><th>Contraseña<br>Medicación</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
