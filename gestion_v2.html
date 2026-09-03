@@ -446,10 +446,30 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
       <div class="page-header">
         <div><div class="page-title">Registros</div><div class="page-subtitle">Selecciona el tipo de registro que quieres rellenar</div></div>
-        <button class="btn-secondary" id="btn-registros-carpeta-drive-principal" onclick="verCarpetaRegistrosDigitales('registros')">📁 Ver Carpeta de Registros Digitales</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" id="btn-registros-carpeta-drive-principal" onclick="verCarpetaRegistrosDigitales('registros')">📁 Ver Carpeta de Registros Digitales</button>
+          <button class="btn-secondary" id="btn-editar-registros-guardados" onclick="abrirEditarRegistrosGuardados()">✏️ Editar registros guardados</button>
+        </div>
       </div>
       <div class="info-banner" id="banner-registros-drive">ℹ️ Cada registro que rellenes se guarda automáticamente en la hoja de cálculo individual de ese usuario, dentro de su carpeta en Drive. En "📁 Ver Carpeta de Registros Digitales" puedes ver, para cada tipo, el archivo con todos los usuarios juntos (actividades de todos, caídas de todos, sanitario de todos...).</div>
       <div class="reg-grid" id="reg-grid"></div>
+    </div>
+
+    <div id="view-editar-registros" class="page hidden">
+      <button class="btn-back" onclick="navTo('registros')">← Volver a Registros</button>
+      <div class="page-header">
+        <div><div class="page-title">Editar registros guardados</div><div class="page-subtitle">Solo para Coordinadores — cambia con cuidado, esto edita lo que ya está guardado de verdad</div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div class="fl-lbl">Tipo de registro</div>
+            <select class="form-input" id="sel-tipo-editar-registro"></select>
+          </div>
+          <button class="btn-primary" onclick="cargarRegistrosParaEditar()">Cargar</button>
+        </div>
+      </div>
+      <div id="editar-registros-contenido"></div>
     </div>
 
     <!-- ===== REGISTROS - FORMULARIO ===== -->
@@ -1147,6 +1167,8 @@ function aplicarPermisosVisuales(){
     var el = document.getElementById(id);
     if(el) el.style.display = PERMISOS_ACTUAL.puedeVerConexionDrive ? '' : 'none';
   });
+  var btnEditarRegs = document.getElementById('btn-editar-registros-guardados');
+  if(btnEditarRegs) btnEditarRegs.style.display = (PERMISOS_ACTUAL.configuracion==='todo') ? '' : 'none';
 }
 /* ===================== CONEXIÓN REAL CON GOOGLE DRIVE (piloto: Horarios y Transporte) ===================== */
 var GOOGLE_CLIENT_ID = '496228924695-amquf0pghvq40ra9k81uv84t9v297n3d.apps.googleusercontent.com';
@@ -1830,6 +1852,81 @@ function guardarFilaViaAppsScript(carpetaId, nombreArchivo, pestana, cabecera, f
         callback(err);
       }
     });
+}
+/* ---- Editar registros guardados (solo Coordinadores): leer y sobrescribir la pestaña "General" ---- */
+function leerFilasViaAppsScript(nombreArchivo, pestana, callback){
+  fetch(APPS_SCRIPT_URL + '?accion=leerFilas&carpetaId=' + encodeURIComponent(CARPETA_REGISTROS_DIGITALES_ID) + '&nombreArchivo=' + encodeURIComponent(nombreArchivo) + '&pestana=' + encodeURIComponent(pestana))
+    .then(function(r){ return r.json(); })
+    .then(function(data){ (data && data.ok) ? callback(null, data.headers||[], data.filas||[]) : callback((data && data.error) || 'error_desconocido'); })
+    .catch(function(err){ callback(err); });
+}
+function sobrescribirFilasViaAppsScript(nombreArchivo, pestana, headers, filas, callback){
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'sobrescribirFilas', carpetaId: CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo: nombreArchivo, pestana: pestana, cabecera: headers, filas: filas})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){ callback((data && data.ok) ? null : ((data && data.error) || 'error_desconocido')); })
+    .catch(function(err){ callback(err); });
+}
+var _editarRegistrosDatos = {headers:[], filas:[]};
+function abrirEditarRegistrosGuardados(){
+  var sel = document.getElementById('sel-tipo-editar-registro');
+  sel.innerHTML = ordenarAlfabetico(REGISTRO_TIPOS, function(t){return t.titulo;})
+    .map(function(t){ return '<option value="'+t.id+'">'+t.titulo+'</option>'; }).join('');
+  document.getElementById('editar-registros-contenido').innerHTML = '<div class="empty-state">Elige un tipo y dale a "Cargar".</div>';
+  navTo('editar-registros');
+}
+function cargarRegistrosParaEditar(){
+  var tipoId = document.getElementById('sel-tipo-editar-registro').value;
+  var tipo = REGISTRO_TIPOS.filter(function(t){return t.id===tipoId;})[0];
+  if(!tipo) return;
+  var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
+  var cont = document.getElementById('editar-registros-contenido');
+  cont.innerHTML = '<div class="empty-state">⏳ Cargando…</div>';
+  leerFilasViaAppsScript(nombreArchivo, 'General', function(err, headers, filas){
+    if(err){ cont.innerHTML = '<div class="empty-state">⚠️ No se pudo cargar ('+err+'). Puede que este tipo aún no tenga ningún registro guardado.</div>'; return; }
+    _editarRegistrosDatos = {tipo: tipo, nombreArchivo: nombreArchivo, headers: headers, filas: filas};
+    renderTablaEditarRegistros();
+  });
+}
+function renderTablaEditarRegistros(){
+  var d = _editarRegistrosDatos;
+  var cont = document.getElementById('editar-registros-contenido');
+  var h = '<div class="table-card" style="overflow-x:auto"><table class="tabla-col1-fija"><thead><tr>';
+  d.headers.forEach(function(hd){ h += '<th>'+esc(hd)+'</th>'; });
+  h += '<th></th></tr></thead><tbody>';
+  d.filas.forEach(function(fila, i){
+    h += '<tr>';
+    d.headers.forEach(function(hd, j){
+      h += '<td><input class="form-input" style="min-width:140px" value="'+esc(fila[j]||'')+'" onchange="cambiarCeldaEditarRegistro('+i+','+j+',this.value)"/></td>';
+    });
+    h += '<td><button class="btn-secondary btn-sm" onclick="eliminarFilaEditarRegistro('+i+')">🗑</button></td></tr>';
+  });
+  h += '</tbody></table></div>';
+  h += '<div style="display:flex;gap:10px;margin-top:14px">';
+  h += '<button class="btn-secondary" onclick="anadirFilaEditarRegistro()">+ Añadir fila</button>';
+  h += '<button class="btn-primary" onclick="guardarCambiosEditarRegistros()">💾 Guardar cambios</button>';
+  h += '</div>';
+  cont.innerHTML = h;
+}
+function cambiarCeldaEditarRegistro(fila, col, valor){ _editarRegistrosDatos.filas[fila][col] = valor; }
+function eliminarFilaEditarRegistro(fila){
+  pedirConfirmacion('Eliminar fila', '¿Seguro que quieres quitar esta fila? Se borrará de verdad al guardar los cambios.', function(){
+    _editarRegistrosDatos.filas.splice(fila,1);
+    renderTablaEditarRegistros();
+  });
+}
+function anadirFilaEditarRegistro(){
+  _editarRegistrosDatos.filas.push(_editarRegistrosDatos.headers.map(function(){return '';}));
+  renderTablaEditarRegistros();
+}
+function guardarCambiosEditarRegistros(){
+  var d = _editarRegistrosDatos;
+  mostrarAviso('Guardando cambios…', '⏳');
+  sobrescribirFilasViaAppsScript(d.nombreArchivo, 'General', d.headers, d.filas, function(err){
+    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    mostrarAviso('Cambios guardados en "General" de '+d.tipo.titulo+'.', '✅');
+  });
 }
 function guardarRegistroEnDriveReal(tipo, datos, callback){
   var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
@@ -4426,7 +4523,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','transporte','ocio','asistencia-ocio','carta-ocio','horarios','historico-horarios','paap','paap-detalle','config'].forEach(function(v){
+  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','transporte','ocio','asistencia-ocio','carta-ocio','horarios','historico-horarios','paap','paap-detalle','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
