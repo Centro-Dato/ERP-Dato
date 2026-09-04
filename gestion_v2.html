@@ -149,6 +149,12 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .chk-group{display:flex;flex-wrap:wrap;gap:8px}
 .chk-item{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1.5px solid #14141a;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
 .chk-item input{cursor:pointer}
+.chk-group-num{display:flex;flex-direction:column;gap:8px}
+.chk-item-num{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f8fafc;border:1.5px solid #14141a;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600}
+.chk-item-num label{display:flex;align-items:center;gap:6px;cursor:pointer;flex:1}
+.chk-item-num label input[type=checkbox]{cursor:pointer}
+.chk-item-num input[type=number]{width:72px;flex:0 0 auto;padding:6px 8px;font-size:12.5px}
+.chk-item-num input[type=number]:disabled{background:#f1f5f9;color:#94a3b8}
 #carta-ocio-texto table{border-collapse:collapse;margin:10px 0}
 #carta-ocio-texto table td,#carta-ocio-texto table th{border:1.5px solid #94a3b8;padding:6px 10px;min-width:40px}
 #carta-ocio-texto:focus{outline:2px solid var(--primary)}
@@ -1652,6 +1658,19 @@ function recogerValoresFormulario(tipo){
       var marcados = [];
       document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
       valorPorCampo[campo.k] = marcados.join(', ');
+    } else if(campo.type==='checkboxes-numero'){
+      var partesNum = [];
+      var optsNum = opcionesDeCampo(campo, tipo.id);
+      optsNum.forEach(function(op, i){
+        var idChk = 'f_'+tipo.id+'_'+campo.k+'_num_'+i; // el número comparte índice con la opción
+        var chkEl = document.querySelector('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox][value="'+op.replace(/"/g,'\\"')+'"]');
+        if(chkEl && chkEl.checked){
+          var numEl = document.getElementById(idChk);
+          var val = numEl ? numEl.value : '';
+          partesNum.push(op+(val ? ' ('+val+')' : ''));
+        }
+      });
+      valorPorCampo[campo.k] = partesNum.join('\n');
     } else if(campo.type==='aspectos-actividad'){
       aspectosPorAlumno = {};
       document.querySelectorAll('#wrap-aspectos-actividad .aspectos-matriz-tabla tbody tr').forEach(function(fila){
@@ -1894,7 +1913,7 @@ function renderOpcionesFormulario(){
   var cont = document.getElementById('editar-opciones-contenido');
   document.getElementById('editar-registros-contenido').innerHTML = '';
   if(!tipo){ cont.innerHTML=''; return; }
-  var camposConOpciones = tipo.fields.filter(function(c){ return (c.type==='select'||c.type==='checkboxes') && Array.isArray(c.opts); });
+  var camposConOpciones = tipo.fields.filter(function(c){ return (c.type==='select'||c.type==='checkboxes'||c.type==='checkboxes-numero') && Array.isArray(c.opts); });
   if(camposConOpciones.length===0){
     cont.innerHTML = '<div class="empty-state">Este tipo de registro no tiene listas de opciones que se puedan editar aquí.</div>';
     return;
@@ -2020,6 +2039,7 @@ function generarFilaEjemplo(tipo){
       return nombreUsuarioEjemplo;
     }
     if(campo.type==='checkboxes'){ var opts2 = opcionesDeCampo(campo); return opts2.length ? opts2[0] : ''; }
+    if(campo.type==='checkboxes-numero'){ var opts3 = opcionesDeCampo(campo); return opts3.length ? opts3[0]+' (1)' : ''; }
     if(campo.type==='aspectos-actividad') return 'Movilidad, Comunicación — ejemplo';
     if(campo.type==='matriz-radio'){
       return campo.filas.map(function(fila){ return fila+': '+(campo.columnas[0]||''); }).join(' | ');
@@ -4332,8 +4352,7 @@ var REGISTRO_TIPOS = [
   {id:'control_dietas',titulo:'Registro Control Dietas',icon:'🥗',color:'#ecfdf5',iconColor:'#065f46',desc:'Control de dietas especiales',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'dietas',label:'Dietas activas',type:'checkboxes',opts:['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA']},
-    {k:'nMenus',label:'Nº de menús',type:'text'},
+    {k:'dietas',label:'Dietas y nº de menús',type:'checkboxes-numero',opts:['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA']},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
   {id:'crisis_epilepticas',titulo:'Registro Crisis Epilépticas',icon:'⚡',color:'#fff7ed',iconColor:'#9a3412',desc:'Registro de crisis y su duración',
@@ -5525,7 +5544,7 @@ function opcionesDeCampo(campo, tipoId){
 function renderCampoFormulario(tipoId, campo){
   var id = 'f_'+tipoId+'_'+campo.k;
   var req = campo.req ? ' <span class="req">*</span>' : '';
-  var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio') ? 'span2' : '';
+  var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='checkboxes-numero' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio') ? 'span2' : '';
   var h = '<div class="'+wrapClass+'"><label class="form-lbl" for="'+id+'">'+campo.label+req+'</label>';
   if(campo.type==='textarea'){
     h += '<textarea class="form-input" id="'+id+'" rows="3"></textarea>';
@@ -5555,6 +5574,16 @@ function renderCampoFormulario(tipoId, campo){
     h += '<div class="chk-group" id="grupo_'+tipoId+'_'+campo.k+'">';
     opcionesDeCampo(campo, tipoId).forEach(function(op,i){
       h += '<label class="chk-item"><input type="checkbox" value="'+op+'"'+onchangeChk+'/> '+op+'</label>';
+    });
+    h += '</div>';
+  } else if(campo.type==='checkboxes-numero'){
+    h += '<div class="chk-group-num" id="grupo_'+tipoId+'_'+campo.k+'">';
+    opcionesDeCampo(campo, tipoId).forEach(function(op,i){
+      var idNum = id+'_num_'+i;
+      h += '<div class="chk-item-num">';
+      h += '<label><input type="checkbox" value="'+op+'" onchange="var n=document.getElementById(\''+idNum+'\'); n.disabled=!this.checked; if(this.checked){ n.focus(); } else { n.value=\'\'; }"/> '+op+'</label>';
+      h += '<input type="number" min="0" step="1" class="form-input" id="'+idNum+'" placeholder="Nº" disabled/>';
+      h += '</div>';
     });
     h += '</div>';
   } else if(campo.type==='time'){
@@ -5623,7 +5652,7 @@ function validarCamposObligatorios(tipo){
   (tipo.fields||[]).forEach(function(campo){
     if(!campo.req) return;
     var id = 'f_'+tipo.id+'_'+campo.k;
-    if(campo.type==='checkboxes'){
+    if(campo.type==='checkboxes' || campo.type==='checkboxes-numero'){
       var grupo = document.getElementById('grupo_'+tipo.id+'_'+campo.k);
       var marcado = grupo && grupo.querySelectorAll('input[type=checkbox]:checked').length>0;
       if(!marcado) faltantes.push(campo.label);
