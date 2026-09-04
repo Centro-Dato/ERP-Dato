@@ -1137,9 +1137,18 @@ function aplicarPermisosVisuales(){
   ['usuarios','registros','paap','transporte','ocio','horarios'].forEach(function(mod){
     var btn = document.getElementById('home-'+mod);
     if(!btn) return;
-    var permisoClave = (mod==='expedientes') ? 'usuarios' : (mod==='transporte') ? 'registros' : mod;
-    var permiso = PERMISOS_ACTUAL[permisoClave];
-    btn.style.display = (!permiso || permiso==='nada') ? 'none' : '';
+    var visible;
+    if(mod==='transporte'){
+      // Transporte se rige por el permiso específico de su tipo de registro (registrosDetalle),
+      // no solo por el nivel general de Registros — así queda igual de restringido que la propia
+      // tarjeta de Transporte dentro de la pantalla de Registros.
+      visible = nivelRegistro('transporte')!=='nada';
+    } else {
+      var permisoClave = (mod==='expedientes') ? 'usuarios' : mod;
+      var permiso = PERMISOS_ACTUAL[permisoClave];
+      visible = !(!permiso || permiso==='nada');
+    }
+    btn.style.display = visible ? '' : 'none';
   });
   // "Documentación CAM": todavía no existe de verdad, así que se rige solo por su permiso
   // (por defecto "Nada" para todos, hasta que se construya y se le dé acceso a alguien).
@@ -4450,10 +4459,10 @@ var REGISTRO_TIPOS = [
   {id:'plan_seguridad_alimentaria',titulo:'Registro de Recepción de Productos Alimenticios',icon:'🛡️',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Vigilancia en la recepción, temperaturas de catering y muestras',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'vigilanciaRecepcion',label:'Vigilancia en la Recepción — correcto',type:'checkboxes',req:true,
+    {k:'vigilanciaRecepcion',label:'Vigilancia en la Recepción — correcto',type:'checkboxes',
      opts:['CORRESPONDENCIA CON EL PEDIDO','INTEGRIDAD ENVASES','LIMPIEZA EXTERIOR','ETIQUETADO E IDENTIFICACIÓN DEL PRODUCTO','PRODUCTOS DENTRO DE FECHAS DE CONSUMO','COMPROBACIÓN ORGANOLÉPTICA']},
     {k:'incidencias',label:'Incidencias - Observaciones',type:'textarea'},
-    {k:'vigiladoPor',label:'Vigilado por',type:'text',req:true},
+    {k:'vigiladoPor',label:'Vigilado por',type:'text'},
 
     {k:'sec_temp_catering',label:'RECEPCIÓN TEMPERATURAS CATERING',type:'seccion'},
     {k:'plato1',label:'Plato 1 - Nombre',type:'text'},
