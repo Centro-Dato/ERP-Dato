@@ -1688,6 +1688,20 @@ function recogerValoresFormulario(tipo){
         partes.push(fila+': '+(marcadoR?marcadoR.value:'—'));
       });
       valorPorCampo[campo.k] = partes.join(' | ');
+    } else if(campo.type==='matriz-checkbox'){
+      var filasMC = (campo.filas==='BD')
+        ? ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;})
+        : (campo.filas||[]);
+      var lineasMC = [];
+      filasMC.forEach(function(nombreFila, fi){
+        var marcadasFila = [];
+        campo.columnas.forEach(function(col, ci){
+          var elCasilla = document.querySelector('#'+id+'_wrap input[data-fila="'+fi+'"][data-col="'+ci+'"]');
+          if(elCasilla && elCasilla.checked) marcadasFila.push(col);
+        });
+        if(marcadasFila.length>0) lineasMC.push(nombreFila+': '+marcadasFila.join(', '));
+      });
+      valorPorCampo[campo.k] = lineasMC.join('\n');
     } else {
       var el = document.getElementById(id);
       var valor = el ? el.value : '';
@@ -4410,9 +4424,8 @@ var REGISTRO_TIPOS = [
   {id:'medicacion',titulo:'Registro Medicación',icon:'💊',color:'#fdf4ff',iconColor:'#581c87',desc:'Administración de medicación crónica y temporal',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
-    {k:'cronica',label:'Medicación crónica',type:'select',opts:['ADMINISTRADA','NO ADMINISTRADA']},
-    {k:'temporal',label:'Medicación temporal',type:'select',opts:['IBUPROFENO','NINGUNA','PARACETAMOL','OTROS']},
+    {k:'cronica',label:'Medicación crónica — administrada',type:'checkboxes',opts:['Alfonso Luis Julián Vicaria','Edurne Chunchurreta Merino','María Tisca Porras Recio','Mercedes García Martínez','Patricia de Barrio López']},
+    {k:'temporal',label:'Medicación temporal',type:'matriz-checkbox',filas:'BD',columnas:['IBUPROFENO','PARACETAMOL','OTROS']},
     {k:'incidencias',label:'Incidencias',type:'textarea'}
    ]},
   {id:'abvd',titulo:'Registro ABVD',icon:'🏘️',color:'#f0fdfa',iconColor:'#134e4a',desc:'Actividades Básicas de la Vida Diaria',
@@ -5241,7 +5254,7 @@ function verPreviaCartaOcio(mes){
 
 // Tipos de registro que NO están ligados a un usuario concreto (son generales del centro)
 // y por tanto no deben aparecer en la carpeta de Registros de un usuario individual.
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_catering','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_catering','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion'];
 
 function verCarpetaRegistrosUsuario(){
   if(!_expActual) return;
@@ -5544,7 +5557,7 @@ function opcionesDeCampo(campo, tipoId){
 function renderCampoFormulario(tipoId, campo){
   var id = 'f_'+tipoId+'_'+campo.k;
   var req = campo.req ? ' <span class="req">*</span>' : '';
-  var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='checkboxes-numero' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio') ? 'span2' : '';
+  var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='checkboxes-numero' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio' || campo.type==='matriz-checkbox') ? 'span2' : '';
   var h = '<div class="'+wrapClass+'"><label class="form-lbl" for="'+id+'">'+campo.label+req+'</label>';
   if(campo.type==='textarea'){
     h += '<textarea class="form-input" id="'+id+'" rows="3"></textarea>';
@@ -5564,6 +5577,21 @@ function renderCampoFormulario(tipoId, campo){
       h += '<tr><td>'+fila+'</td>';
       campo.columnas.forEach(function(col){
         h += '<td style="text-align:center"><input type="radio" name="'+nombreGrupo+'" value="'+col+'" style="width:18px;height:18px;cursor:pointer"/></td>';
+      });
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+  } else if(campo.type==='matriz-checkbox'){
+    var filasMatrizChk = (campo.filas==='BD')
+      ? ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;})
+      : (campo.filas||[]);
+    h += '<div class="table-card" id="'+id+'_wrap"><table class="tabla-col1-fija"><thead><tr><th></th>';
+    campo.columnas.forEach(function(col){ h += '<th style="text-align:center">'+col+'</th>'; });
+    h += '</tr></thead><tbody>';
+    filasMatrizChk.forEach(function(fila, fi){
+      h += '<tr><td>'+fila+'</td>';
+      campo.columnas.forEach(function(col, ci){
+        h += '<td style="text-align:center"><input type="checkbox" data-fila="'+fi+'" data-col="'+ci+'" style="width:18px;height:18px;cursor:pointer"/></td>';
       });
       h += '</tr>';
     });
