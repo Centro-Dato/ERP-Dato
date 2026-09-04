@@ -1958,9 +1958,10 @@ function anadirOpcionCampo(tipoId, campoK){
 }
 function guardarOpcionesCampo(tipoId, campoK){
   var lista = obtenerListaEnEdicion(tipoId, campoK).filter(function(v){ return v && v.trim(); });
+  lista = ordenarAlfabetico(lista, function(v){ return v; });
   guardarOpcionesPersonalizadas(tipoId, campoK, lista, function(err){
     if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
-    mostrarAviso('Lista guardada — ya está disponible para todo el equipo, sin tener que avisar a nadie.', '✅');
+    mostrarAviso('Lista guardada en orden alfabético — ya está disponible para todo el equipo, sin tener que avisar a nadie.', '✅');
     delete _opcionesEnEdicion[claveOpciones(tipoId, campoK)];
     renderOpcionesFormulario();
   });
