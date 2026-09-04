@@ -4395,9 +4395,8 @@ var REGISTRO_TIPOS = [
   {id:'hidratacion',titulo:'Registro Hidratación',icon:'💧',color:'#e0f2fe',iconColor:'#0369a1',desc:'Control de ingesta de líquidos',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
-    {k:'desayuno',label:'Hidratación desayuno',type:'checkboxes',opts:['AGUA','CAFÉ','INFUSIÓN','LECHE','ZUMO','OTROS']},
-    {k:'comida',label:'Hidratación comida',type:'checkboxes',opts:['AGUA','OTROS']}
+    {k:'desayuno',label:'Hidratación desayuno',type:'matriz-checkbox',filas:'BD',columnas:['AGUA','ZUMO','LECHE','CAFÉ','INFUSIÓN','OTROS']},
+    {k:'comida',label:'Hidratación comida',type:'matriz-checkbox',filas:'BD',columnas:['AGUA','OTROS']}
    ]},
   {id:'higiene',titulo:'Registro Higiene',icon:'🧼',color:'#f0fdf4',iconColor:'#14532d',desc:'Registro de higiene personal',
    fields:[
@@ -5256,7 +5255,7 @@ function verPreviaCartaOcio(mes){
 
 // Tipos de registro que NO están ligados a un usuario concreto (son generales del centro)
 // y por tanto no deben aparecer en la carpeta de Registros de un usuario individual.
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
 
 function verCarpetaRegistrosUsuario(){
   if(!_expActual) return;
