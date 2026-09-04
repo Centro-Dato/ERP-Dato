@@ -1667,7 +1667,7 @@ function recogerValoresFormulario(tipo){
     } else if(campo.type==='checkboxes'){
       var marcados = [];
       document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
-      valorPorCampo[campo.k] = marcados.join(', ');
+      valorPorCampo[campo.k] = marcados.join(campo.listaVertical ? '\n' : ', ');
     } else if(campo.type==='lista-numero'){
       var partesNum = [];
       var optsNum = opcionesDeCampo(campo, tipo.id);
@@ -4459,7 +4459,7 @@ var REGISTRO_TIPOS = [
   {id:'plan_seguridad_alimentaria',titulo:'Registro de Recepción de Productos Alimenticios',icon:'🛡️',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Vigilancia en la recepción, temperaturas de catering y muestras',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'vigilanciaRecepcion',label:'Vigilancia en la Recepción — correcto',type:'checkboxes',
+    {k:'vigilanciaRecepcion',label:'Vigilancia en la Recepción — correcto',type:'checkboxes',listaVertical:true,
      opts:['CORRESPONDENCIA CON EL PEDIDO','INTEGRIDAD ENVASES','LIMPIEZA EXTERIOR','ETIQUETADO E IDENTIFICACIÓN DEL PRODUCTO','PRODUCTOS DENTRO DE FECHAS DE CONSUMO','COMPROBACIÓN ORGANOLÉPTICA']},
     {k:'incidencias',label:'Incidencias - Observaciones',type:'textarea'},
     {k:'vigiladoPor',label:'Vigilado por',type:'text'},
