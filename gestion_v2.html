@@ -146,6 +146,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .form-input:focus{border-color:var(--primary)}
 .form-lbl{font-size:12.5px;font-weight:700;color:#374151;margin-bottom:7px;display:block}
 .form-lbl .req{color:#dc2626}
+.form-seccion-titulo{font-size:14.5px;font-weight:800;color:#1e293b;margin:18px 0 4px;padding-top:16px;border-top:1.5px solid #e2e8f0}
 .chk-group{display:flex;flex-wrap:wrap;gap:8px}
 .chk-item{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1.5px solid #14141a;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
 .chk-item input{cursor:pointer}
@@ -1631,8 +1632,7 @@ var REGISTRO_COLOR = {
   entradas_salidas:'0EA5E9', hidratacion:'0891B2', higiene:'15803D', incontinencias:'7C3AED',
   limpieza:'64748B', medicacion:'9333EA', abvd:'0D9488', quejas_sugerencias:'CA8A04',
   recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA', solicitud_menus:'C2410C',
-  temperaturas_catering:'B45309', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9',
-  temperaturas_nevera:'1D4ED8'
+  temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9'
 };
 
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
@@ -1643,8 +1643,11 @@ function recogerValoresFormulario(tipo){
   var campoUsuarioKey = null;
   var valorPorCampo = {};
   var aspectosPorAlumno = null;
+  // Los campos "seccion" son solo encabezados visuales dentro del formulario: no representan
+  // datos, así que no cuentan ni como columna ni como valor a guardar.
+  var camposReales = tipo.fields.filter(function(c){ return c.type!=='seccion'; });
 
-  tipo.fields.forEach(function(campo){
+  camposReales.forEach(function(campo){
     var id = 'f_'+tipo.id+'_'+campo.k;
     headers.push(campo.label);
     if(campo.type==='checkboxes' && campo.opts==='BD'){
@@ -1712,19 +1715,19 @@ function recogerValoresFormulario(tipo){
 
   var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : [];
   var headersIndividual = campoUsuarioKey
-    ? tipo.fields.filter(function(c){ return c.k!==campoUsuarioKey; }).map(function(c){ return c.label; })
+    ? camposReales.filter(function(c){ return c.k!==campoUsuarioKey; }).map(function(c){ return c.label; })
     : headers;
   var filas = [];
   var filaGeneral;
   if(usuarios.length>0){
     usuarios.forEach(function(nombreUsuario){
-      var filaIndividual = tipo.fields.filter(function(campo){ return campo.k!==campoUsuarioKey; }).map(function(campo){
+      var filaIndividual = camposReales.filter(function(campo){ return campo.k!==campoUsuarioKey; }).map(function(campo){
         if(campo.type==='aspectos-actividad') return aspectosPorAlumno ? (aspectosPorAlumno[nombreUsuario]||'') : '';
         return valorPorCampo[campo.k];
       });
       filas.push({usuario: nombreUsuario, valores: filaIndividual});
     });
-    filaGeneral = tipo.fields.map(function(campo){
+    filaGeneral = camposReales.map(function(campo){
       if(campo.k===campoUsuarioKey) return usuarios.join('\n');
       if(campo.type==='aspectos-actividad'){
         return usuarios.map(function(u){ return u+': '+((aspectosPorAlumno && aspectosPorAlumno[u])||''); }).join('\n');
@@ -1732,7 +1735,7 @@ function recogerValoresFormulario(tipo){
       return valorPorCampo[campo.k];
     });
   } else {
-    var filaUnica = tipo.fields.map(function(campo){ return valorPorCampo[campo.k]; });
+    var filaUnica = camposReales.map(function(campo){ return valorPorCampo[campo.k]; });
     filas.push({usuario: null, valores: filaUnica});
     filaGeneral = filaUnica;
   }
@@ -4444,14 +4447,30 @@ var REGISTRO_TIPOS = [
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'medicacion',label:'Medicación que entrega',type:'textarea',req:true}
    ]},
-  {id:'plan_seguridad_alimentaria',titulo:'Registro Plan de Control de Seguridad Alimentaria',icon:'🛡️',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Vigilancia en la recepción de productos alimenticios',
+  {id:'plan_seguridad_alimentaria',titulo:'Registro de Recepción de Productos Alimenticios',icon:'🛡️',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Vigilancia en la recepción, temperaturas de catering y muestras',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'vigilanciaRecepcion',label:'Vigilancia en la Recepción',type:'matriz-radio',req:true,
-     filas:['CORRESPONDENCIA CON EL PEDIDO','INTEGRIDAD ENVASES','LIMPIEZA EXTERIOR','ETIQUETADO E IDENTIFICACIÓN DEL PRODUCTO','PRODUCTOS DENTRO DE FECHAS DE CONSUMO','COMPROBACIÓN ORGANOLÉPTICA'],
-     columnas:['CORRECTO','NO CORRECTO']},
+    {k:'vigilanciaRecepcion',label:'Vigilancia en la Recepción — correcto',type:'checkboxes',req:true,
+     opts:['CORRESPONDENCIA CON EL PEDIDO','INTEGRIDAD ENVASES','LIMPIEZA EXTERIOR','ETIQUETADO E IDENTIFICACIÓN DEL PRODUCTO','PRODUCTOS DENTRO DE FECHAS DE CONSUMO','COMPROBACIÓN ORGANOLÉPTICA']},
     {k:'incidencias',label:'Incidencias - Observaciones',type:'textarea'},
-    {k:'vigiladoPor',label:'Vigilado por',type:'text',req:true}
+    {k:'vigiladoPor',label:'Vigilado por',type:'text',req:true},
+
+    {k:'sec_temp_catering',label:'RECEPCIÓN TEMPERATURAS CATERING',type:'seccion'},
+    {k:'plato1',label:'Plato 1 - Nombre',type:'text'},
+    {k:'temp1c',label:'Plato 1 - Temp. caliente (≥60º)',type:'text'},
+    {k:'temp1f',label:'Plato 1 - Temp. fría (≤8º)',type:'text'},
+    {k:'plato2',label:'Plato 2 - Nombre',type:'text'},
+    {k:'temp2c',label:'Plato 2 - Temp. caliente (≥60º)',type:'text'},
+    {k:'temp2f',label:'Plato 2 - Temp. fría (≤8º)',type:'text'},
+    {k:'guarnicion',label:'Guarnición - Nombre',type:'text'},
+    {k:'tempGc',label:'Guarnición - Temp. caliente (≥60º)',type:'text'},
+    {k:'tempGf',label:'Guarnición - Temp. fría (≤8º)',type:'text'},
+    {k:'lugar',label:'Lugar de medición',type:'select',opts:['COCINA']},
+    {k:'recepcionadoPor',label:'Recepcionado por',type:'text'},
+
+    {k:'sec_muestras',label:'MUESTRAS COMIDA CATERING',type:'seccion'},
+    {k:'muestrasRecogidas',label:'Muestras recogidas — recogida',type:'checkboxes',opts:['PLATO 1','PLATO 2','GUARNICIÓN']},
+    {k:'recogidoPor',label:'Recogido por',type:'text'}
    ]},
   {id:'solicitud_menus',titulo:'Registro Solicitud de Menús',icon:'🍽️',color:'#fff7ed',iconColor:'#7c2d12',desc:'Solicitudes de menús especiales por usuario',
    fields:[
@@ -4469,21 +4488,6 @@ var REGISTRO_TIPOS = [
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'temp_maxima',label:'Temperatura Máxima',type:'text',req:true},
     {k:'temp_minima',label:'Temperatura Mínima',type:'text',req:true}
-   ]},
-  {id:'temperaturas_catering',titulo:'Registro Temperaturas Catering',icon:'🌡️',color:'#fff7ed',iconColor:'#7c2d12',desc:'Control de temperatura de comidas',
-   fields:[
-    {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'plato1',label:'Plato 1 - Nombre',type:'text'},
-    {k:'temp1c',label:'Plato 1 - Temp. caliente (≥60º)',type:'text'},
-    {k:'temp1f',label:'Plato 1 - Temp. fría (≤8º)',type:'text'},
-    {k:'plato2',label:'Plato 2 - Nombre',type:'text'},
-    {k:'temp2c',label:'Plato 2 - Temp. caliente (≥60º)',type:'text'},
-    {k:'temp2f',label:'Plato 2 - Temp. fría (≤8º)',type:'text'},
-    {k:'plato3',label:'Plato 3 - Nombre',type:'text'},
-    {k:'temp3c',label:'Plato 3 - Temp. caliente (≥60º)',type:'text'},
-    {k:'temp3f',label:'Plato 3 - Temp. fría (≤8º)',type:'text'},
-    {k:'lugar',label:'Lugar de medición',type:'text'},
-    {k:'recepcionadoPor',label:'Recepcionado por',type:'text'}
    ]},
   {id:'transporte',titulo:'Registro Transporte',icon:'🚌',color:'#f0f9ff',iconColor:'#1e3a8a',desc:'Incidencias y control de rutas',
    fields:[
@@ -5251,7 +5255,7 @@ function verPreviaCartaOcio(mes){
 
 // Tipos de registro que NO están ligados a un usuario concreto (son generales del centro)
 // y por tanto no deben aparecer en la carpeta de Registros de un usuario individual.
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_catering','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion'];
 
 function verCarpetaRegistrosUsuario(){
   if(!_expActual) return;
@@ -5553,6 +5557,9 @@ function opcionesDeCampo(campo, tipoId){
 }
 function renderCampoFormulario(tipoId, campo){
   var id = 'f_'+tipoId+'_'+campo.k;
+  if(campo.type==='seccion'){
+    return '<div class="span2 form-seccion-titulo">'+campo.label+'</div>';
+  }
   var req = campo.req ? ' <span class="req">*</span>' : '';
   var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='lista-numero' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio' || campo.type==='matriz-checkbox') ? 'span2' : '';
   var h = '<div class="'+wrapClass+'"><label class="form-lbl" for="'+id+'">'+campo.label+req+'</label>';
