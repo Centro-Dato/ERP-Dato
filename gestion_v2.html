@@ -1680,8 +1680,30 @@ var REGISTRO_COLOR = {
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
 // Si el registro tiene un campo de selección de usuario(s), genera UNA FILA POR PERSONA (misma
 // convención que en el resto del programa), tanto para "General" como para su pestaña individual.
+// Casi todos los campos ocupan una sola columna en la hoja. "lista-numero" es la excepción:
+// se reparte en DOS columnas reales (nombres en una, números en la de al lado), para que
+// encaje con hojas como la de Dietas que ya tenían esas dos columnas por separado.
+function columnasDeCampo(campo){
+  if(campo.type==='lista-numero'){
+    return [
+      {campo: campo, sub: 'nombres', label: campo.label2Nombres || campo.label},
+      {campo: campo, sub: 'numeros', label: campo.label2Numeros || (campo.label+' (número)')}
+    ];
+  }
+  return [{campo: campo, sub: null, label: campo.label}];
+}
+function valorDeColumna(col, valorPorCampo, nombreUsuario, aspectosPorAlumno, campoUsuarioKey, usuarios){
+  var campo = col.campo;
+  if(campo.k===campoUsuarioKey) return nombreUsuario!==undefined ? nombreUsuario : (usuarios||[]).join('\n');
+  if(campo.type==='aspectos-actividad'){
+    if(nombreUsuario!==undefined) return aspectosPorAlumno ? (aspectosPorAlumno[nombreUsuario]||'') : '';
+    return (usuarios||[]).map(function(u){ return u+': '+((aspectosPorAlumno && aspectosPorAlumno[u])||''); }).join('\n');
+  }
+  var v = valorPorCampo[campo.k];
+  if(col.sub && v && typeof v==='object') return v[col.sub] || '';
+  return v;
+}
 function recogerValoresFormulario(tipo){
-  var headers = [];
   var campoUsuarioKey = null;
   var valorPorCampo = {};
   var aspectosPorAlumno = null;
@@ -1691,7 +1713,6 @@ function recogerValoresFormulario(tipo){
 
   camposReales.forEach(function(campo){
     var id = 'f_'+tipo.id+'_'+campo.k;
-    headers.push(campo.label);
     if(campo.type==='checkboxes' && campo.opts==='BD'){
       campoUsuarioKey = campo.k;
       var seleccion = [];
@@ -1702,17 +1723,18 @@ function recogerValoresFormulario(tipo){
       document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
       valorPorCampo[campo.k] = marcados.join(campo.listaVertical ? '\n' : ', ');
     } else if(campo.type==='lista-numero'){
-      var partesNum = [];
+      var nombresNum = [], numerosNum = [];
       var optsNum = opcionesDeCampo(campo, tipo.id);
       optsNum.forEach(function(op, i){
         var idNum = 'f_'+tipo.id+'_'+campo.k+'_num_'+i;
         var numEl = document.getElementById(idNum);
         var val = numEl ? numEl.value.trim() : '';
         if(val && Number(val) > 0){
-          partesNum.push(op+' ('+val+')');
+          nombresNum.push(op);
+          numerosNum.push(val);
         }
       });
-      valorPorCampo[campo.k] = partesNum.join('\n');
+      valorPorCampo[campo.k] = {nombres: nombresNum.join('\n'), numeros: numerosNum.join('\n')};
     } else if(campo.type==='aspectos-actividad'){
       aspectosPorAlumno = {};
       document.querySelectorAll('#wrap-aspectos-actividad .aspectos-matriz-tabla tbody tr').forEach(function(fila){
@@ -1755,29 +1777,30 @@ function recogerValoresFormulario(tipo){
     }
   });
 
+  // "columnas" es la lista real y plana de columnas de la hoja (algunos campos aportan más de una).
+  var columnas = [];
+  camposReales.forEach(function(campo){ columnasDeCampo(campo).forEach(function(c){ columnas.push(c); }); });
+  var headers = columnas.map(function(c){ return c.label; });
+
   var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : [];
-  var headersIndividual = campoUsuarioKey
-    ? camposReales.filter(function(c){ return c.k!==campoUsuarioKey; }).map(function(c){ return c.label; })
-    : headers;
+  var columnasIndividual = campoUsuarioKey ? columnas.filter(function(c){ return c.campo.k!==campoUsuarioKey; }) : columnas;
+  var headersIndividual = campoUsuarioKey ? columnasIndividual.map(function(c){ return c.label; }) : headers;
   var filas = [];
   var filaGeneral;
   if(usuarios.length>0){
     usuarios.forEach(function(nombreUsuario){
-      var filaIndividual = camposReales.filter(function(campo){ return campo.k!==campoUsuarioKey; }).map(function(campo){
-        if(campo.type==='aspectos-actividad') return aspectosPorAlumno ? (aspectosPorAlumno[nombreUsuario]||'') : '';
-        return valorPorCampo[campo.k];
+      var filaIndividual = columnasIndividual.map(function(c){
+        return valorDeColumna(c, valorPorCampo, nombreUsuario, aspectosPorAlumno, campoUsuarioKey, usuarios);
       });
       filas.push({usuario: nombreUsuario, valores: filaIndividual});
     });
-    filaGeneral = camposReales.map(function(campo){
-      if(campo.k===campoUsuarioKey) return usuarios.join('\n');
-      if(campo.type==='aspectos-actividad'){
-        return usuarios.map(function(u){ return u+': '+((aspectosPorAlumno && aspectosPorAlumno[u])||''); }).join('\n');
-      }
-      return valorPorCampo[campo.k];
+    filaGeneral = columnas.map(function(c){
+      return valorDeColumna(c, valorPorCampo, undefined, aspectosPorAlumno, campoUsuarioKey, usuarios);
     });
   } else {
-    var filaUnica = camposReales.map(function(campo){ return valorPorCampo[campo.k]; });
+    var filaUnica = columnas.map(function(c){
+      return valorDeColumna(c, valorPorCampo, undefined, aspectosPorAlumno, campoUsuarioKey, usuarios);
+    });
     filas.push({usuario: null, valores: filaUnica});
     filaGeneral = filaUnica;
   }
@@ -4410,7 +4433,7 @@ var REGISTRO_TIPOS = [
   {id:'control_dietas',titulo:'Registro Control Dietas',icon:'🥗',color:'#ecfdf5',iconColor:'#065f46',desc:'Control de dietas especiales',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'dietas',label:'Dietas y nº de menús',type:'lista-numero',opts:['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA']},
+    {k:'dietas',label:'Dietas y nº de menús',type:'lista-numero',label2Nombres:'Dietas activas',label2Numeros:'Nº de menús',opts:['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA']},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
   {id:'crisis_epilepticas',titulo:'Registro Crisis Epilépticas',icon:'⚡',color:'#fff7ed',iconColor:'#9a3412',desc:'Registro de crisis y su duración',
