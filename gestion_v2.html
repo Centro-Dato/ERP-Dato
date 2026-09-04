@@ -763,7 +763,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
       <div class="table-card">
         <table class="tabla-config-sticky">
-          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Documentación<br>CAM</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Documentación<br>CAM</th><th>Contraseña<br>Medicación</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
       </div>
@@ -1000,6 +1000,19 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cerrarModalNuevoEmpleado()">Cancelar</button>
       <button class="btn-primary" onclick="crearNuevoEmpleado()">✓ Crear empleado</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-clave-medicacion" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalClaveMedicacion()">
+  <div class="modal-box" style="max-width:380px;text-align:center">
+    <div style="font-size:36px;margin-bottom:10px">🔒</div>
+    <div class="modal-title">Acceso a Medicación</div>
+    <div class="modal-sub">Introduce la contraseña para poder entrar a este registro</div>
+    <input type="password" id="input-clave-medicacion" class="form-input" placeholder="Contraseña" style="margin-bottom:16px" onkeydown="if(event.key==='Enter')confirmarClaveMedicacion()"/>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn-secondary" onclick="cerrarModalClaveMedicacion()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarClaveMedicacion()">Entrar</button>
     </div>
   </div>
 </div>
@@ -2355,9 +2368,6 @@ function abrirEnDriveReal(){
 
 function estadoTextoCarpetaPiloto(tipoId, nombre){
   var v = carpetaRealVinculada(tipoId);
-  if(tipoId==='registros'){
-    return '<strong>'+nombre+':</strong> ya guarda de verdad, esto no afecta a eso — ' + (v ? ('vinculada a "'+esc(v.nombre)+'" para poder ver el listado de archivos aquí') : 'solo falta vincular si quieres ver aquí el listado de archivos');
-  }
   return '<strong>'+nombre+':</strong> ' + (v ? ('vinculada a "'+esc(v.nombre)+'"') : 'sin vincular todavía');
 }
 function renderEstadoCarpetasPiloto(){
@@ -2880,13 +2890,13 @@ var USUARIOS = [
 ];
 
 var EMPLEADOS_OFICIAL = [
-  {id:1,nombre:'Ana',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:4,nombre:'Mª Jose',usuario:'mj.bermejo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:5,nombre:'Marcial',usuario:'marcial@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:6,nombre:'Patri',usuario:'patricia.mateo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:7,nombre:'Ana de Frutos',usuario:'t.ocupacional@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}}
+  {id:1,nombre:'Ana',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:4,nombre:'Mª Jose',usuario:'mj.bermejo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:5,nombre:'Marcial',usuario:'marcial@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:6,nombre:'Patri',usuario:'patricia.mateo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:7,nombre:'Ana de Frutos',usuario:'t.ocupacional@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}}
 ];
 var EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
 var _empleadosCargadosDeVerdad = false;
@@ -2934,6 +2944,7 @@ function completarPermisosFaltantes(lista){
     completar('paap', esAdmin ? 'todo' : 'nada');
     completar('horarios', esAdmin ? 'todo' : 'ver');
     completar('configuracion', esAdmin ? 'todo' : 'nada');
+    completar('claveMedicacionActiva', false);
     completar('puedeVerConexionDrive', esAdmin);
     completar('puedeVerMediasTransporte', esAdmin);
     if(!p.registrosDetalle){ p.registrosDetalle = {}; huboCambios = true; }
@@ -4636,9 +4647,22 @@ function iniciarSesionDesdeAvatar(){
     google.accounts.id.prompt();
   }
 }
+var _intentosInicializarGoogle = 0;
 function inicializarLoginGoogle(){
   if(typeof google === 'undefined' || !google.accounts || !google.accounts.id){
-    setTimeout(inicializarLoginGoogle, 300);
+    _intentosInicializarGoogle++;
+    // Unos 20 segundos de margen (300ms x ~67 intentos) antes de avisar de que algo va mal,
+    // por si la conexión va lenta esa vez. Pasado eso, seguir esperando en silencio para
+    // siempre es peor que avisar con un botón para reintentar.
+    if(_intentosInicializarGoogle <= 67){
+      setTimeout(inicializarLoginGoogle, 300);
+      return;
+    }
+    var elCargandoG = document.getElementById('google-signin-cargando');
+    if(elCargandoG){
+      elCargandoG.classList.remove('hidden');
+      elCargandoG.innerHTML = '⚠️ No se ha podido cargar el inicio de sesión de Google (puede ser la conexión a internet, o que algo lo esté bloqueando, como un antivirus o el wifi de una red restringida).<br/><button class="btn-primary btn-sm" style="margin-top:10px" onclick="_intentosInicializarGoogle=0;inicializarLoginGoogle()">🔄 Reintentar</button>';
+    }
     return;
   }
   document.getElementById('google-signin-cargando').classList.add('hidden');
@@ -4654,6 +4678,7 @@ document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
   cerrarMenuMovil();
+  _medicacionDesbloqueada = false;
   if(typeof google !== 'undefined' && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
 };
 
@@ -4886,8 +4911,8 @@ function crearNuevoEmpleado(){
   var esAdmin = rol==='admin';
   var nuevoId = Math.max.apply(null, EMPLEADOS.map(function(e){return e.id;}).concat([0])) + 1;
   var permisosBase = esAdmin
-    ? {usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:false,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}
-    : {usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}};
+    ? {usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}
+    : {usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',claveMedicacionActiva:false,puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}};
   EMPLEADOS.push({id:nuevoId, nombre:nombre, usuario:usuario, rol:rol, permisos:permisosBase});
   guardarEmpleadosLocalStorage();
   cerrarModalNuevoEmpleado();
@@ -5795,8 +5820,18 @@ function renderCamposFormulario(tipo){
   (tipo.fields||[]).forEach(function(campo){ h += renderCampoFormulario(tipo.id, campo); });
   document.getElementById('formreg-campos').innerHTML = h;
 }
+var CLAVE_MEDICACION = 'MEDICACI0N';
+var CLAVE_MEDICACION = 'MEDICACI0N';
+var _medicacionDesbloqueada = false;
 function abrirFormRegistro(id, titulo){
   if(nivelRegistro(id)==='nada'){ mostrarAviso('No tienes acceso a este tipo de registro.'); return; }
+  // Medicación: se pide contraseña antes de entrar SOLO si está activado en Configuración para este empleado.
+  if(id==='medicacion' && PERMISOS_ACTUAL.claveMedicacionActiva && !_medicacionDesbloqueada){
+    _tituloPendienteMedicacion = titulo;
+    document.getElementById('input-clave-medicacion').value = '';
+    document.getElementById('modal-clave-medicacion').classList.remove('hidden');
+    return;
+  }
   document.getElementById('formreg-titulo').textContent = titulo;
   var tipo = REGISTRO_TIPOS.filter(function(t){return t.id===id;})[0];
   _regActualId = id; _regActualTitulo = titulo;
@@ -5806,13 +5841,27 @@ function abrirFormRegistro(id, titulo){
     ? '🔗 Se guardará en el archivo general'
     : '🔗 Se guardará en la hoja del usuario';
   var nivel = nivelRegistro(id);
-  var puedeGuardar = (nivel==='editar' || nivel==='todo');
+  var puedeGuardar = (id==='medicacion' && PERMISOS_ACTUAL.claveMedicacionActiva) ? _medicacionDesbloqueada : (nivel==='editar' || nivel==='todo');
   var btnGuardar = document.getElementById('btn-guardar-registro');
   btnGuardar.style.display = puedeGuardar ? '' : 'none';
   var driveId = 'd'+(_driveIdSeq++);
   _driveStore[driveId] = {titulo: titulo, docs: [{nombre: titulo+'.xlsx', icono: tipo.icon}]};
   document.getElementById('btn-drive-registro').setAttribute('onclick','verCarpetaDrive(\''+driveId+'\')');
   navTo('form-registro');
+}
+var _tituloPendienteMedicacion = '';
+function cerrarModalClaveMedicacion(){
+  document.getElementById('modal-clave-medicacion').classList.add('hidden');
+}
+function confirmarClaveMedicacion(){
+  var clave = document.getElementById('input-clave-medicacion').value;
+  if(clave===CLAVE_MEDICACION){
+    _medicacionDesbloqueada = true;
+    cerrarModalClaveMedicacion();
+    abrirFormRegistro('medicacion', _tituloPendienteMedicacion || 'Registro Medicación');
+  } else {
+    mostrarAviso('Contraseña incorrecta.');
+  }
 }
 var _regActualId = null, _regActualTitulo = '';
 function validarCamposObligatorios(tipo){
@@ -5903,6 +5952,11 @@ function renderConfig(){
     h += permSelectCelda(emp, 'configuracion');
     // Documentación CAM (apartado todavía sin construir; el permiso ya se deja preparado)
     h += permSelectCelda(emp, 'documentacionCam');
+    // Contraseña de Medicación: activar o no que se pida al entrar al registro
+    h += '<td><select class="perm-select v-'+(emp.permisos.claveMedicacionActiva?'todo':'nada')+'" onchange="cambiarClaveMedicacionActiva('+emp.id+',this)">'+
+      '<option value="no" '+(!emp.permisos.claveMedicacionActiva?'selected':'')+'>No pedir</option>'+
+      '<option value="si" '+(emp.permisos.claveMedicacionActiva?'selected':'')+'>Pedir contraseña</option>'+
+      '</select></td>';
     // Ve el estado de conexión con Drive/API (pensado solo para quien administra el sistema)
     h += '<td><select class="perm-select v-'+(emp.permisos.puedeVerConexionDrive?'todo':'nada')+'" onchange="cambiarPuedeVerConexionDrive('+emp.id+',this)">'+
       '<option value="no" '+(!emp.permisos.puedeVerConexionDrive?'selected':'')+'>No</option>'+
@@ -5953,6 +6007,12 @@ function cambiarPuedeVerMediasTransporte(empId, sel){
   var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
   emp.permisos.puedeVerMediasTransporte = (sel.value==='si');
   sel.className = 'perm-select v-'+(emp.permisos.puedeVerMediasTransporte?'todo':'nada');
+  guardarEmpleadosLocalStorage();
+}
+function cambiarClaveMedicacionActiva(empId, sel){
+  var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
+  emp.permisos.claveMedicacionActiva = (sel.value==='si');
+  sel.className = 'perm-select v-'+(emp.permisos.claveMedicacionActiva?'todo':'nada');
   guardarEmpleadosLocalStorage();
 }
 function permSelectHtml(emp, mod){
