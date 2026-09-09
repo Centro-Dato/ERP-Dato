@@ -3807,6 +3807,18 @@ function renderFranjasDia(){
         h += '<label class="chk-item" style="'+estiloLabel+'"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleAlumnoArea('+idx+','+aIdx+',\''+n.replace(/'/g,"")+'\',this.checked)"/> '+esc(abreviarNombreCompleto(n))+'</label>';
       });
       h += '</div>';
+      // Si ya no quedan alumnos "libres" en la lista de arriba (todos repartidos en otras áreas),
+      // este desplegable muestra a TODOS los usuarios sin filtrar, para poder añadir a quien haga falta.
+      h += '<div style="display:flex;gap:6px;margin-top:8px">';
+      h += '<select id="anadir-alumno-sel-'+idx+'-'+aIdx+'" class="form-input" style="flex:1;font-size:12.5px">';
+      h += '<option value="">— Añadir usuario —</option>';
+      ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).forEach(function(u){
+        var nombreCompleto = u.nombre+' '+u.apellidos;
+        h += '<option value="'+nombreCompleto+'">'+esc(nombreAbreviado(u))+'</option>';
+      });
+      h += '</select>';
+      h += '<button class="btn-secondary btn-sm" onclick="anadirAlumnoManualArea('+idx+','+aIdx+')">+ Añadir</button>';
+      h += '</div>';
       }
       if((a.alumnos||[]).length>0 && ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)===-1){
         h += '<div class="fl-lbl" style="margin-top:10px;margin-bottom:4px">🎨 Resaltar en esta caja</div>';
@@ -3911,6 +3923,18 @@ function toggleAlumnoArea(idx, aIdx, nombre, marcado){
   } else {
     area.alumnos = area.alumnos.filter(function(n){ return n!==nombre; });
   }
+  renderFranjasDia();
+  renderSelectAlumnosHorario();
+}
+// Añade un alumno a esta área sin pasar por el filtro de "disponibles" — útil cuando ya no
+// queda nadie libre en la lista de casillas porque están todos repartidos en otras áreas.
+function anadirAlumnoManualArea(idx, aIdx){
+  var sel = document.getElementById('anadir-alumno-sel-'+idx+'-'+aIdx);
+  if(!sel || !sel.value) return;
+  var nombre = sel.value;
+  var area = HORARIOS_POR_DIA[_diaHorarioActual][idx].areas[aIdx];
+  if(!area.alumnos) area.alumnos = [];
+  if(area.alumnos.indexOf(nombre)===-1) area.alumnos.push(nombre);
   renderFranjasDia();
   renderSelectAlumnosHorario();
 }
