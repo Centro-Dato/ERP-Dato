@@ -607,18 +607,9 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-secondary" onclick="verPreviaHorarios()">👁 Vista previa</button>
           <button class="btn-secondary" onclick="guardarHorarios()">💾 Guardar</button>
-          <button class="btn-primary" id="btn-horarios-guardar-drive" onclick="guardarHorarioEnDrive()">☁️ Guardar en Drive</button>
-          <button class="btn-secondary" onclick="descargarHorarios()">⬇ Descargar</button>
           <button class="btn-secondary" onclick="imprimirHtml(generarHtmlHorarioSemana(), true)">🖨 Imprimir</button>
-          <button class="btn-secondary" onclick="abrirHistoricoHorarios()">🕐 Histórico</button>
           <button class="btn-secondary" onclick="abrirModalCopiarDia()">📋 Copiar día</button>
-          <button class="btn-secondary" id="btn-horarios-carpeta-drive" onclick="verCarpetaHorariosDrive()">📁 Ver carpeta en Drive</button>
         </div>
-      </div>
-      <div class="card" style="margin-bottom:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label class="fl-lbl" style="margin:0" for="input-fecha-horario">📅 Fecha de este horario</label>
-        <input type="date" class="form-input" id="input-fecha-horario" style="max-width:170px" onchange="actualizarFechaHorarioTexto()"/>
-        <strong id="texto-fecha-horario" style="color:#334155"></strong>
       </div>
       <div class="tabs-bar">
         <button class="tab-btn" id="tab-horarios-area" onclick="cambiarSubvistaHorarios('area')">Por Área</button>
@@ -1111,7 +1102,7 @@ function aplicarPermisosVisuales(){
   // Botones/avisos de "Ver carpeta en Drive" / "Guardar en hoja de cálculo real": solo para quien
   // administra las conexiones de Drive (Coordinadores). Los empleados solo rellenan formularios.
   ['btn-drive-registro','btn-paap-detalle-drive','btn-ocio-carpeta-drive',
-   'btn-ocio-guardar-drive','btn-horarios-carpeta-drive','btn-horarios-guardar-drive','btn-registros-carpeta-drive',
+   'btn-ocio-guardar-drive','btn-registros-carpeta-drive',
    'btn-registros-carpeta-drive-principal','banner-registros-drive'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = PERMISOS_ACTUAL.puedeVerConexionDrive ? '' : 'none';
@@ -3663,7 +3654,6 @@ function abrirVistaHorarios(){
   });
 }
 function renderHorarios(){
-  inicializarFechaHorarioSiHaceFalta();
   renderDiasTabsHorarios();
   renderFranjasDia();
   renderSelectAlumnosHorario();
@@ -3723,12 +3713,16 @@ function confirmarCopiarDia(){
     copiarAhora();
   }
 }
-// Antes esta función quitaba de la lista a los alumnos ya usados en OTRA área de la misma
-// franja, para evitar duplicarlos. Se ha quitado esa restricción a propósito: hay actividades
-// (p.ej. Fisioterapia y Terapia Ocupacional) que comparten el mismo grupo de alumnos a la misma
-// hora, y ahora se puede duplicar el área entera para reflejarlo (ver duplicarAreaEnFranja).
+// Un alumno que ya está marcado en OTRA área de la misma franja desaparece de la lista de esa
+// otra área, para que sea más fácil ver de un vistazo a quién falta por asignar todavía. Para
+// los casos en que dos áreas comparten el mismo grupo (p.ej. Fisioterapia y Terapia Ocupacional),
+// se usa "Duplicar área": copia a los alumnos directamente sin pasar por esta lista.
 function alumnosDisponiblesEnFranja(idxFranja, aIdxActual){
-  return ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;});
+  var franja = HORARIOS_POR_DIA[_diaHorarioActual][idxFranja];
+  var usadosEnOtras = {};
+  (franja.areas||[]).forEach(function(a, i){ if(i!==aIdxActual) (a.alumnos||[]).forEach(function(n){ usadosEnOtras[n]=true; }); });
+  var todos = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;});
+  return todos.filter(function(n){ return !usadosEnOtras[n]; });
 }
 // Duplica un área entera (nombre, profesional, alumnos y colores) dentro de la misma franja,
 // para no tener que volver a marcar uno por uno los mismos alumnos en la actividad "gemela".
@@ -3764,10 +3758,6 @@ function renderFranjasDia(){
     return;
   }
   var h = '';
-  var sinAsignar = usuariosSinAsignarEnDia();
-  if(sinAsignar.length>0){
-    h += '<div class="info-banner" style="background:#fef3c7;border-color:#fde68a;color:#92400e">⚠️ Todavía sin asignar en ningún área hoy ('+sinAsignar.length+'): '+sinAsignar.map(abreviarNombreCompleto).join(', ')+'</div>';
-  }
   franjas.forEach(function(f, idx){
     h += '<div class="card" style="margin-bottom:16px">';
     h += '<div class="card-header" style="flex-wrap:wrap;gap:10px">';
@@ -4096,35 +4086,19 @@ var HISTORICO_HORARIOS = [];
     if(guardado) HISTORICO_HORARIOS = JSON.parse(guardado);
   }catch(e){ /* localStorage no disponible */ }
 })();
-function textoFechaHorarioFormato(iso){
-  if(!iso) return '';
-  var d = parsearFechaLocalOcio(iso);
-  var dia = DIAS_SEMANA_COMPLETO_OCIO[d.getDay()].toUpperCase();
-  var dd = String(d.getDate()).padStart(2,'0');
-  var mm = String(d.getMonth()+1).padStart(2,'0');
-  return dia+'/'+dd+'/'+mm+'/'+d.getFullYear();
-}
-var _fechaHorarioSeleccionada = '';
-function actualizarFechaHorarioTexto(){
-  var input = document.getElementById('input-fecha-horario');
-  _fechaHorarioSeleccionada = input.value;
-  document.getElementById('texto-fecha-horario').textContent = textoFechaHorarioFormato(_fechaHorarioSeleccionada);
-}
-function inicializarFechaHorarioSiHaceFalta(){
-  var input = document.getElementById('input-fecha-horario');
-  if(!input) return;
-  if(!input.value){
-    var hoy = new Date();
-    input.value = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
-  }
-  actualizarFechaHorarioTexto();
-}
 function guardarHorarios(){
-  var etiquetaFecha = textoFechaHorarioFormato(_fechaHorarioSeleccionada) || new Date().toLocaleString('es-ES');
-  var snapshot = {fecha: etiquetaFecha, datos: JSON.parse(JSON.stringify(HORARIOS_POR_DIA))};
-  HISTORICO_HORARIOS.unshift(snapshot);
-  try{ localStorage.setItem('historico_horarios', JSON.stringify(HISTORICO_HORARIOS)); }catch(e){}
-  mostrarAviso('Horario guardado en el histórico ('+snapshot.fecha+').');
+  mostrarAviso('Guardando los horarios para todo el equipo…', '⏳');
+  var pendientes = DIAS_SEMANA.length;
+  var huboError = false;
+  DIAS_SEMANA.forEach(function(dia){
+    guardarOpcionesPersonalizadas('horarios_datos', dia, [datosHorariosParaGuardar(dia)], function(err){
+      if(err) huboError = true;
+      pendientes--;
+      if(pendientes===0){
+        mostrarAviso(huboError ? 'Guardado, pero con algún aviso — revisa la conexión si algo no aparece para el resto del equipo.' : 'Horarios guardados — ya los puede ver el resto del equipo.', huboError?'⚠️':'✅');
+      }
+    });
+  });
 }
 function abrirHistoricoHorarios(){
   renderListaHistoricoHorarios();
@@ -5331,6 +5305,11 @@ var ASPECTOS_POR_AREA = {
   'TERAPIA OCUPACIONAL':['ABVD','MOTRICIDAD FINA','MOVILIDAD','SENSORIAL','FUNCIONES EJECUTIVAS','OTROS'],
   'VIDA COMUNITARIA':['PINTURA','LECTURA','MÚSICA','JUEGOS','OTROS']
 };
+// Solo en Fisioterapia, la tabla de aspectos se ve muy apretada con el texto completo en cada
+// columna — se abrevia a una inicial, con una leyenda debajo de la tabla que explica cada una.
+var ASPECTOS_ABREVIADOS_FISIO = {
+  'MOVILIDAD':'M', 'FUERZA':'F', 'COORDINACIÓN':'C', 'EQUILIBRIO':'E', 'DESCONTRACTURANTE':'D', 'RESPIRATORIO':'R'
+};
 function actualizarMatrizAspectos(){
   var cont = document.getElementById('wrap-aspectos-actividad');
   if(!cont) return;
@@ -5347,12 +5326,16 @@ function actualizarMatrizAspectos(){
     alumnos = ordenarAlfabetico(USUARIOS, function(u){ return u.nombre+' '+u.apellidos; }).map(function(u){ return u.nombre+' '+u.apellidos; });
   }
   var aspectos = ASPECTOS_POR_AREA[area] || [];
+  var esFisio = (area==='FISIOTERAPIA');
   var h = '<div class="aspectos-matriz-card">';
   h += '<div class="aspectos-matriz-header">ELIGE LOS ASPECTOS TRABAJADOS</div>';
   h += '<div class="aspectos-matriz-body">';
   h += '<div class="aspectos-matriz-area">'+area+'</div>';
   h += '<div style="overflow-x:auto"><table class="aspectos-matriz-tabla tabla-col1-fija"><thead><tr><th></th>';
-  aspectos.forEach(function(a){ h += '<th>'+a+'</th>'; });
+  aspectos.forEach(function(a){
+    var textoCol = (esFisio && ASPECTOS_ABREVIADOS_FISIO[a]) ? ASPECTOS_ABREVIADOS_FISIO[a] : a;
+    h += '<th title="'+esc(a)+'">'+esc(textoCol)+'</th>';
+  });
   h += '</tr></thead><tbody>';
   alumnos.forEach(function(alumno, idx){
     h += '<tr data-fila-alumno="'+alumno.replace(/"/g,'')+'"><td class="aspectos-matriz-nombre">'+esc(abreviarNombreCompleto(alumno))+'</td>';
@@ -5361,7 +5344,13 @@ function actualizarMatrizAspectos(){
     });
     h += '</tr>';
   });
-  h += '</tbody></table></div></div></div>';
+  h += '</tbody></table></div>';
+  if(esFisio){
+    h += '<div style="margin-top:10px;font-size:12px;color:#64748b;line-height:1.6"><strong>Leyenda:</strong> '+
+      aspectos.map(function(a){ return '<strong>'+esc(ASPECTOS_ABREVIADOS_FISIO[a]||a)+'</strong> = '+esc(a); }).join(' &nbsp;·&nbsp; ')+
+      '</div>';
+  }
+  h += '</div></div>';
   cont.innerHTML = h;
 }
 
