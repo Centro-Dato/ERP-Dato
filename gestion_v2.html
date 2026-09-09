@@ -4037,7 +4037,7 @@ function generarHtmlHorarioSemana(datos){
       h += '</tr><tr>';
       (f.areas||[]).forEach(function(a){
         var coloresAlumnos = a.coloresAlumnos || {};
-        var listaAlumnos = (a.alumnos||[]).map(function(n){
+        var listaAlumnos = (ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)>-1) ? '' : (a.alumnos||[]).map(function(n){
           var c = coloresAlumnos[n];
           return c ? '<span style="background:'+(c.fondo||'transparent')+';color:'+(c.texto||'inherit')+'">'+n+'</span>' : n;
         }).join('<br>');
