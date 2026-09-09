@@ -189,7 +189,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .aspectos-matriz-chk{width:19px;height:19px;cursor:pointer;accent-color:var(--primary)}
 .aspectos-matriz-tabla tbody tr:nth-child(even){background:#f8fafc}
 /* ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) */
-.ocio-tabla{border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+.ocio-tabla{border-collapse:collapse;font-size:12.5px;table-layout:fixed;width:max-content}
 .ocio-tabla th,.ocio-tabla td{border:1.5px solid #14141a;padding:6px 10px;text-align:center}
 .ocio-tabla .ocio-th-usuario{background:#5cc4f2;color:#000;font-weight:800;text-transform:uppercase;font-size:12px;text-align:left;vertical-align:middle;width:170px;white-space:nowrap}
 .ocio-th-fecha{background:var(--primary);color:#fff;font-weight:800;white-space:normal;cursor:context-menu;width:150px}
@@ -591,6 +591,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
         <div class="tabs-bar" id="ocio-meses-tabs" style="margin-bottom:0"></div>
         <button class="btn-secondary btn-sm" onclick="abrirModalNuevaPestanaOcio()">+ Añadir pestaña</button>
+        <button class="btn-secondary btn-sm" onclick="anadirActividadOcio()">+ Añadir actividad</button>
         <button class="btn-secondary btn-sm" onclick="abrirModalCopiarHojaOcio()">📋 Copiar hoja</button>
         <button class="btn-primary btn-sm" onclick="guardarDatosOcioAhora()">💾 Guardar</button>
       </div>
