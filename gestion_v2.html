@@ -191,15 +191,19 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 /* ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) */
 .ocio-tabla{border-collapse:collapse;font-size:12.5px}
 .ocio-tabla th,.ocio-tabla td{border:1.5px solid #14141a;padding:6px 10px;text-align:center}
-.ocio-th-usuario{background:#5cc4f2;font-weight:800;text-transform:uppercase;font-size:12px;text-align:left;vertical-align:middle;width:1%;white-space:nowrap}
-.ocio-th-fecha{background:var(--primary);color:#fff;font-weight:800;white-space:nowrap}
-.ocio-th-actividad{font-style:italic;font-weight:700;background:#fff;white-space:nowrap}
-.ocio-th-si,.ocio-th-no,.ocio-th-pagado{background:#5cc4f2;font-weight:800;font-size:11px}
+.ocio-th-usuario{background:#5cc4f2;color:#000;font-weight:800;text-transform:uppercase;font-size:12px;text-align:left;vertical-align:middle;width:1%;white-space:nowrap}
+.ocio-th-fecha{background:var(--primary);color:#fff;font-weight:800;white-space:nowrap;cursor:context-menu}
+.ocio-th-actividad{font-style:italic;font-weight:700;background:#fff;white-space:nowrap;cursor:context-menu}
+.ocio-vacio{color:#94a3b8;font-style:normal}
+.ocio-th-si,.ocio-th-no,.ocio-th-pagado{background:#5cc4f2;color:#000;font-weight:800;font-size:11px}
 .ocio-td-usuario{text-align:left;font-weight:700;white-space:nowrap;background:#fff;width:1%}
-.ocio-celda{width:34px;height:26px;cursor:pointer;background:#e5e7eb}
+.ocio-nombre-editable{cursor:pointer;border-bottom:1px dashed transparent}
+.ocio-nombre-editable:hover{border-bottom:1px dashed #94a3b8}
+.ocio-input-inline{display:inline-block;width:auto;min-width:160px;padding:2px 6px;font-size:12.5px;font-weight:700}
+.ocio-celda{width:34px;height:26px;cursor:pointer;background:#e5e7eb;font-weight:800;text-align:center;color:#475569}
 .ocio-celda.ocio-si-on{background:var(--primary);color:#fff}
-.ocio-celda.ocio-no-on{background:#9ca3af}
-.ocio-celda.ocio-pagado-on{background:#d9a521}
+.ocio-celda.ocio-no-on{background:#9ca3af;color:#fff}
+.ocio-celda.ocio-pagado-on{background:#d9a521;color:#fff}
 .ocio-fila-total{font-weight:800;background:#f1f5f9}
 .info-banner{background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:14px 18px;font-size:13px;color:#3730a3;margin-bottom:22px;line-height:1.6}
 /* MODAL */
@@ -570,45 +574,25 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
     </div>
 
-    <!-- ===== ACTIVIDADES DE OCIO ===== -->
+    <!-- ===== ACTIVIDADES DE OCIO (Asistencia y pago) ===== -->
     <div id="view-ocio" class="page hidden">
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
       <div class="page-header">
-        <div><div class="page-title">Actividades de Ocio</div><div class="page-subtitle">Registro, cartas y asistencia de las salidas de ocio</div></div>
-        <button class="btn-secondary" id="btn-ocio-carpeta-drive" onclick="abrirCarpetaOcioDrive()">📁 Ver carpeta en Drive</button>
-      </div>
-      <div class="card" style="margin-bottom:18px">
-        <div class="card-header">
-          <div class="card-title">📁 Cartas</div>
-          <button class="btn-secondary btn-sm" id="btn-ocio-cartas-drive" onclick="verCarpetaCartasOcio()">📁 Ver carpeta</button>
+        <div><div class="page-title">Actividades de Ocio</div><div class="page-subtitle" id="ocio-anio-titulo">Asistencia y pago de las salidas de ocio</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-secondary" id="btn-ocio-carpeta-drive" onclick="abrirCarpetaOcioDrive()">📁 Ver carpeta en Drive</button>
+          <button class="btn-secondary btn-sm" onclick="descargarMesOcioExcel()">⬇ Descargar</button>
+          <button class="btn-secondary btn-sm" onclick="imprimirMesOcio()">🖨 Imprimir</button>
+          <button class="btn-primary" id="btn-ocio-guardar-drive" onclick="guardarMesOcioEnDrive()">☁️ Guardar en Drive</button>
         </div>
-        <p style="color:#64748b;font-size:13.5px;line-height:1.6">Carpeta con las cartas de autorización que se envían a las familias para cada salida.</p>
       </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📊 Asistencia</div>
-          <button class="btn-primary btn-sm" onclick="abrirAsistenciaOcio()">Ver archivo</button>
-        </div>
-        <p style="color:#64748b;font-size:13.5px;line-height:1.6">
-          Archivo de Google Sheets con una pestaña por mes: para cada salida se marca si el usuario asiste (Sí/No) y si está pagada. Se sincroniza con la carpeta individual de cada usuario para ver de un vistazo a qué actividades de ocio ha asistido y cuándo.
-        </p>
-      </div>
-    </div>
-
-    <!-- ===== ASISTENCIA Y PAGO ANUAL (OCIO) ===== -->
-    <div id="view-asistencia-ocio" class="page hidden">
-      <button class="btn-back" onclick="navTo('ocio')">← Volver a Actividades de Ocio</button>
-      <div class="page-header">
-        <div><div class="page-title">Asistencia</div><div class="page-subtitle" id="ocio-anio-titulo">Archivo 2026 — una pestaña por mes</div></div>
-        <button class="btn-primary" id="btn-ocio-guardar-drive" onclick="guardarAsistenciaOcioEnDriveReal()">💾 Guardar en hoja de cálculo real</button>
-        <button class="btn-secondary btn-sm" onclick="abrirHojaOcioEnDrive()">📊 Abrir hoja en Drive</button>
-        <button class="btn-secondary btn-sm" onclick="aplicarFormatoHojaOcioActual()">🎨 Aplicar formato de colores</button>
-        <button class="btn-secondary btn-sm" onclick="cambiarHojaOcioElegida()">🔗 Usar hoja de cálculo por enlace</button>
-      </div>
+      <div class="info-banner">ℹ️ Clic en un nombre para corregirlo. Clic derecho en cualquier celda para añadir/quitar filas o actividades. Clic derecho en el nombre o la fecha de una actividad para modificarla.</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
         <div class="tabs-bar" id="ocio-meses-tabs" style="margin-bottom:0"></div>
         <button class="btn-secondary btn-sm" onclick="abrirModalNuevaPestanaOcio()">+ Añadir pestaña</button>
+        <button class="btn-secondary btn-sm" onclick="abrirModalCopiarHojaOcio()">📋 Copiar hoja</button>
       </div>
+      <div id="toggle-filas-ocultas-ocio" style="margin-bottom:10px"></div>
       <div id="ocio-tabla-contenido"></div>
     </div>
 
@@ -664,91 +648,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div><div class="page-title">Histórico de Horarios</div><div class="page-subtitle">Versiones guardadas con el botón "Guardar"</div></div>
       </div>
       <div class="docs-grid docs-list" id="historico-horarios-lista"></div>
-    </div>
-
-    <!-- ===== EDITOR DE CARTA DE OCIO ===== -->
-    <div id="view-carta-ocio" class="page hidden">
-      <button class="btn-back" onclick="navTo('ocio')">← Volver a Actividades de Ocio</button>
-      <div class="page-header">
-        <div><div class="page-title" id="carta-ocio-titulo">Carta</div><div class="page-subtitle">Puedes editar el texto libremente antes de descargar o imprimir</div></div>
-      </div>
-      <div class="card">
-        <input type="file" id="input-subir-carta" accept=".txt,.docx,.doc" class="hidden" onchange="subirArchivoCartaOcio(event)"/>
-        <div class="modal-actions" style="justify-content:flex-start;margin-bottom:14px">
-          <button class="btn-secondary btn-sm" onclick="document.getElementById('input-subir-carta').click()">⬆ Subir mi propia plantilla</button>
-          <span style="font-size:12px;color:#94a3b8">Admite .txt y .docx — sustituye el texto de abajo por el de tu archivo</span>
-        </div>
-        <div class="modal-actions" style="justify-content:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <button class="btn-secondary btn-sm" onclick="deshacerCarta()" title="Deshacer">↶</button>
-          <button class="btn-secondary btn-sm" onclick="rehacerCarta()" title="Rehacer">↷</button>
-          <span style="width:1.5px;background:#d1d5db;align-self:stretch;margin:0 4px"></span>
-          <button class="btn-secondary btn-sm" onclick="aplicarFormato('bold')" style="font-weight:900" title="Negrita">B</button>
-          <button class="btn-secondary btn-sm" onclick="aplicarFormato('italic')" style="font-style:italic" title="Cursiva">I</button>
-          <button class="btn-secondary btn-sm" onclick="aplicarFormato('underline')" style="text-decoration:underline" title="Subrayado">S</button>
-          <label class="btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer" title="Color de letra">
-            🎨<input type="color" onchange="aplicarColorFuente(this)" style="width:22px;height:22px;padding:0;border:none;cursor:pointer"/>
-          </label>
-          <select class="perm-select" onchange="aplicarTamanoFuente(this)" style="width:auto" title="Tamaño de letra">
-            <option value="">Tamaño</option>
-            <option value="12">12</option>
-            <option value="14">14</option>
-            <option value="16">16</option>
-            <option value="18">18</option>
-            <option value="20">20</option>
-            <option value="24">24</option>
-            <option value="28">28</option>
-          </select>
-          <button class="btn-secondary btn-sm" onclick="borrarFormatoCarta()" title="Borrar formato">🧹 Borrar formato</button>
-          <span style="width:1.5px;background:#d1d5db;align-self:stretch;margin:0 4px"></span>
-          <button class="btn-secondary btn-sm" onclick="aplicarFormato('justifyLeft')" title="Alinear a la izquierda">⇤</button>
-          <button class="btn-secondary btn-sm" onclick="aplicarFormato('justifyCenter')" title="Centrar">↔</button>
-          <button class="btn-secondary btn-sm" onclick="aplicarFormato('justifyRight')" title="Alinear a la derecha">⇥</button>
-          <button class="btn-secondary btn-sm" onclick="aplicarFormato('justifyFull')" title="Justificar">☰</button>
-          <span style="width:1.5px;background:#d1d5db;align-self:stretch;margin:0 4px"></span>
-          <div style="position:relative;display:inline-block">
-            <button class="btn-secondary btn-sm" onclick="alternarMenuTablaToolbar(event)">▦ Tabla ▾</button>
-            <div id="menu-tabla-toolbar" class="menu-contextual-carta hidden" style="position:absolute;top:110%;left:0">
-              <button onclick="cerrarMenuTablaToolbar();insertarTablaCarta()">▦ Insertar tabla</button>
-              <hr/>
-              <button onclick="cerrarMenuTablaToolbar();anadirFilaTabla()">⬇ Añadir fila</button>
-              <button onclick="cerrarMenuTablaToolbar();quitarFilaTabla()">✖ Quitar fila</button>
-              <hr/>
-              <button onclick="cerrarMenuTablaToolbar();anadirColumnaTabla()">➡ Añadir columna</button>
-              <button onclick="cerrarMenuTablaToolbar();quitarColumnaTabla()">✖ Quitar columna</button>
-              <hr/>
-              <button onclick="cerrarMenuTablaToolbar();combinarCeldaDerecha()">⛓ Combinar con celda derecha</button>
-              <button onclick="cerrarMenuTablaToolbar();separarCelda()">⛓‍💥 Separar celda</button>
-            </div>
-          </div>
-        </div>
-        <div style="overflow-x:auto">
-        <div style="display:flex">
-          <div style="width:30px;flex-shrink:0"></div>
-          <div id="regla-horizontal" class="regla-horizontal"></div>
-        </div>
-        <div style="display:flex">
-          <div id="regla-vertical" class="regla-vertical"></div>
-          <div id="carta-ocio-texto" class="form-input hoja-a4" contenteditable="true" onclick="registrarClicEnEditor(event)" onmouseup="registrarClicEnEditor(event)" onmousedown="iniciarRedimensionCelda(event)" onmousemove="actualizarCursorRedimension(event)" oncontextmenu="mostrarMenuContextualCarta(event)" oninput="generarReglasCarta()"></div>
-        </div>
-        </div>
-        <div id="menu-contextual-carta" class="menu-contextual-carta hidden"></div>
-        <div class="modal-actions" style="justify-content:flex-start;margin-top:16px">
-          <button class="btn-secondary" onclick="abrirModalDescargaCarta({tipo:'editor'})">⬇ Descargar</button>
-          <button class="btn-primary" onclick="imprimirCartaOcio()">🖨 Imprimir</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== MODAL ELEGIR FORMATO DE DESCARGA (CARTA OCIO) ===== -->
-    <div id="modal-descarga-carta" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalDescargaCarta()">
-      <div class="modal-box" style="max-width:380px;text-align:center">
-        <div class="modal-title">¿En qué formato?</div>
-        <div class="modal-sub">Elige cómo quieres descargar la carta</div>
-        <div class="modal-actions" style="justify-content:center;flex-wrap:wrap">
-          <button class="btn-secondary" onclick="confirmarDescargaCartaDocx()">📄 Word (.docx)</button>
-          <button class="btn-primary" onclick="confirmarDescargaCartaPdf()">📕 PDF</button>
-        </div>
-      </div>
     </div>
 
     <div id="view-config" class="page hidden">
@@ -855,8 +754,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <label class="form-lbl">Precio</label>
     <input type="text" class="form-input" id="act-ocio-precio" style="margin-bottom:16px" placeholder="22 €"/>
     <input type="hidden" id="act-ocio-fecha"/>
-    <input type="hidden" id="act-ocio-fechacarta"/>
-    <input type="hidden" id="act-ocio-descripcion"/>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cerrarModalActividadOcio()">Cancelar</button>
       <button class="btn-primary" onclick="guardarActividadOcio()">Guardar</button>
@@ -893,27 +790,16 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   </div>
 </div>
 
-<!-- ===== MODAL: ELEGIR HOJA DE CÁLCULO (cuando hay varias en la carpeta) ===== -->
-<div id="modal-elegir-hoja-ocio" class="modal-overlay hidden" onclick="if(event.target===this)document.getElementById('modal-elegir-hoja-ocio').classList.add('hidden')">
-  <div class="modal-box" style="max-width:440px">
-    <div class="modal-title">¿Cuál es la hoja correcta?</div>
-    <div class="modal-sub">Se han encontrado varias hojas de cálculo en la carpeta de Ocio. Elige con cuál trabajar (se recordará para la próxima vez):</div>
-    <div id="lista-elegir-hoja-ocio" style="margin:14px 0"></div>
+<!-- ===== MODAL: COPIAR HOJA DE OCIO A OTRO MES ===== -->
+<div id="modal-copiar-hoja-ocio" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalCopiarHojaOcio()">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-title">📋 Copiar hoja</div>
+    <div class="modal-sub">Copia las actividades y las marcas de "<strong id="copiar-hoja-origen"></strong>" a otra pestaña. Se sobrescribe todo el contenido que hubiera en el destino.</div>
+    <label class="form-lbl">Copiar a:</label>
+    <select class="form-input" id="select-copiar-hoja-destino" style="margin:10px 0 16px"></select>
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="document.getElementById('modal-elegir-hoja-ocio').classList.add('hidden')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== MODAL: USAR HOJA DE CÁLCULO DE OCIO PEGANDO SU ENLACE ===== -->
-<div id="modal-pegar-hoja-ocio" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalPegarHojaOcio()">
-  <div class="modal-box" style="max-width:460px">
-    <div class="modal-title">Hoja de cálculo de Ocio</div>
-    <div class="modal-sub">Abre en tu navegador la hoja de cálculo real donde se rellenan los ocios, copia la URL de la barra de direcciones, y pégala aquí:</div>
-    <input type="text" class="form-input" id="input-enlace-hoja-ocio" placeholder="https://docs.google.com/spreadsheets/d/..." style="margin:14px 0 16px" onkeydown="if(event.key==='Enter')usarHojaOcioPorEnlace()"/>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="cerrarModalPegarHojaOcio()">Cancelar</button>
-      <button class="btn-primary" onclick="usarHojaOcioPorEnlace()">Usar esta hoja</button>
+      <button class="btn-secondary" onclick="cerrarModalCopiarHojaOcio()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarCopiarHojaOcio()">Copiar</button>
     </div>
   </div>
 </div>
@@ -1148,7 +1034,7 @@ function irA(modulo){
   if(modulo==='usuarios' || modulo==='expedientes') navTo('usuarios');
   if(modulo==='registros') navTo('registros');
   if(modulo==='transporte'){ renderAccesoRegistroEnArea('transporte-acceso-registro','transporte'); navTo('transporte'); }
-  if(modulo==='ocio'){ navTo('ocio'); }
+  if(modulo==='ocio'){ abrirAsistenciaOcio(); }
   if(modulo==='horarios'){ renderHorarios(); navTo('horarios'); }
   if(modulo==='paap'){ renderPaapGrid(); navTo('paap'); }
 }
@@ -1196,7 +1082,7 @@ function aplicarPermisosVisuales(){
   }
   // Botones/avisos de "Ver carpeta en Drive" / "Guardar en hoja de cálculo real": solo para quien
   // administra las conexiones de Drive (Coordinadores). Los empleados solo rellenan formularios.
-  ['btn-drive-registro','btn-paap-detalle-drive','btn-ocio-carpeta-drive','btn-ocio-cartas-drive',
+  ['btn-drive-registro','btn-paap-detalle-drive','btn-ocio-carpeta-drive',
    'btn-ocio-guardar-drive','btn-horarios-carpeta-drive','btn-registros-carpeta-drive',
    'btn-registros-carpeta-drive-principal','banner-registros-drive'].forEach(function(id){
     var el = document.getElementById(id);
@@ -1403,18 +1289,18 @@ function asegurarPestanaSheet(spreadsheetId, nombrePestana, callback){
   });
 }
 function construirFilasAsistenciaOcio(){
-  var actividades = OCIO_ACTIVIDADES[_ocioMesActual] || [];
-  var usuariosOrdenados = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;});
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
+  var filasUsuarios = filasUsuariosDelMes(_ocioMesActual);
   var filas = [];
   var header1 = ['Usuario'], header2 = [''], header3 = [''];
   actividades.forEach(function(a){
     header1.push(a.fecha,'',''); header2.push(a.nombre.toUpperCase(),'',''); header3.push('SI','NO','Pagado');
   });
   filas.push(header1, header2, header3);
-  usuariosOrdenados.forEach(function(u){
-    var fila = [u.nombre+' '+u.apellidos];
+  filasUsuarios.forEach(function(f){
+    var fila = [f.nombre];
     actividades.forEach(function(a, i){
-      var d = (OCIO_ASISTENCIA[_ocioMesActual][u.id]||[])[i] || {};
+      var d = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
       fila.push(!!d.si, !!d.no, !!d.pagado);
     });
     filas.push(fila);
@@ -1422,8 +1308,8 @@ function construirFilasAsistenciaOcio(){
   var totalRow = ['TOTAL'];
   actividades.forEach(function(a, i){
     var totalSi=0, totalNo=0, totalPagado=0;
-    usuariosOrdenados.forEach(function(u){
-      var d = (OCIO_ASISTENCIA[_ocioMesActual][u.id]||[])[i] || {};
+    filasUsuarios.forEach(function(f){
+      var d = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
       if(d.si) totalSi++; if(d.no) totalNo++; if(d.pagado) totalPagado++;
     });
     totalRow.push(totalSi, totalNo, totalPagado);
@@ -1440,8 +1326,8 @@ function hexAColorSheets(hex){
   };
 }
 function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
-  var actividades = OCIO_ACTIVIDADES[_ocioMesActual] || [];
-  var numUsuarios = ordenarAlfabetico(USUARIOS, function(u){return u.nombre;}).length;
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
+  var numUsuarios = filasUsuariosDelMes(_ocioMesActual).length;
   var numCols = 1 + actividades.length*3;
   var filaTotalIdx = 3 + numUsuarios; // 0-index: 0,1,2 cabeceras; 3..3+n-1 usuarios; filaTotalIdx = total
 
@@ -1507,152 +1393,113 @@ function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
   gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId: spreadsheetId, resource: { requests: requests } })
     .then(function(){ callback(null); }, function(err){ callback(err); });
 }
-/* ---- Recordar qué hoja de cálculo concreta se usa para Ocio (por si hay varias en la carpeta) ---- */
-function obtenerHojaOcioElegida(){
-  try{ var raw = localStorage.getItem('drive_hoja_ocio'); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+/* ---- Descargar / Imprimir / Guardar en Drive (carpeta fija de Ocio) ---- */
+var CARPETA_OCIO_ARCHIVOS_ID = '1YUJHBEx93tD5xTEJvaJzOMYeLvHfPmuu';
+function nombreArchivoMesOcio(mes){ return 'Asistencia Ocio - '+mes; }
+var _xlsxCargado = false;
+function cargarXLSX(callback){
+  if(_xlsxCargado && window.XLSX){ callback(true); return; }
+  var script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  script.onload = function(){ _xlsxCargado = true; callback(true); };
+  script.onerror = function(){ callback(false); };
+  document.head.appendChild(script);
 }
-function fijarHojaOcioElegida(hoja){ localStorage.setItem('drive_hoja_ocio', JSON.stringify(hoja)); }
-function olvidarHojaOcioElegida(){ localStorage.removeItem('drive_hoja_ocio'); }
-function abrirHojaOcioEnDrive(){
-  var hoja = obtenerHojaOcioElegida();
-  if(!hoja){ mostrarAviso('Todavía no hay ninguna hoja de cálculo vinculada. Usa "🔗 Usar hoja de cálculo por enlace" primero.', 'ℹ️'); return; }
-  window.open('https://docs.google.com/spreadsheets/d/'+hoja.id+'/edit', '_blank');
-}
-function aplicarFormatoHojaOcioActual(){
-  var hoja = obtenerHojaOcioElegida();
-  if(!hoja){ mostrarAviso('Todavía no hay ninguna hoja de cálculo vinculada. Usa "🔗 Usar hoja de cálculo por enlace" primero.', 'ℹ️'); return; }
-  mostrarAviso('Aplicando el formato de colores a la pestaña "'+_ocioMesActual+'"…', '🎨');
-  autorizarGoogleDrive(function(){
-    gapi.client.sheets.spreadsheets.get({spreadsheetId: hoja.id}).then(function(resp){
-      var pestana = (resp.result.sheets||[]).filter(function(s){ return s.properties.title === _ocioMesActual; })[0];
-      if(!pestana){ mostrarAviso('Esa pestaña todavía no existe en la hoja. Guarda primero con "💾 Guardar en hoja de cálculo real".', '⚠️'); return; }
-      formatearHojaAsistenciaOcio(hoja.id, pestana.properties.sheetId, function(err){
-        if(err){ mostrarAviso('No se pudo aplicar el formato.', '⚠️'); return; }
-        mostrarAviso('Formato de colores aplicado a "'+_ocioMesActual+'".', '✅');
-      });
-    }, function(){ mostrarAviso('No se pudo leer la hoja de cálculo.', '⚠️'); });
+function descargarMesOcioExcel(){
+  cargarXLSX(function(ok){
+    if(!ok){ mostrarAviso('No se pudo cargar la librería para generar el Excel (revisa la conexión a internet).', '⚠️'); return; }
+    var filas = construirFilasAsistenciaOcio();
+    var ws = window.XLSX.utils.aoa_to_sheet(filas);
+    var wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, _ocioMesActual.substring(0,31));
+    window.XLSX.writeFile(wb, nombreArchivoMesOcio(_ocioMesActual)+'.xlsx');
   });
 }
-function cambiarHojaOcioElegida(){
-  olvidarHojaOcioElegida();
-  abrirModalPegarHojaOcio();
-}
-function abrirModalPegarHojaOcio(){
-  document.getElementById('input-enlace-hoja-ocio').value = '';
-  document.getElementById('modal-pegar-hoja-ocio').classList.remove('hidden');
-}
-function cerrarModalPegarHojaOcio(){
-  document.getElementById('modal-pegar-hoja-ocio').classList.add('hidden');
-}
-function usarHojaOcioPorEnlace(){
-  var texto = document.getElementById('input-enlace-hoja-ocio').value.trim();
-  if(!texto){ mostrarAviso('Pega el enlace de la hoja de cálculo.'); return; }
-  var id = null;
-  var m = texto.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if(m){ id = m[1]; } else if(/^[a-zA-Z0-9-_]{20,}$/.test(texto)){ id = texto; }
-  if(!id){ mostrarAviso('No he podido reconocer el ID en ese enlace. Comprueba que has copiado la URL completa de la hoja de cálculo (debe contener "/spreadsheets/d/...").', '⚠️'); return; }
-  cerrarModalPegarHojaOcio();
-  mostrarAviso('Comprobando la hoja de cálculo…', '⏳');
-  autorizarGoogleDrive(function(){
-    gapi.client.sheets.spreadsheets.get({spreadsheetId: id}).then(function(resp){
-      var hoja = {id: id, name: resp.result.properties.title};
-      fijarHojaOcioElegida(hoja);
-      mostrarAviso('Hoja "'+hoja.name+'" vinculada correctamente. Ya puedes darle a "💾 Guardar en hoja de cálculo real".', '✅');
-    }, function(err){
-      mostrarAviso('No se pudo abrir esa hoja de cálculo. Comprueba que el enlace es correcto y que tu cuenta tiene acceso a ella.', '⚠️');
+function imprimirMesOcio(){
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
+  var filasUsuarios = filasUsuariosDelMes(_ocioMesActual);
+  var h = '<h2>Asistencia Ocio — '+esc(_ocioMesActual)+'</h2><table><thead><tr><th>Usuario</th>';
+  actividades.forEach(function(a){ h += '<th colspan="3">'+esc(a.nombre)+(a.precio?' — '+esc(a.precio):'')+'<br>'+esc(a.fecha||'')+'</th>'; });
+  h += '</tr><tr><th></th>';
+  actividades.forEach(function(){ h += '<th>SI</th><th>NO</th><th>Pagado</th>'; });
+  h += '</tr></thead><tbody>';
+  filasUsuarios.forEach(function(f){
+    h += '<tr><td>'+esc(f.nombre)+'</td>';
+    actividades.forEach(function(a,i){
+      var d = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
+      h += '<td style="text-align:center">'+(d.si?'✓':'')+'</td><td style="text-align:center">'+(d.no?'✗':'')+'</td><td style="text-align:center">'+(d.pagado?'✓':'')+'</td>';
     });
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  imprimirHtml(h, true);
+}
+function guardarMesOcioEnDrive(){
+  mostrarAviso('Guardando "'+_ocioMesActual+'" en la carpeta de Ocio de Drive…', '⏳');
+  autorizarGoogleDrive(function(){
+    var nombre = nombreArchivoMesOcio(_ocioMesActual);
+    gapi.client.drive.files.list({
+      q: "name='"+nombre.replace(/'/g,"\\'")+"' and '"+CARPETA_OCIO_ARCHIVOS_ID+"' in parents and trashed=false",
+      fields: 'files(id,name)'
+    }).then(function(resp){
+      var existentes = resp.result.files || [];
+      if(existentes.length>0){
+        escribirDatosEnHojaOcio(existentes[0].id, nombre, false);
+      } else {
+        gapi.client.drive.files.create({
+          resource: { name: nombre, mimeType: 'application/vnd.google-apps.spreadsheet', parents: [CARPETA_OCIO_ARCHIVOS_ID] },
+          fields: 'id'
+        }).then(function(resp2){
+          escribirDatosEnHojaOcio(resp2.result.id, nombre, true);
+        }, function(){ mostrarAviso('No se pudo crear el archivo en Drive. Comprueba que esa carpeta existe y que tu cuenta tiene acceso.', '⚠️'); });
+      }
+    }, function(){ mostrarAviso('No se pudo comprobar la carpeta de Drive.', '⚠️'); });
+  });
+}
+function escribirDatosEnHojaOcio(spreadsheetId, nombre, esNuevo){
+  var filas = construirFilasAsistenciaOcio();
+  gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: spreadsheetId,
+    range: 'A1',
+    valueInputOption: 'RAW',
+    resource: { values: filas }
+  }).then(function(){
+    gapi.client.sheets.spreadsheets.get({spreadsheetId: spreadsheetId}).then(function(resp){
+      var sheetId = resp.result.sheets[0].properties.sheetId;
+      formatearHojaAsistenciaOcio(spreadsheetId, sheetId, function(errFormato){
+        if(errFormato){ mostrarAviso((esNuevo?'Archivo creado y guardado':'Actualizado')+' en Drive: "'+nombre+'", pero no se pudo aplicar el formato visual. Los datos sí están bien.', '⚠️'); return; }
+        mostrarAviso((esNuevo?'Archivo creado y guardado':'Actualizado')+' en Drive: "'+nombre+'".', '✅');
+      });
+    }, function(){ mostrarAviso('Guardado en Drive, pero no se pudo aplicar el formato.', '⚠️'); });
+  }, function(){
+    mostrarAviso('No se pudo guardar en Drive.', '⚠️');
   });
 }
 
-function guardarAsistenciaOcioEnDriveReal(){
-  var vinculo = carpetaRealVinculada('ocio');
-  if(!vinculo){
-    mostrarAviso('Primero hay que conectar la carpeta de Ocio con Google Drive. Se abre el selector ahora — elige la carpeta real "2025-2026" (no el acceso directo).', '🔗');
-    abrirSelectorCarpeta('ocio');
-    return;
-  }
-  var elegida = obtenerHojaOcioElegida();
-  if(elegida){ prepararGuardadoEnHoja(elegida); return; }
-  mostrarAviso('Buscando hojas de cálculo dentro de la carpeta de Ocio…', '⏳');
-  encontrarHojaCalculoEnCarpeta('ocio', function(archivos, err){
-    if(err){ mostrarAviso('No se pudo acceder a la carpeta de Ocio. Prueba a reconectarla desde Configuración ("Reiniciar conexiones") y vuelve a elegir la carpeta correcta.', '⚠️'); return; }
-    if(!archivos || archivos.length===0){
-      mostrarAviso('No hay ninguna hoja de cálculo en esa carpeta todavía. Creando una nueva llamada "Asistencia Ocio"…', '📄');
-      crearHojaCalculoEnCarpeta('ocio', 'Asistencia Ocio', function(nueva, errCrear){
-        if(errCrear){ mostrarAviso('No se pudo crear la hoja de cálculo nueva.', '⚠️'); return; }
-        fijarHojaOcioElegida(nueva);
-        prepararGuardadoEnHoja(nueva);
-      });
-      return;
-    }
-    if(archivos.length===1){
-      fijarHojaOcioElegida(archivos[0]);
-      prepararGuardadoEnHoja(archivos[0]);
-      return;
-    }
-    mostrarSelectorHojaOcio(archivos);
-  });
+/* ---- Copiar toda una pestaña (actividades + marcas) a otro mes ---- */
+function abrirModalCopiarHojaOcio(){
+  document.getElementById('copiar-hoja-origen').textContent = _ocioMesActual;
+  var sel = document.getElementById('select-copiar-hoja-destino');
+  sel.innerHTML = todasLasPestanasOcio().filter(function(m){ return m!==_ocioMesActual; }).map(function(m){ return '<option value="'+m+'">'+m+'</option>'; }).join('');
+  document.getElementById('modal-copiar-hoja-ocio').classList.remove('hidden');
 }
-function mostrarSelectorHojaOcio(archivos){
-  var cont = document.getElementById('lista-elegir-hoja-ocio');
-  var h = '';
-  archivos.forEach(function(a){
-    var nombreSeguro = a.name.replace(/'/g,"");
-    h += '<button class="btn-secondary" style="display:block;width:100%;margin-bottom:8px;text-align:left" onclick="elegirHojaOcio(\''+a.id+'\',\''+nombreSeguro+'\')">📊 '+esc(a.name)+'</button>';
-  });
-  cont.innerHTML = h;
-  document.getElementById('modal-elegir-hoja-ocio').classList.remove('hidden');
+function cerrarModalCopiarHojaOcio(){
+  document.getElementById('modal-copiar-hoja-ocio').classList.add('hidden');
 }
-function elegirHojaOcio(id, nombre){
-  document.getElementById('modal-elegir-hoja-ocio').classList.add('hidden');
-  var hoja = {id: id, name: nombre};
-  fijarHojaOcioElegida(hoja);
-  prepararGuardadoEnHoja(hoja);
-}
-// Comprueba primero si la pestaña del mes ya existe; si ya existe, pide confirmación explícita
-// antes de tocar nada (para no arriesgarnos a machacar un formato que ya tuvierais hecho a mano).
-function prepararGuardadoEnHoja(hoja){
-  autorizarGoogleDrive(function(){
-    gapi.client.sheets.spreadsheets.get({spreadsheetId: hoja.id}).then(function(resp){
-      var existente = (resp.result.sheets||[]).some(function(s){ return s.properties.title === _ocioMesActual; });
-      if(existente){
-        pedirConfirmacion('La pestaña "'+_ocioMesActual+'" ya existe',
-          'Esa pestaña ya tiene contenido en "'+hoja.name+'". Si continúas, se sobrescribirán los datos de esa pestaña (fechas, actividades y marcas) con lo que ves en pantalla ahora mismo. El formato/colores que ya tuviera esa pestaña se mantiene tal cual, solo se tocan los valores.',
-          function(){ guardarAsistenciaEnHojaConcreta(hoja); });
-      } else {
-        guardarAsistenciaEnHojaConcreta(hoja);
-      }
-    }, function(err){
-      mostrarAviso('No se pudo comprobar la hoja de cálculo. Prueba de nuevo.', '⚠️');
-    });
-  });
-}
-function guardarAsistenciaEnHojaConcreta(hoja){
-  asegurarPestanaSheet(hoja.id, _ocioMesActual, function(errPestana, sheetId, seCreoAhora){
-    if(errPestana){ mostrarAviso('No se pudo preparar la pestaña de "'+_ocioMesActual+'" en la hoja de cálculo.', '⚠️'); return; }
-    var filas = construirFilasAsistenciaOcio();
-    gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: hoja.id,
-      range: "'"+_ocioMesActual+"'!A1",
-      valueInputOption: 'RAW',
-      resource: { values: filas }
-    }).then(function(){
-      if(!seCreoAhora){
-        // La pestaña ya existía: no tocamos su formato/colores, solo los valores que acabamos de escribir.
-        mostrarAviso('Datos actualizados en "'+hoja.name+'", pestaña "'+_ocioMesActual+'" (se ha respetado el formato que ya tenía).', '✅');
-        return;
-      }
-      formatearHojaAsistenciaOcio(hoja.id, sheetId, function(errFormato){
-        if(errFormato){
-          mostrarAviso('Guardado en "'+hoja.name+'", pero no se pudo aplicar el formato visual. Los datos sí están bien.', '⚠️');
-          return;
-        }
-        mostrarAviso('Pestaña "'+_ocioMesActual+'" creada y formateada en "'+hoja.name+'".', '✅');
-      });
-    }, function(errGuardar){
-      var msg = (errGuardar && errGuardar.result && errGuardar.result.error) ? errGuardar.result.error.message : 'error desconocido';
-      mostrarAviso('No se pudo guardar en la hoja de cálculo: '+msg, '⚠️');
-    });
+function confirmarCopiarHojaOcio(){
+  var destino = document.getElementById('select-copiar-hoja-destino').value;
+  if(!destino) return;
+  var origen = _ocioMesActual;
+  pedirConfirmacion('Copiar hoja', 'Se sobrescribirá todo el contenido de "'+destino+'" con lo que hay ahora en "'+origen+'". ¿Continuar?', function(){
+    OCIO_ACTIVIDADES[destino] = JSON.parse(JSON.stringify(obtenerActividadesDelMes(origen)));
+    OCIO_ASISTENCIA[destino] = JSON.parse(JSON.stringify(OCIO_ASISTENCIA[origen]||{}));
+    OCIO_FILAS_MANUALES[destino] = JSON.parse(JSON.stringify(OCIO_FILAS_MANUALES[origen]||[]));
+    OCIO_FILAS_OCULTAS[destino] = JSON.parse(JSON.stringify(OCIO_FILAS_OCULTAS[origen]||[]));
+    cerrarModalCopiarHojaOcio();
+    mostrarAviso('Copiado "'+origen+'" en "'+destino+'".', '✅');
+    _ocioMesActual = destino;
+    renderMesesTabsOcio();
+    renderTablaAsistenciaOcio();
   });
 }
 
@@ -2395,7 +2242,6 @@ function reiniciarConexionesDrivePiloto(){
   localStorage.removeItem('drive_real_transporte');
   localStorage.removeItem('drive_real_ocio');
   localStorage.removeItem('drive_real_registros');
-  olvidarHojaOcioElegida();
   REGISTRO_TIPOS.forEach(function(t){ localStorage.removeItem('drive_hoja_registro_'+t.id); });
   _tokenActual = null;
   _tokenClient = null;
@@ -3076,26 +2922,55 @@ var TABS = [
 
 /* ===================== ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) ===================== */
 var OCIO_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-var OCIO_PESTANAS_EXTRA = ['Plantilla'];
+var OCIO_PESTANAS_EXTRA = [];
 function todasLasPestanasOcio(){ return OCIO_MESES.concat(OCIO_PESTANAS_EXTRA); }
 var _ocioMesActual = 'Julio';
 var OCIO_ACTIVIDADES = {
   'Julio': [
-    {fecha:'mié, 1 jul 2026', nombre:'Cine', fechaCarta:'Miércoles 1 de JULIO', descripcion:'Iremos al CINE, como siempre con sesión exclusiva para nosotros.', precio:'22 €'},
-    {fecha:'lun, 6 jul 2026', nombre:'Museo Nomad', fechaCarta:'Lunes 6 de JULIO', descripcion:'Visitaremos nuevamente el Museo NOMAD, experiencia inmersiva, en esta ocasión disfrutaremos de la exposición "La Triada Inmortal".', precio:'22 €'},
-    {fecha:'mar, 14 jul 2026', nombre:'Shangai Station', fechaCarta:'Martes 14 de JULIO', descripcion:'Iremos a comer unas ricas comidas orientales al restaurante asiático Shangai Station Arturo Soria.', precio:'22 €'},
-    {fecha:'mié, 22 jul 2026', nombre:'Museo Tiflológico', fechaCarta:'Miércoles 22 de JULIO', descripcion:'Visitaremos el Museo Tiflológico, creado por la ONCE en 1992, y se define como un museo para ver y tocar. Seguro que será una interesante visita.', precio:'22 €'},
-    {fecha:'27-30 jul 2026', nombre:'Desayunos Especiales', fechaCarta:'Lunes 27, Martes 28, Miércoles 29, Jueves 30 y Viernes 31 de JULIO', descripcion:'Durante toda la semana haremos desayunos especiales.', precio:'40 €'}
+    {fecha:'mié, 1 jul 2026', nombre:'Cine', precio:'22 €'},
+    {fecha:'lun, 6 jul 2026', nombre:'Museo Nomad', precio:'22 €'},
+    {fecha:'mar, 14 jul 2026', nombre:'Shangai Station', precio:'22 €'},
+    {fecha:'mié, 22 jul 2026', nombre:'Museo Tiflológico', precio:'22 €'}
   ]
 };
 var OCIO_ASISTENCIA = {};
+// Nombre de usuario corregido solo para esta tabla de Ocio (no toca el expediente ni el resto del programa).
+var OCIO_NOMBRE_OVERRIDE = {};
+// Filas añadidas a mano (no ligadas a un usuario real de la lista), por pestaña/mes.
+var OCIO_FILAS_MANUALES = {};
+var _ocioFilaManualIdSeq = 1;
+// Usuarios reales quitados de la vista de un mes concreto (no se borran del programa, solo de esa pestaña).
+var OCIO_FILAS_OCULTAS = {};
+var _ocioMostrarOcultos = {};
+
+// Cada mes tiene siempre una tabla fija: si todavía no tiene actividades propias, se le
+// crean 4 huecos en blanco (editables con el clic derecho) en vez de mostrar una pantalla vacía.
+function obtenerActividadesDelMes(mes){
+  if(!OCIO_ACTIVIDADES[mes]){
+    OCIO_ACTIVIDADES[mes] = [1,2,3,4].map(function(n){ return {fecha:'', nombre:'Actividad '+n, precio:''}; });
+  }
+  return OCIO_ACTIVIDADES[mes];
+}
+function nombreMostradoUsuarioOcio(u){
+  return OCIO_NOMBRE_OVERRIDE[u.id] || (u.nombre+' '+u.apellidos);
+}
+// Lista unificada de filas a mostrar ese mes: usuarios reales (menos los ocultados) + filas manuales.
+function filasUsuariosDelMes(mes){
+  var ocultos = OCIO_FILAS_OCULTAS[mes] || [];
+  var reales = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;})
+    .filter(function(u){ return _ocioMostrarOcultos[mes] || ocultos.indexOf(u.id)===-1; })
+    .map(function(u){ return {id:u.id, nombre:nombreMostradoUsuarioOcio(u), manual:false, oculto: ocultos.indexOf(u.id)>-1}; });
+  var manuales = (OCIO_FILAS_MANUALES[mes]||[]).map(function(f){ return {id:f.id, nombre:f.nombre, manual:true, oculto:false}; });
+  return reales.concat(manuales);
+}
 function inicializarAsistenciaOcio(){
-  if(OCIO_ASISTENCIA[_ocioMesActual] || !OCIO_ACTIVIDADES[_ocioMesActual]) return;
-  OCIO_ASISTENCIA[_ocioMesActual] = {};
-  var patrones = {1:[true,true,false,true,true], 2:[true,false,true,false,false]};
-  USUARIOS.forEach(function(u){
-    var patron = patrones[u.id] || OCIO_ACTIVIDADES[_ocioMesActual].map(function(){return false;});
-    OCIO_ASISTENCIA[_ocioMesActual][u.id] = OCIO_ACTIVIDADES[_ocioMesActual].map(function(a,i){
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
+  if(!OCIO_ASISTENCIA[_ocioMesActual]) OCIO_ASISTENCIA[_ocioMesActual] = {};
+  var patrones = {1:[true,true,false,true], 2:[true,false,true,false]};
+  filasUsuariosDelMes(_ocioMesActual).forEach(function(f){
+    if(OCIO_ASISTENCIA[_ocioMesActual][f.id]) return;
+    var patron = patrones[f.id] || actividades.map(function(){return false;});
+    OCIO_ASISTENCIA[_ocioMesActual][f.id] = actividades.map(function(a,i){
       return {si: !!patron[i], no: !patron[i], pagado: !!patron[i]};
     });
   });
@@ -3104,7 +2979,7 @@ function abrirAsistenciaOcio(){
   inicializarAsistenciaOcio();
   renderMesesTabsOcio();
   renderTablaAsistenciaOcio();
-  navTo('asistencia-ocio');
+  navTo('ocio');
 }
 function renderMesesTabsOcio(){
   var h='';
@@ -3136,52 +3011,57 @@ function crearNuevaPestanaOcio(){
   inicializarAsistenciaOcio();
   renderMesesTabsOcio();
   renderTablaAsistenciaOcio();
-  mostrarAviso('Pestaña "'+nombre+'" creada. Añade su primera salida con el botón "+ Añadir salida".', '✅');
+  mostrarAviso('Pestaña "'+nombre+'" creada, con 4 huecos de actividad listos para rellenar (clic derecho en el nombre o la fecha para editarlos).', '✅');
 }
+
+/* ---- Tabla de asistencia: fija (4 huecos por defecto), con edición directa y menú de clic derecho ---- */
 function renderTablaAsistenciaOcio(){
   var el = document.getElementById('ocio-tabla-contenido');
-  var actividades = OCIO_ACTIVIDADES[_ocioMesActual] || [];
-  var botonAnadir = '<button class="btn-primary btn-sm" style="margin-bottom:14px" onclick="abrirModalActividadOcio()">+ Añadir salida</button>';
-  if(actividades.length===0){
-    el.innerHTML = botonAnadir + '<div class="empty-state">Sin salidas todavía en esta pestaña. Añade la primera con el botón de arriba.</div>';
-    return;
-  }
-  var usuariosOrdenados = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;});
-  var h = botonAnadir;
-  h += '<div style="overflow-x:auto"><table class="ocio-tabla"><thead>';
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
+  var filasUsuarios = filasUsuariosDelMes(_ocioMesActual);
+  var h = '<div style="overflow-x:auto"><table class="ocio-tabla" oncontextmenu="return manejarContextMenuOcio(event)"><thead>';
   h += '<tr><th class="ocio-th-usuario" rowspan="3">Usuario</th>';
-  actividades.forEach(function(a){ h += '<th class="ocio-th-fecha" colspan="3">'+a.fecha+'</th>'; });
+  actividades.forEach(function(a, i){ h += '<th class="ocio-th-fecha" colspan="3" data-act="'+i+'" data-parte="fecha">'+(a.fecha||'<span class="ocio-vacio">— fecha —</span>')+'</th>'; });
   h += '</tr><tr>';
   actividades.forEach(function(a, i){
-    h += '<th class="ocio-th-actividad" colspan="3">'+a.nombre.toUpperCase()+(a.precio?' — '+esc(a.precio):'')+' '+
-      '<button class="doc-btn" style="width:20px;height:20px;font-size:11px;vertical-align:middle" title="Editar salida" onclick="abrirModalActividadOcio('+i+')">✏️</button>'+
-      '<button class="doc-btn" style="width:20px;height:20px;font-size:11px;vertical-align:middle" title="Eliminar salida" onclick="eliminarActividadOcio('+i+')">🗑️</button>'+
-      '</th>';
+    h += '<th class="ocio-th-actividad" colspan="3" data-act="'+i+'" data-parte="nombre">'+esc(a.nombre.toUpperCase())+(a.precio?' — '+esc(a.precio):'')+'</th>';
   });
   h += '</tr><tr>';
-  actividades.forEach(function(){ h += '<th class="ocio-th-si">SI</th><th class="ocio-th-no">NO</th><th class="ocio-th-pagado">Pagado</th>'; });
+  actividades.forEach(function(a, i){ h += '<th class="ocio-th-si" data-act="'+i+'">SI</th><th class="ocio-th-no" data-act="'+i+'">NO</th><th class="ocio-th-pagado" data-act="'+i+'">Pagado</th>'; });
   h += '</tr></thead><tbody>';
-  usuariosOrdenados.forEach(function(u, idxUsuario){
-    h += '<tr><td class="ocio-td-usuario">'+(idxUsuario+1)+'. '+u.nombre+' '+u.apellidos+'</td>';
+  filasUsuarios.forEach(function(f, idxFila){
+    h += '<tr data-fila="'+idxFila+'"><td class="ocio-td-usuario" data-fila="'+idxFila+'">'+(idxFila+1)+'. <span class="ocio-nombre-editable" onclick="editarNombreFilaOcio(this,'+idxFila+')">'+esc(f.nombre)+'</span></td>';
     actividades.forEach(function(a, i){
-      var fila = (OCIO_ASISTENCIA[_ocioMesActual][u.id]||[])[i] || {si:false,no:false,pagado:false};
-      h += '<td class="ocio-celda'+(fila.si?' ocio-si-on':'')+'" onclick="toggleOcioCelda('+u.id+','+i+',\'si\')" title="Sí asiste"></td>';
-      h += '<td class="ocio-celda'+(fila.no?' ocio-no-on':'')+'" onclick="toggleOcioCelda('+u.id+','+i+',\'no\')" title="No asiste"></td>';
-      h += '<td class="ocio-celda'+(fila.pagado?' ocio-pagado-on':'')+'" onclick="toggleOcioCelda('+u.id+','+i+',\'pagado\')" title="Pagado"></td>';
+      var fila = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {si:false,no:false,pagado:false};
+      h += '<td class="ocio-celda'+(fila.si?' ocio-si-on':'')+'" data-fila="'+idxFila+'" data-act="'+i+'" onclick="toggleOcioCelda(\''+f.id+'\','+i+',\'si\')" title="Sí asiste">'+(fila.si?'✓':'')+'</td>';
+      h += '<td class="ocio-celda'+(fila.no?' ocio-no-on':'')+'" data-fila="'+idxFila+'" data-act="'+i+'" onclick="toggleOcioCelda(\''+f.id+'\','+i+',\'no\')" title="No asiste">'+(fila.no?'✗':'')+'</td>';
+      h += '<td class="ocio-celda'+(fila.pagado?' ocio-pagado-on':'')+'" data-fila="'+idxFila+'" data-act="'+i+'" onclick="toggleOcioCelda(\''+f.id+'\','+i+',\'pagado\')" title="Pagado">'+(fila.pagado?'✓':'')+'</td>';
     });
     h += '</tr>';
   });
   h += '<tr class="ocio-fila-total"><td>Total</td>';
   actividades.forEach(function(a, i){
     var totalSi=0, totalNo=0, totalPagado=0;
-    usuariosOrdenados.forEach(function(u){
-      var fila = (OCIO_ASISTENCIA[_ocioMesActual][u.id]||[])[i] || {};
+    filasUsuarios.forEach(function(f){
+      var fila = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
       if(fila.si) totalSi++; if(fila.no) totalNo++; if(fila.pagado) totalPagado++;
     });
     h += '<td colspan="1">'+totalSi+'</td><td>'+totalNo+'</td><td>'+totalPagado+'</td>';
   });
   h += '</tr></tbody></table></div>';
   el.innerHTML = h;
+  renderToggleFilasOcultasOcio();
+}
+function renderToggleFilasOcultasOcio(){
+  var cont = document.getElementById('toggle-filas-ocultas-ocio');
+  if(!cont) return;
+  var ocultos = (OCIO_FILAS_OCULTAS[_ocioMesActual]||[]).length;
+  if(ocultos===0){ cont.innerHTML = ''; return; }
+  if(_ocioMostrarOcultos[_ocioMesActual]){
+    cont.innerHTML = '<button class="btn-secondary btn-sm" onclick="_ocioMostrarOcultos[\''+_ocioMesActual+'\']=false;renderTablaAsistenciaOcio()">🙈 Ocultar de nuevo ('+ocultos+')</button>';
+  } else {
+    cont.innerHTML = '<button class="btn-secondary btn-sm" onclick="_ocioMostrarOcultos[\''+_ocioMesActual+'\']=true;renderTablaAsistenciaOcio()">👁 Mostrar '+ocultos+' fila'+(ocultos>1?'s':'')+' quitada'+(ocultos>1?'s':'')+' este mes</button>';
+  }
 }
 function toggleOcioCelda(userId, idx, campo){
   var filas = OCIO_ASISTENCIA[_ocioMesActual][userId];
@@ -3193,18 +3073,136 @@ function toggleOcioCelda(userId, idx, campo){
   renderTablaAsistenciaOcio();
 }
 
-/* ---- Añadir / editar / eliminar salidas (actividades) de Ocio ---- */
+/* ---- Editar el nombre de una fila con un clic ---- */
+function editarNombreFilaOcio(span, idxFila){
+  var f = filasUsuariosDelMes(_ocioMesActual)[idxFila];
+  if(!f) return;
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.value = f.nombre;
+  input.className = 'form-input ocio-input-inline';
+  input.onclick = function(e){ e.stopPropagation(); };
+  function guardar(){
+    var nuevo = input.value.trim();
+    if(nuevo){
+      if(f.manual){
+        var m = (OCIO_FILAS_MANUALES[_ocioMesActual]||[]).filter(function(x){return x.id===f.id;})[0];
+        if(m) m.nombre = nuevo;
+      } else {
+        OCIO_NOMBRE_OVERRIDE[f.id] = nuevo;
+      }
+    }
+    renderTablaAsistenciaOcio();
+  }
+  input.onblur = guardar;
+  input.onkeydown = function(e){ if(e.key==='Enter') input.blur(); if(e.key==='Escape'){ input.onblur=null; renderTablaAsistenciaOcio(); } };
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+}
+
+/* ---- Menú de clic derecho: añadir/quitar filas y actividades, o editar el nombre/fecha de una actividad ---- */
+var _menuContextualOcioEl = null;
+function cerrarMenuContextualOcio(){
+  if(_menuContextualOcioEl){ _menuContextualOcioEl.remove(); _menuContextualOcioEl = null; }
+  document.removeEventListener('click', cerrarMenuContextualOcio);
+}
+function manejarContextMenuOcio(evento){
+  var celda = evento.target.closest('[data-parte]');
+  if(celda){
+    // Clic derecho justo en el nombre o la fecha de una actividad: abre el editor de esa actividad.
+    evento.preventDefault();
+    abrirModalActividadOcio(parseInt(celda.getAttribute('data-act'),10));
+    return false;
+  }
+  var celdaFila = evento.target.closest('[data-fila]');
+  var celdaAct = evento.target.closest('[data-act]');
+  var filaIdx = celdaFila ? parseInt(celdaFila.getAttribute('data-fila'),10) : null;
+  var actIdx = celdaAct ? parseInt(celdaAct.getAttribute('data-act'),10) : null;
+  if(filaIdx===null && actIdx===null) return true; // fuera de la tabla: menú normal del navegador
+  evento.preventDefault();
+  mostrarMenuContextualOcio(evento, filaIdx, actIdx);
+  return false;
+}
+function mostrarMenuContextualOcio(evento, filaIdx, actIdx){
+  cerrarMenuContextualOcio();
+  var menu = document.createElement('div');
+  menu.className = 'menu-contextual-ocio';
+  menu.style.cssText = 'position:fixed;left:'+evento.clientX+'px;top:'+evento.clientY+'px;background:#fff;border:1.5px solid #14141a;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:6px;z-index:9999;min-width:250px;font-size:13px';
+  function opcion(texto, fn){
+    var it = document.createElement('div');
+    it.textContent = texto;
+    it.style.cssText = 'padding:8px 10px;border-radius:6px;cursor:pointer';
+    it.onmouseenter = function(){ it.style.background = '#f1f5f9'; };
+    it.onmouseleave = function(){ it.style.background = ''; };
+    it.onclick = function(e){ e.stopPropagation(); cerrarMenuContextualOcio(); fn(); };
+    menu.appendChild(it);
+  }
+  function separador(){
+    var s = document.createElement('div');
+    s.style.cssText = 'height:1px;background:#e2e8f0;margin:4px 2px';
+    menu.appendChild(s);
+  }
+  if(filaIdx!==null){
+    var f = filasUsuariosDelMes(_ocioMesActual)[filaIdx];
+    opcion('➕ Añadir fila en blanco', function(){ anadirFilaManualOcio(); });
+    if(f) opcion('🗑 Quitar "'+f.nombre+'" de este mes', function(){ quitarFilaOcio(f); });
+    separador();
+  }
+  if(actIdx!==null){
+    opcion('➕ Añadir actividad (hueco nuevo)', function(){ anadirActividadOcio(); });
+    opcion('🗑 Eliminar esta actividad', function(){ eliminarActividadOcio(actIdx); });
+  }
+  document.body.appendChild(menu);
+  _menuContextualOcioEl = menu;
+  setTimeout(function(){ document.addEventListener('click', cerrarMenuContextualOcio); }, 0);
+}
+function anadirFilaManualOcio(){
+  var nombre = prompt('Nombre para la nueva fila:', '');
+  if(!nombre || !nombre.trim()) return;
+  var id = 'manual_'+(_ocioFilaManualIdSeq++);
+  if(!OCIO_FILAS_MANUALES[_ocioMesActual]) OCIO_FILAS_MANUALES[_ocioMesActual] = [];
+  OCIO_FILAS_MANUALES[_ocioMesActual].push({id:id, nombre:nombre.trim()});
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
+  if(!OCIO_ASISTENCIA[_ocioMesActual]) OCIO_ASISTENCIA[_ocioMesActual] = {};
+  OCIO_ASISTENCIA[_ocioMesActual][id] = actividades.map(function(){ return {si:false,no:false,pagado:false}; });
+  renderTablaAsistenciaOcio();
+}
+function quitarFilaOcio(f){
+  pedirConfirmacion('Quitar fila', '¿Quitar "'+f.nombre+'" de la tabla de este mes? '+(f.manual ? 'Se borra del todo (era una fila añadida a mano).' : 'El usuario no se borra del programa, solo deja de verse en esta pestaña (puedes recuperarlo con "Mostrar filas quitadas").'), function(){
+    if(f.manual){
+      OCIO_FILAS_MANUALES[_ocioMesActual] = (OCIO_FILAS_MANUALES[_ocioMesActual]||[]).filter(function(x){return x.id!==f.id;});
+      delete OCIO_ASISTENCIA[_ocioMesActual][f.id];
+    } else {
+      if(!OCIO_FILAS_OCULTAS[_ocioMesActual]) OCIO_FILAS_OCULTAS[_ocioMesActual] = [];
+      OCIO_FILAS_OCULTAS[_ocioMesActual].push(f.id);
+    }
+    renderTablaAsistenciaOcio();
+  });
+}
+function anadirActividadOcio(){
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
+  actividades.push({fecha:'', nombre:'Actividad '+(actividades.length+1), precio:''});
+  var idxNueva = actividades.length-1;
+  if(!OCIO_ASISTENCIA[_ocioMesActual]) OCIO_ASISTENCIA[_ocioMesActual] = {};
+  filasUsuariosDelMes(_ocioMesActual).forEach(function(f){
+    if(!OCIO_ASISTENCIA[_ocioMesActual][f.id]) OCIO_ASISTENCIA[_ocioMesActual][f.id] = [];
+    OCIO_ASISTENCIA[_ocioMesActual][f.id].push({si:false,no:false,pagado:false});
+  });
+  renderTablaAsistenciaOcio();
+  abrirModalActividadOcio(idxNueva);
+}
+
+/* ---- Añadir / editar / eliminar actividades de Ocio ---- */
 var _actividadOcioEditandoIdx = null;
 function abrirModalActividadOcio(idx){
   _actividadOcioEditandoIdx = (typeof idx === 'number') ? idx : null;
-  var a = (_actividadOcioEditandoIdx!==null) ? (OCIO_ACTIVIDADES[_ocioMesActual]||[])[_actividadOcioEditandoIdx] : null;
+  var a = (_actividadOcioEditandoIdx!==null) ? (obtenerActividadesDelMes(_ocioMesActual))[_actividadOcioEditandoIdx] : null;
   document.getElementById('titulo-modal-actividad-ocio').textContent = a ? 'Editar salida' : 'Nueva salida';
   document.getElementById('act-ocio-nombre').value = a ? a.nombre : '';
   document.getElementById('act-ocio-fecha-inicio').value = '';
   document.getElementById('act-ocio-fecha-fin').value = '';
   document.getElementById('act-ocio-fecha').value = a ? a.fecha : '';
-  document.getElementById('act-ocio-fechacarta').value = a ? (a.fechaCarta||'') : '';
-  document.getElementById('act-ocio-descripcion').value = a ? (a.descripcion||'') : '';
   document.getElementById('act-ocio-precio').value = a ? (a.precio||'') : '';
   document.getElementById('modal-actividad-ocio').classList.remove('hidden');
 }
@@ -3224,16 +3222,8 @@ function actualizarFechasActividadOcio(){
   if(fin && fin !== ini){
     var dFin = parsearFechaLocalOcio(fin);
     document.getElementById('act-ocio-fecha').value = dIni.getDate()+'-'+dFin.getDate()+' '+MESES_ABREV_OCIO[dIni.getMonth()]+' '+dIni.getFullYear();
-    var dias = [];
-    var cursor = new Date(dIni);
-    while(cursor <= dFin){
-      dias.push(DIAS_SEMANA_COMPLETO_OCIO[cursor.getDay()]+' '+cursor.getDate());
-      cursor.setDate(cursor.getDate()+1);
-    }
-    document.getElementById('act-ocio-fechacarta').value = dias.join(', ')+' de '+MESES_MAYUS_OCIO[dIni.getMonth()];
   } else {
     document.getElementById('act-ocio-fecha').value = DIAS_SEMANA_ABREV_OCIO[dIni.getDay()]+', '+dIni.getDate()+' '+MESES_ABREV_OCIO[dIni.getMonth()]+' '+dIni.getFullYear();
-    document.getElementById('act-ocio-fechacarta').value = DIAS_SEMANA_COMPLETO_OCIO[dIni.getDay()]+' '+dIni.getDate()+' de '+MESES_MAYUS_OCIO[dIni.getMonth()];
   }
 }
 function cerrarModalActividadOcio(){
@@ -3243,21 +3233,16 @@ function guardarActividadOcio(){
   var nombre = document.getElementById('act-ocio-nombre').value.trim();
   var fecha = document.getElementById('act-ocio-fecha').value.trim();
   if(!nombre || !fecha){ mostrarAviso('El nombre y la fecha son obligatorios.'); return; }
-  var datos = {
-    nombre: nombre, fecha: fecha,
-    fechaCarta: document.getElementById('act-ocio-fechacarta').value.trim(),
-    descripcion: document.getElementById('act-ocio-descripcion').value.trim(),
-    precio: document.getElementById('act-ocio-precio').value.trim()
-  };
-  if(!OCIO_ACTIVIDADES[_ocioMesActual]) OCIO_ACTIVIDADES[_ocioMesActual] = [];
+  var datos = { nombre: nombre, fecha: fecha, precio: document.getElementById('act-ocio-precio').value.trim() };
+  var actividades = obtenerActividadesDelMes(_ocioMesActual);
   if(_actividadOcioEditandoIdx !== null){
-    OCIO_ACTIVIDADES[_ocioMesActual][_actividadOcioEditandoIdx] = datos;
+    actividades[_actividadOcioEditandoIdx] = datos;
   } else {
-    OCIO_ACTIVIDADES[_ocioMesActual].push(datos);
+    actividades.push(datos);
     if(!OCIO_ASISTENCIA[_ocioMesActual]) OCIO_ASISTENCIA[_ocioMesActual] = {};
-    USUARIOS.forEach(function(u){
-      if(!OCIO_ASISTENCIA[_ocioMesActual][u.id]) OCIO_ASISTENCIA[_ocioMesActual][u.id] = [];
-      OCIO_ASISTENCIA[_ocioMesActual][u.id].push({si:false,no:false,pagado:false});
+    filasUsuariosDelMes(_ocioMesActual).forEach(function(f){
+      if(!OCIO_ASISTENCIA[_ocioMesActual][f.id]) OCIO_ASISTENCIA[_ocioMesActual][f.id] = [];
+      OCIO_ASISTENCIA[_ocioMesActual][f.id].push({si:false,no:false,pagado:false});
     });
   }
   cerrarModalActividadOcio();
@@ -3265,8 +3250,8 @@ function guardarActividadOcio(){
   mostrarAviso('Salida guardada.', '✅');
 }
 function eliminarActividadOcio(idx){
-  var a = (OCIO_ACTIVIDADES[_ocioMesActual]||[])[idx];
-  pedirConfirmacion('Eliminar salida', '¿Eliminar "'+(a?a.nombre:'esta salida')+'"? También se borran las marcas de asistencia de todos los usuarios para esta salida.', function(){
+  var a = (obtenerActividadesDelMes(_ocioMesActual))[idx];
+  pedirConfirmacion('Eliminar actividad', '¿Eliminar "'+(a?a.nombre:'esta actividad')+'"? También se borran las marcas de asistencia de todos los usuarios para esta actividad.', function(){
     OCIO_ACTIVIDADES[_ocioMesActual].splice(idx,1);
     Object.keys(OCIO_ASISTENCIA[_ocioMesActual]||{}).forEach(function(uid){
       OCIO_ASISTENCIA[_ocioMesActual][uid].splice(idx,1);
@@ -3300,356 +3285,8 @@ function abrirCarpetaOcioDrive(){
   window.open('https://drive.google.com/drive/folders/1AvkI3WD6g2aI3677zi9locXBP0gz9L-8', '_blank');
 }
 
-/* ---- Carta mensual de Actividades de Ocio: plantilla editable, para imprimir o descargar ---- */
-var _cartaOcioMesActual = 'Plantilla';
-function generarHtmlCartaOcio(mes){
-  var actividades = OCIO_ACTIVIDADES[mes] || [];
-  var tituloMes = (mes==='Plantilla') ? '[MES]' : mes.toUpperCase();
-  var borde = 'border:1px solid #333;padding:6px 10px';
-  var filasCentro = actividades.length>0
-    ? actividades.map(function(a){
-        return '<tr>'+
-          '<td style="'+borde+'"><strong>'+(a.fechaCarta||a.fecha)+'</strong><br/>'+(a.descripcion||a.nombre)+'</td>'+
-          '<td style="'+borde+';text-align:center">'+(a.precio||'')+'</td>'+
-          '<td style="'+borde+';text-align:center">☐</td>'+
-          '<td style="'+borde+';text-align:center">☐</td>'+
-        '</tr>';
-      }).join('')
-    : '<tr><td style="'+borde+'">[Añade aquí la fecha y descripción de la actividad]</td><td style="'+borde+'"></td><td style="'+borde+'"></td><td style="'+borde+'"></td></tr>';
-  var filasFamilia = actividades.length>0
-    ? actividades.map(function(a){
-        return '<tr>'+
-          '<td style="'+borde+'"><strong>'+(a.fechaCarta||a.fecha)+'</strong></td>'+
-          '<td style="'+borde+'">'+(a.nombre||'').toUpperCase()+'</td>'+
-          '<td style="'+borde+';text-align:center">'+(a.precio||'')+'</td>'+
-          '<td style="'+borde+';text-align:center">☐</td>'+
-          '<td style="'+borde+';text-align:center">☐</td>'+
-        '</tr>';
-      }).join('')
-    : '<tr><td style="'+borde+'">[Fecha]</td><td style="'+borde+'">[Actividad]</td><td style="'+borde+'"></td><td style="'+borde+'"></td><td style="'+borde+'"></td></tr>';
-  return '<p style="text-align:right"><strong>Madrid, ___ de '+(mes==='Plantilla'?'___':tituloMes.toLowerCase())+' de 2026</strong></p>'+
-    '<p>Volvemos nuevamente con ilusión a mandaros el programa de actividades de ocio para el mes de <strong>'+tituloMes+'.</strong> NECESITAMOS NOS CONFIRMÉIS LA ASISTENCIA A LAS ACTIVIDADES.</p>'+
-    '<p><strong>ACTIVIDADES OCIO '+tituloMes+' EJEMPLAR PARA EL CENTRO</strong></p>'+
-    '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">'+
-      '<tr><th style="'+borde+'"></th><th style="'+borde+'">PRECIO</th><th style="'+borde+'">SÍ</th><th style="'+borde+'">NO</th></tr>'+
-      filasCentro+
-    '</table>'+
-    '<p>Parte de las actividades están financiadas por la <strong>Fundación sin Barreras</strong>.</p>'+
-    '<p><strong>ACTIVIDADES OCIO '+tituloMes+' EJEMPLAR PARA LA FAMILIA</strong></p>'+
-    '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">'+
-      filasFamilia+
-    '</table>'+
-    '<p>Nombre del usuario: ______________________</p>'+
-    '<p>Firma: ______________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fecha: ___ / ___ / 2026</p>'+
-    '<p>Un saludo,<br>El equipo de Centro Dato</p>';
-}
-/* ---- Barra de herramientas del editor de cartas ---- */
-function aplicarFormato(comando){
-  document.getElementById('carta-ocio-texto').focus();
-  document.execCommand(comando, false, null);
-}
-function aplicarTamanoFuente(select){
-  if(!select.value) return;
-  var editor = document.getElementById('carta-ocio-texto');
-  editor.focus();
-  document.execCommand('fontSize', false, '7');
-  editor.querySelectorAll('font[size="7"]').forEach(function(f){
-    f.removeAttribute('size');
-    f.style.fontSize = select.value+'px';
-  });
-  select.value = '';
-}
-function aplicarColorFuente(input){
-  document.getElementById('carta-ocio-texto').focus();
-  document.execCommand('foreColor', false, input.value);
-}
-function borrarFormatoCarta(){
-  document.getElementById('carta-ocio-texto').focus();
-  document.execCommand('removeFormat', false, null);
-}
-function deshacerCarta(){ document.getElementById('carta-ocio-texto').focus(); document.execCommand('undo', false, null); }
-function rehacerCarta(){ document.getElementById('carta-ocio-texto').focus(); document.execCommand('redo', false, null); }
 
-// Se guarda qué tabla se ha pulsado por última vez (funciona también con tablas
-// que vienen de un .docx subido, no solo con las insertadas desde aquí).
-var _tablaActivaCarta = null;
-function registrarClicEnEditor(evento){
-  var elemento = evento.target;
-  // Si el clic ha caído justo en un nodo de texto (raro, pero puede pasar), subimos al padre.
-  if(elemento && elemento.nodeType===3) elemento = elemento.parentElement;
-  var tabla = (elemento && elemento.closest) ? elemento.closest('table') : null;
-  if(tabla) _tablaActivaCarta = tabla;
-}
-function tablaMasCercana(){
-  var editor = document.getElementById('carta-ocio-texto');
-  if(_tablaActivaCarta && editor.contains(_tablaActivaCarta)) return _tablaActivaCarta;
-  var sel = window.getSelection();
-  if(sel.rangeCount){
-    var nodo = sel.anchorNode;
-    while(nodo && nodo!==editor){
-      if(nodo.nodeName==='TABLE') return nodo;
-      nodo = nodo.parentNode;
-    }
-  }
-  // Si no se ha podido determinar cuál es (por ejemplo justo tras subir un archivo,
-  // antes de hacer clic en ningún sitio), y solo hay una tabla en la carta, usamos esa.
-  var tablas = editor.querySelectorAll('table');
-  if(tablas.length===1) return tablas[0];
-  return null;
-}
-function insertarTablaCarta(){
-  var editor = document.getElementById('carta-ocio-texto');
-  editor.focus();
-  document.execCommand('insertHTML', false, '<table><tr><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr></table><p><br></p>');
-  var tablas = editor.querySelectorAll('table');
-  _tablaActivaCarta = tablas.length ? tablas[tablas.length-1] : null;
-  generarReglasCarta();
-}
-function anadirFilaTabla(){
-  var tabla = tablaMasCercana();
-  if(!tabla){ mostrarAviso('Pulsa antes dentro de una celda de la tabla que quieras modificar.'); return; }
-  var nCols = tabla.rows.length ? tabla.rows[0].cells.length : 1;
-  var fila = tabla.insertRow(-1);
-  for(var i=0;i<nCols;i++){ fila.insertCell(-1).innerHTML='&nbsp;'; }
-  generarReglasCarta();
-}
-function quitarFilaTabla(){
-  var tabla = tablaMasCercana();
-  if(!tabla){ mostrarAviso('Pulsa antes dentro de una celda de la tabla que quieras modificar.'); return; }
-  if(tabla.rows.length<=1){ mostrarAviso('No quedan más filas para quitar.'); return; }
-  tabla.deleteRow(-1);
-  generarReglasCarta();
-}
-function anadirColumnaTabla(){
-  var tabla = tablaMasCercana();
-  if(!tabla){ mostrarAviso('Pulsa antes dentro de una celda de la tabla que quieras modificar.'); return; }
-  Array.prototype.forEach.call(tabla.rows, function(fila){ fila.insertCell(-1).innerHTML='&nbsp;'; });
-  generarReglasCarta();
-}
-function quitarColumnaTabla(){
-  var tabla = tablaMasCercana();
-  if(!tabla || !tabla.rows.length || tabla.rows[0].cells.length<=1){ mostrarAviso('No quedan más columnas para quitar.'); return; }
-  Array.prototype.forEach.call(tabla.rows, function(fila){ fila.deleteCell(-1); });
-  generarReglasCarta();
-}
-// Combina la celda "activa" (la última pulsada) con la celda inmediatamente a su derecha.
-function combinarCeldaDerecha(){
-  var celda = _celdaContextual && document.getElementById('carta-ocio-texto').contains(_celdaContextual) ? _celdaContextual : null;
-  if(!celda){ mostrarAviso('Haz clic primero dentro de la celda que quieras combinar (con el botón izquierdo).'); return; }
-  var siguiente = celda.nextElementSibling;
-  if(!siguiente || (siguiente.tagName!=='TD' && siguiente.tagName!=='TH')){ mostrarAviso('No hay ninguna celda a la derecha con la que combinar.'); return; }
-  var span = (celda.colSpan||1) + (siguiente.colSpan||1);
-  celda.innerHTML = (celda.innerHTML.replace(/&nbsp;/g,'').trim() + ' ' + siguiente.innerHTML.replace(/&nbsp;/g,'').trim()).trim() || '&nbsp;';
-  celda.colSpan = span;
-  siguiente.remove();
-  generarReglasCarta();
-}
-// Deshace una combinación: separa la celda activa en celdas individuales de nuevo.
-function separarCelda(){
-  var celda = _celdaContextual && document.getElementById('carta-ocio-texto').contains(_celdaContextual) ? _celdaContextual : null;
-  if(!celda){ mostrarAviso('Haz clic primero dentro de la celda que quieras separar.'); return; }
-  var span = celda.colSpan||1;
-  if(span<=1){ mostrarAviso('Esta celda no está combinada con ninguna otra.'); return; }
-  celda.colSpan = 1;
-  for(var i=1;i<span;i++){
-    var nueva = document.createElement(celda.tagName.toLowerCase());
-    nueva.innerHTML = '&nbsp;';
-    celda.parentNode.insertBefore(nueva, celda.nextSibling);
-  }
-  generarReglasCarta();
-}
-
-/* ---- Reglas horizontal y vertical (simulan una hoja A4 real) ---- */
-var PX_POR_CM = 37.8; // aproximación a 96dpi
-function generarReglasCarta(){
-  var editor = document.getElementById('carta-ocio-texto');
-  var reglaH = document.getElementById('regla-horizontal');
-  var reglaV = document.getElementById('regla-vertical');
-  if(!editor || !reglaH || !reglaV) return;
-  var h = '';
-  for(var cm=0; cm<=21; cm++){
-    var x = cm*PX_POR_CM;
-    h += '<div class="marca mayor" style="left:'+x+'px"></div>';
-    if(cm<21) h += '<div class="num" style="left:'+x+'px">'+cm+'</div>';
-    if(cm<21){
-      for(var m=1;m<4;m++){ h += '<div class="marca" style="left:'+(x+m*PX_POR_CM/4)+'px"></div>'; }
-    }
-  }
-  reglaH.innerHTML = h;
-
-  var altoTotal = Math.max(editor.scrollHeight, 1123);
-  var cmTotales = Math.ceil(altoTotal/PX_POR_CM);
-  reglaV.style.height = altoTotal+'px';
-  var hv = '';
-  for(var cmV=0; cmV<=cmTotales; cmV++){
-    var y = cmV*PX_POR_CM;
-    hv += '<div class="marca mayor" style="top:'+y+'px"></div>';
-    hv += '<div class="num" style="top:'+y+'px">'+cmV+'</div>';
-    if(cmV<cmTotales){
-      for(var mv=1;mv<4;mv++){ hv += '<div class="marca" style="top:'+(y+mv*PX_POR_CM/4)+'px"></div>'; }
-    }
-  }
-  reglaV.innerHTML = hv;
-}
-
-/* ---- Menú contextual (clic derecho) del editor de cartas ---- */
-var _celdaContextual = null, _filaContextual = null, _tablaContextual = null;
-function indiceDeCelda(celda){
-  return Array.prototype.indexOf.call(celda.parentNode.children, celda);
-}
-function mostrarMenuContextualCarta(evento){
-  evento.preventDefault();
-  var objetivo = evento.target;
-  var celda = objetivo.closest ? objetivo.closest('td,th') : null;
-  // Si el clic ha caído justo en el borde entre celdas, buscamos por coordenadas.
-  if(!celda && document.elementFromPoint){
-    var elementoBajoCursor = document.elementFromPoint(evento.clientX, evento.clientY);
-    celda = elementoBajoCursor && elementoBajoCursor.closest ? elementoBajoCursor.closest('td,th') : null;
-  }
-  _celdaContextual = celda;
-  _filaContextual = celda ? celda.closest('tr') : null;
-  _tablaContextual = celda ? celda.closest('table') : null;
-
-  var h = '';
-  h += '<button onclick="accionMenuContextualCarta(\'copiar\')">📋 Copiar</button>';
-  h += '<button onclick="accionMenuContextualCarta(\'cortar\')">✂️ Cortar</button>';
-  h += '<button onclick="accionMenuContextualCarta(\'pegar\')">📥 Pegar</button>';
-  h += '<button onclick="accionMenuContextualCarta(\'eliminar\')">🗑️ Eliminar seleccionado</button>';
-  if(_tablaContextual){
-    h += '<hr/>';
-    h += '<button onclick="accionMenuContextualCarta(\'vaciarCelda\')">🧹 Vaciar esta celda</button>';
-    h += '<button onclick="accionMenuContextualCarta(\'filaArriba\')">⬆ Insertar fila arriba</button>';
-    h += '<button onclick="accionMenuContextualCarta(\'filaAbajo\')">⬇ Insertar fila abajo</button>';
-    h += '<button onclick="accionMenuContextualCarta(\'eliminarFila\')">✖ Eliminar esta fila</button>';
-    h += '<hr/>';
-    h += '<button onclick="accionMenuContextualCarta(\'colIzquierda\')">⬅ Insertar columna a la izquierda</button>';
-    h += '<button onclick="accionMenuContextualCarta(\'colDerecha\')">➡ Insertar columna a la derecha</button>';
-    h += '<button onclick="accionMenuContextualCarta(\'eliminarColumna\')">✖ Eliminar esta columna</button>';
-    h += '<hr/>';
-    h += '<button onclick="accionMenuContextualCarta(\'eliminarTabla\')">🗑️ Eliminar tabla completa</button>';
-  } else {
-    h += '<hr/><button onclick="accionMenuContextualCarta(\'insertarTabla\')">▦ Insertar tabla aquí</button>';
-  }
-  var menu = document.getElementById('menu-contextual-carta');
-  menu.innerHTML = h;
-  menu.style.left = Math.min(evento.clientX, window.innerWidth-250)+'px';
-  menu.style.top = Math.min(evento.clientY, window.innerHeight-40)+'px';
-  menu.classList.remove('hidden');
-}
-function ocultarMenuContextualCarta(){
-  document.getElementById('menu-contextual-carta').classList.add('hidden');
-}
-document.addEventListener('click', function(e){
-  var menu = document.getElementById('menu-contextual-carta');
-  if(menu && !menu.contains(e.target)) menu.classList.add('hidden');
-  var menuTabla = document.getElementById('menu-tabla-toolbar');
-  if(menuTabla && !menuTabla.contains(e.target) && !e.target.closest('button[onclick^="alternarMenuTablaToolbar"]')) menuTabla.classList.add('hidden');
-});
-function alternarMenuTablaToolbar(evento){
-  evento.stopPropagation();
-  document.getElementById('menu-tabla-toolbar').classList.toggle('hidden');
-}
-function cerrarMenuTablaToolbar(){
-  document.getElementById('menu-tabla-toolbar').classList.add('hidden');
-}
-function accionMenuContextualCarta(accion){
-  var editor = document.getElementById('carta-ocio-texto');
-  editor.focus();
-  if(accion==='copiar'){ document.execCommand('copy'); }
-  else if(accion==='cortar'){ document.execCommand('cut'); }
-  else if(accion==='pegar'){
-    if(navigator.clipboard && navigator.clipboard.readText){
-      navigator.clipboard.readText().then(function(texto){
-        document.execCommand('insertText', false, texto);
-      }).catch(function(){
-        mostrarAviso('Tu navegador no permite pegar así por seguridad. Usa Ctrl+V (o Cmd+V) con el cursor donde quieras pegar.');
-      });
-    } else {
-      mostrarAviso('Tu navegador no permite pegar así por seguridad. Usa Ctrl+V (o Cmd+V) con el cursor donde quieras pegar.');
-    }
-  }
-  else if(accion==='eliminar'){ document.execCommand('delete', false, null); }
-  else if(accion==='insertarTabla'){ insertarTablaCarta(); }
-  else if(accion==='filaArriba' && _filaContextual && _tablaContextual){
-    var idxArriba = Array.prototype.indexOf.call(_tablaContextual.rows, _filaContextual);
-    var nCols = _tablaContextual.rows[0] ? _tablaContextual.rows[0].cells.length : 1;
-    var filaN = _tablaContextual.insertRow(idxArriba);
-    for(var i=0;i<nCols;i++){ filaN.insertCell(-1).innerHTML='&nbsp;'; }
-  }
-  else if(accion==='filaAbajo' && _filaContextual && _tablaContextual){
-    var idxAbajo = Array.prototype.indexOf.call(_tablaContextual.rows, _filaContextual);
-    var nCols2 = _tablaContextual.rows[0] ? _tablaContextual.rows[0].cells.length : 1;
-    var filaN2 = _tablaContextual.insertRow(idxAbajo+1);
-    for(var j=0;j<nCols2;j++){ filaN2.insertCell(-1).innerHTML='&nbsp;'; }
-  }
-  else if(accion==='eliminarFila' && _filaContextual && _tablaContextual){
-    if(_tablaContextual.rows.length<=1){ mostrarAviso('No quedan más filas para quitar.'); }
-    else { var idxElim = Array.prototype.indexOf.call(_tablaContextual.rows, _filaContextual); _tablaContextual.deleteRow(idxElim); }
-  }
-  else if(accion==='colIzquierda' && _celdaContextual && _tablaContextual){
-    var idxColI = indiceDeCelda(_celdaContextual);
-    Array.prototype.forEach.call(_tablaContextual.rows, function(fila){ fila.insertCell(idxColI).innerHTML='&nbsp;'; });
-  }
-  else if(accion==='colDerecha' && _celdaContextual && _tablaContextual){
-    var idxColD = indiceDeCelda(_celdaContextual);
-    Array.prototype.forEach.call(_tablaContextual.rows, function(fila){ fila.insertCell(idxColD+1).innerHTML='&nbsp;'; });
-  }
-  else if(accion==='eliminarColumna' && _celdaContextual && _tablaContextual){
-    if(!_tablaContextual.rows.length || _tablaContextual.rows[0].cells.length<=1){ mostrarAviso('No quedan más columnas para quitar.'); }
-    else { var idxColE = indiceDeCelda(_celdaContextual); Array.prototype.forEach.call(_tablaContextual.rows, function(fila){ if(fila.cells[idxColE]) fila.deleteCell(idxColE); }); }
-  }
-  else if(accion==='eliminarTabla' && _tablaContextual){
-    _tablaContextual.remove();
-  }
-  else if(accion==='vaciarCelda' && _celdaContextual){
-    _celdaContextual.innerHTML = '&nbsp;';
-  }
-  ocultarMenuContextualCarta();
-}
-
-/* ---- Redimensionar columnas arrastrando el borde derecho de una celda ---- */
-var _resizeColState = null;
-function actualizarCursorRedimension(evento){
-  if(_resizeColState) return;
-  var editor = document.getElementById('carta-ocio-texto');
-  var celda = evento.target.closest ? evento.target.closest('td,th') : null;
-  if(!celda){ editor.style.cursor=''; return; }
-  var rect = celda.getBoundingClientRect();
-  editor.style.cursor = (rect.right - evento.clientX)<=6 ? 'col-resize' : '';
-}
-function iniciarRedimensionCelda(evento){
-  var celda = evento.target.closest ? evento.target.closest('td,th') : null;
-  if(!celda) return;
-  var rect = celda.getBoundingClientRect();
-  if((rect.right - evento.clientX) > 6) return; // no está sobre el borde
-  var tabla = celda.closest('table');
-  if(!tabla) return;
-  evento.preventDefault();
-  _resizeColState = {tabla: tabla, indice: indiceDeCelda(celda), startX: evento.clientX, anchoInicial: rect.width};
-  document.addEventListener('mousemove', _moverRedimensionCelda);
-  document.addEventListener('mouseup', _soltarRedimensionCelda);
-}
-function _moverRedimensionCelda(evento){
-  if(!_resizeColState) return;
-  var nuevoAncho = Math.max(30, _resizeColState.anchoInicial + (evento.clientX - _resizeColState.startX));
-  Array.prototype.forEach.call(_resizeColState.tabla.rows, function(fila){
-    var celda = fila.cells[_resizeColState.indice];
-    if(celda) celda.style.width = nuevoAncho+'px';
-  });
-}
-function _soltarRedimensionCelda(){
-  _resizeColState = null;
-  document.removeEventListener('mousemove', _moverRedimensionCelda);
-  document.removeEventListener('mouseup', _soltarRedimensionCelda);
-}
-
-function abrirEditorCartaOcio(mes){
-  _cartaOcioMesActual = mes;
-  document.getElementById('carta-ocio-titulo').textContent = (mes==='Plantilla') ? 'Plantilla de Carta Mensual' : 'Carta de '+mes+' 2026';
-  document.getElementById('carta-ocio-texto').innerHTML = generarHtmlCartaOcio(mes);
-  navTo('carta-ocio');
-  setTimeout(generarReglasCarta, 50);
-}
+/* ---- Utilidades compartidas: imprimir HTML y descargar como .docx (usadas por Horarios, etc.) ---- */
 function imprimirHtml(html, apaisado){
   var ventana = window.open('', '_blank');
   if(!ventana){ mostrarAviso('El navegador ha bloqueado la ventana de impresión. Permite las ventanas emergentes para poder imprimir.'); return; }
@@ -3837,91 +3474,6 @@ function descargarComoDocx(html, nombreArchivoBase, opciones){
       URL.revokeObjectURL(url);
     });
   });
-}
-function imprimirCartaOcio(){
-  imprimirHtml(document.getElementById('carta-ocio-texto').innerHTML);
-}
-function nombreBaseCartaOcio(mes){
-  return (mes==='Plantilla') ? 'Plantilla de Carta Mensual' : 'Carta '+mes+' 2026';
-}
-function descargarCartaOcio(){
-  descargarComoDocx(document.getElementById('carta-ocio-texto').innerHTML, nombreBaseCartaOcio(_cartaOcioMesActual));
-}
-// Igual, pero directamente a partir del mes (para poder usarlas desde la vista previa sin navegar al editor)
-function imprimirCartaOcioPorMes(mes){ imprimirHtml(generarHtmlCartaOcio(mes)); }
-function descargarCartaOcioPorMes(mes){
-  descargarComoDocx(generarHtmlCartaOcio(mes), nombreBaseCartaOcio(mes));
-}
-
-/* ---- Modal para elegir formato de descarga: Word (.docx) o PDF ---- */
-var _contextoDescargaCarta = {tipo:'editor'};
-function abrirModalDescargaCarta(contexto){
-  _contextoDescargaCarta = contexto || {tipo:'editor'};
-  document.getElementById('modal-descarga-carta').classList.remove('hidden');
-}
-function cerrarModalDescargaCarta(){
-  document.getElementById('modal-descarga-carta').classList.add('hidden');
-}
-function confirmarDescargaCartaDocx(){
-  cerrarModalDescargaCarta();
-  if(_contextoDescargaCarta.tipo==='mes') descargarCartaOcioPorMes(_contextoDescargaCarta.mes);
-  else descargarCartaOcio();
-}
-// El PDF se genera mediante el diálogo de impresión del navegador, eligiendo
-// "Guardar como PDF" en el destino — es la forma fiable de hacerlo sin conexión externa.
-function confirmarDescargaCartaPdf(){
-  cerrarModalDescargaCarta();
-  mostrarAviso('Se va a abrir el cuadro de impresión: elige "Guardar como PDF" en el destino/impresora para descargarla en PDF.');
-  if(_contextoDescargaCarta.tipo==='mes') imprimirCartaOcioPorMes(_contextoDescargaCarta.mes);
-  else imprimirCartaOcio();
-}
-
-var _mammothCargado = false;
-function subirArchivoCartaOcio(evento){
-  var archivo = evento.target.files[0];
-  if(!archivo) return;
-  var nombreMin = archivo.name.toLowerCase();
-  if(nombreMin.endsWith('.txt')){
-    var lector = new FileReader();
-    lector.onload = function(e){
-      var lineas = e.target.result.split('\n').map(function(l){
-        return '<p>'+l.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</p>';
-      }).join('');
-      document.getElementById('carta-ocio-texto').innerHTML = lineas;
-      generarReglasCarta();
-    };
-    lector.readAsText(archivo);
-    return;
-  }
-  if(nombreMin.endsWith('.docx')){
-    cargarMammoth(function(ok){
-      if(!ok){
-        mostrarAviso('No se ha podido leer el .docx (hace falta conexión a internet la primera vez). Prueba a guardarlo como .txt y subirlo de nuevo, o pega el texto directamente en el cuadro.');
-        return;
-      }
-      var lector = new FileReader();
-      lector.onload = function(e){
-        window.mammoth.convertToHtml({arrayBuffer: e.target.result}).then(function(resultado){
-          document.getElementById('carta-ocio-texto').innerHTML = resultado.value;
-          generarReglasCarta();
-          mostrarAviso('Archivo cargado conservando negrita, cursiva, párrafos y tablas simples. Diseños muy complejos (columnas, imágenes, fuentes especiales) puede que no se vean exactamente igual — ajústalos a mano si hace falta.');
-        }).catch(function(){
-          mostrarAviso('No se ha podido leer el contenido de este .docx. Prueba a guardarlo como .txt y subirlo de nuevo.');
-        });
-      };
-      lector.readAsArrayBuffer(archivo);
-    });
-    return;
-  }
-  mostrarAviso('Este tipo de archivo no se puede editar aquí. Sube un .txt o un .docx, o pega el contenido directamente en el cuadro.');
-}
-function cargarMammoth(callback){
-  if(_mammothCargado && window.mammoth){ callback(true); return; }
-  var script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
-  script.onload = function(){ _mammothCargado = true; callback(true); };
-  script.onerror = function(){ callback(false); };
-  document.head.appendChild(script);
 }
 
 /* ===================== HORARIOS (POR ÁREA E INDIVIDUALES) ===================== */
@@ -4701,7 +4253,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','transporte','ocio','asistencia-ocio','carta-ocio','horarios','historico-horarios','paap','paap-detalle','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','transporte','ocio','horarios','historico-horarios','paap','paap-detalle','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
@@ -5439,188 +4991,6 @@ function verDocumento(nombre){
   navTo('documento');
 }
 function volverDeDocumento(){ navTo(_docVistaAnterior); }
-
-// Vista previa real del texto de una carta de Ocio (con descarga e impresión funcionando de verdad)
-function verPreviaCartaOcio(mes){
-  _docVistaAnterior = document.getElementById('view-drive').classList.contains('hidden') ? 'expediente' : 'drive';
-  var titulo = (mes==='Plantilla') ? 'Plantilla de Carta Mensual' : 'Carta de '+mes+' 2026';
-  var html = generarHtmlCartaOcio(mes);
-  document.getElementById('doc-titulo').textContent = titulo;
-  document.getElementById('doc-info').textContent = 'Cartas — Actividades de Ocio';
-  document.getElementById('doc-preview-box').innerHTML = '<div style="text-align:left;font-family:Georgia,serif;font-size:14px;color:#1e293b;max-height:420px;overflow-y:auto;line-height:1.7">'+html+'</div>';
-  document.getElementById('doc-btn-descargar').setAttribute('onclick', "abrirModalDescargaCarta({tipo:'mes',mes:'"+mes+"'})");
-  document.getElementById('doc-btn-imprimir').setAttribute('onclick', "imprimirCartaOcioPorMes('"+mes+"')");
-  navTo('documento');
-}
-
-// Tipos de registro que NO están ligados a un usuario concreto (son generales del centro)
-// y por tanto no deben aparecer en la carpeta de Registros de un usuario individual.
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
-
-function verCarpetaRegistrosUsuario(){
-  if(!_expActual) return;
-  verCarpetaRegistrosDeUsuario(_expActual.id, 'expediente');
-}
-function verCarpetaRegistrosDeUsuario(userId, vistaOrigen){
-  var usuario = USUARIOS.filter(function(u){return u.id===userId;})[0];
-  if(!usuario) return;
-  if(PERMISOS_ACTUAL.registros==='nada'){
-    mostrarAviso('No tienes acceso a los Registros. Pídele a un Coordinador que te dé permiso.');
-    return;
-  }
-  var nombreCompleto = usuario.nombre+' '+usuario.apellidos;
-  // Son los mismos archivos generales de "Registros Digitales" (uno por tipo, con todos los usuarios
-  // dentro); aquí solo se filtran los tipos que sí incluyen a este usuario.
-  var docs = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){
-    return nivelRegistro(r.id)!=='nada' && REGISTROS_NO_LIGADOS_A_USUARIO.indexOf(r.id)===-1;
-  }), function(r){ return r.titulo; }).map(function(r){ return {nombre: r.titulo+'.xlsx', icono: r.icon}; });
-  var driveId = 'd'+(_driveIdSeq++);
-  _driveStore[driveId] = {titulo:'Registros que incluyen a '+nombreCompleto, docs: docs};
-  verCarpetaDrive(driveId, vistaOrigen || 'usuarios');
-}
-
-// Carpeta general "Registros Digitales": un archivo por cada tipo de registro,
-// con las filas de todos los usuarios dentro de ese mismo archivo.
-function verCarpetaRegistrosDigitales(vistaOrigen){
-  if(PERMISOS_ACTUAL.registros==='nada'){
-    mostrarAviso('No tienes acceso a los Registros. Pídele a un Coordinador que te dé permiso.');
-    return;
-  }
-  var docs = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return nivelRegistro(r.id)!=='nada'; }), function(r){ return r.titulo; })
-    .map(function(r){ return {nombre: r.titulo+'.xlsx', icono: r.icon}; });
-  abrirCarpetaConectable('registros', 'Registros Digitales', vistaOrigen || 'config', docs, false);
-}
-
-// Carpeta pendiente de nombre definitivo (de momento "Medias Transporte")
-function verCarpetaMediasTransporte(){
-  abrirCarpetaConectable('transporte', 'Medias Transporte (nombre provisional)', 'transporte', [], false);
-}
-
-// Carpeta de Horarios (piloto de conexión real)
-function verCarpetaHorariosDrive(){
-  abrirCarpetaConectable('horarios', 'Horarios', 'horarios', [], false);
-}
-
-// Carpeta de cartas de autorización enviadas a las familias para las salidas de ocio
-var CARTAS_OCIO_SUBIDAS = [];
-var _cartaSubidaIdSeq = 1;
-var _driveIdActual = null;
-function verCarpetaCartasOcio(){
-  var docs = [{nombre:'📝 Plantilla de Carta Mensual (editable)', icono:'📝', accionVer:"abrirEditorCartaOcio('Plantilla')", accionPreview:"verPreviaCartaOcio('Plantilla')"}];
-  ordenarAlfabetico(CARTAS_OCIO_SUBIDAS, function(c){return c.nombre;}).forEach(function(c){
-    docs.push({
-      nombre: c.nombre, icono: c.icono,
-      accionPreview: "verPreviaCartaSubida("+c.id+")",
-      accionDescargar: "descargarCartaSubida("+c.id+")",
-      accionImprimir: "imprimirCartaSubida("+c.id+")",
-      accionEliminar: "eliminarCartaSubida("+c.id+")"
-    });
-  });
-  var driveId = 'd'+(_driveIdSeq++);
-  _driveStore[driveId] = {titulo:'Cartas — Actividades de Ocio', docs: docs, permitirSubir: true};
-  verCarpetaDrive(driveId, 'ocio');
-}
-function iconoPorExtension(nombre){
-  var n = nombre.toLowerCase();
-  if(n.endsWith('.pdf')) return '📕';
-  if(n.endsWith('.docx') || n.endsWith('.doc')) return '📄';
-  if(n.endsWith('.txt')) return '📃';
-  return '📎';
-}
-function subirArchivoADrive(evento){
-  var archivo = evento.target.files[0];
-  if(!archivo) return;
-  var nombreMin = archivo.name.toLowerCase();
-  var entrada = {id: _cartaSubidaIdSeq++, nombre: archivo.name, icono: iconoPorExtension(archivo.name), tipo: null, htmlPreview: null, blobUrl: null, archivo: archivo};
-  entrada.blobUrl = URL.createObjectURL(archivo);
-  CARTAS_OCIO_SUBIDAS.push(entrada);
-  evento.target.value = '';
-
-  if(nombreMin.endsWith('.pdf')){
-    entrada.tipo = 'pdf';
-    verCarpetaCartasOcio();
-    return;
-  }
-  if(nombreMin.endsWith('.txt')){
-    entrada.tipo = 'texto';
-    var lector = new FileReader();
-    lector.onload = function(e){
-      entrada.htmlPreview = e.target.result.split('\n').map(function(l){ return '<p>'+l.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</p>'; }).join('');
-      verCarpetaCartasOcio();
-    };
-    lector.readAsText(archivo);
-    return;
-  }
-  if(nombreMin.endsWith('.docx')){
-    entrada.tipo = 'docx';
-    cargarMammoth(function(ok){
-      if(!ok){
-        mostrarAviso('No se ha podido leer el .docx para la vista previa (hace falta conexión a internet la primera vez). El archivo se ha guardado igualmente y puedes descargarlo.');
-        verCarpetaCartasOcio();
-        return;
-      }
-      var lector = new FileReader();
-      lector.onload = function(e){
-        window.mammoth.convertToHtml({arrayBuffer: e.target.result}).then(function(resultado){
-          entrada.htmlPreview = resultado.value;
-          verCarpetaCartasOcio();
-        }).catch(function(){
-          verCarpetaCartasOcio();
-        });
-      };
-      lector.readAsArrayBuffer(archivo);
-    });
-    return;
-  }
-  entrada.tipo = 'otro';
-  verCarpetaCartasOcio();
-}
-function buscarCartaSubida(id){
-  return CARTAS_OCIO_SUBIDAS.filter(function(c){ return c.id===id; })[0];
-}
-function verPreviaCartaSubida(id){
-  var c = buscarCartaSubida(id);
-  if(!c) return;
-  _docVistaAnterior = document.getElementById('view-drive').classList.contains('hidden') ? 'expediente' : 'drive';
-  document.getElementById('doc-titulo').textContent = c.nombre;
-  document.getElementById('doc-info').textContent = 'Cartas — Actividades de Ocio';
-  var caja = document.getElementById('doc-preview-box');
-  if(c.tipo==='pdf'){
-    caja.innerHTML = '<iframe src="'+c.blobUrl+'" style="width:100%;height:420px;border:1.5px solid #14141a;border-radius:10px"></iframe>'+
-      '<div style="margin-top:10px;font-size:12.5px;color:#94a3b8">¿No se ve el PDF de arriba? Puede que este visor esté bloqueando el contenido incrustado. '+
-      '<button class="btn-secondary btn-sm" onclick="window.open(\''+c.blobUrl+'\',\'_blank\')" style="margin-left:6px">↗ Abrir en pestaña nueva</button></div>';
-  } else if(c.htmlPreview){
-    caja.innerHTML = '<div style="text-align:left;font-family:Georgia,serif;font-size:14px;color:#1e293b;max-height:420px;overflow-y:auto;line-height:1.7">'+c.htmlPreview+'</div>';
-  } else {
-    caja.innerHTML = 'Este tipo de archivo no se puede previsualizar aquí — descárgalo para verlo.';
-  }
-  document.getElementById('doc-btn-descargar').setAttribute('onclick', 'descargarCartaSubida('+id+')');
-  document.getElementById('doc-btn-imprimir').setAttribute('onclick', 'imprimirCartaSubida('+id+')');
-  navTo('documento');
-}
-function descargarCartaSubida(id){
-  var c = buscarCartaSubida(id);
-  if(!c) return;
-  var a = document.createElement('a');
-  a.href = c.blobUrl; a.download = c.nombre;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-function imprimirCartaSubida(id){
-  var c = buscarCartaSubida(id);
-  if(!c) return;
-  if(c.tipo==='pdf'){
-    var ventana = window.open(c.blobUrl, '_blank');
-    if(!ventana){ mostrarAviso('El navegador ha bloqueado la ventana. Permite las ventanas emergentes para poder imprimir.'); return; }
-    setTimeout(function(){ try{ ventana.print(); }catch(e){} }, 500);
-    return;
-  }
-  if(c.htmlPreview){ imprimirHtml(c.htmlPreview); return; }
-  mostrarAviso('Este tipo de archivo no se puede imprimir directamente desde aquí — descárgalo e imprímelo desde su programa.');
-}
-function eliminarCartaSubida(id){
-  CARTAS_OCIO_SUBIDAS = CARTAS_OCIO_SUBIDAS.filter(function(c){ return c.id!==id; });
-  verCarpetaCartasOcio();
-}
 
 var _driveVistaAnterior = 'expediente';
 function verCarpetaDrive(driveId, vistaOrigenExplicita){
