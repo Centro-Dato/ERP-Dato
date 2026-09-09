@@ -189,14 +189,15 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .aspectos-matriz-chk{width:19px;height:19px;cursor:pointer;accent-color:var(--primary)}
 .aspectos-matriz-tabla tbody tr:nth-child(even){background:#f8fafc}
 /* ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) */
-.ocio-tabla{border-collapse:collapse;font-size:12.5px}
+.ocio-tabla{border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 .ocio-tabla th,.ocio-tabla td{border:1.5px solid #14141a;padding:6px 10px;text-align:center}
-.ocio-th-usuario{background:#5cc4f2;color:#000;font-weight:800;text-transform:uppercase;font-size:12px;text-align:left;vertical-align:middle;width:1%;white-space:nowrap}
-.ocio-th-fecha{background:var(--primary);color:#fff;font-weight:800;white-space:nowrap;cursor:context-menu}
-.ocio-th-actividad{font-style:italic;font-weight:700;background:#fff;white-space:nowrap;cursor:context-menu}
+.ocio-tabla .ocio-th-usuario{background:#5cc4f2;color:#000;font-weight:800;text-transform:uppercase;font-size:12px;text-align:left;vertical-align:middle;width:170px;white-space:nowrap}
+.ocio-th-fecha{background:var(--primary);color:#fff;font-weight:800;white-space:normal;cursor:context-menu;width:150px}
+.ocio-th-actividad{font-style:italic;font-weight:700;background:#fff;white-space:normal;word-wrap:break-word;cursor:context-menu;width:150px;line-height:1.3}
 .ocio-vacio{color:#94a3b8;font-style:normal}
-.ocio-th-si,.ocio-th-no,.ocio-th-pagado{background:#5cc4f2;color:#000;font-weight:800;font-size:11px}
-.ocio-td-usuario{text-align:left;font-weight:700;white-space:nowrap;background:#fff;width:1%}
+.ocio-th-si,.ocio-th-no,.ocio-th-pagado{background:#5cc4f2;color:#000;font-weight:800;font-size:11px;width:50px}
+.ocio-tabla .ocio-td-usuario{text-align:left;font-weight:700;white-space:nowrap;background:#fff;width:170px}
+.ocio-espaciador{border:none!important;background:transparent!important;padding:0!important;width:14px}
 .ocio-nombre-editable{cursor:pointer;border-bottom:1px dashed transparent}
 .ocio-nombre-editable:hover{border-bottom:1px dashed #94a3b8}
 .ocio-input-inline{display:inline-block;width:auto;min-width:160px;padding:2px 6px;font-size:12.5px;font-weight:700}
@@ -742,7 +743,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   <div class="modal-box" style="max-width:480px">
     <div class="modal-title" id="titulo-modal-actividad-ocio">Nueva salida</div>
     <label class="form-lbl">Actividad</label>
-    <input type="text" class="form-input" id="act-ocio-nombre" style="margin-bottom:12px" placeholder="Ej: Cine"/>
+    <input type="text" class="form-input" id="act-ocio-nombre" style="margin-bottom:12px" placeholder="Ej: Cine" onfocus="this.select()"/>
     <div style="display:flex;gap:10px;margin-bottom:12px">
       <div style="flex:1">
         <label class="form-lbl">Fecha</label>
@@ -754,7 +755,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
     </div>
     <label class="form-lbl">Precio</label>
-    <input type="text" class="form-input" id="act-ocio-precio" style="margin-bottom:16px" placeholder="22 €"/>
+    <input type="text" class="form-input" id="act-ocio-precio" style="margin-bottom:16px" placeholder="22 €" onfocus="this.select()"/>
     <input type="hidden" id="act-ocio-fecha"/>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cerrarModalActividadOcio()">Cancelar</button>
@@ -1303,7 +1304,7 @@ function construirFilasAsistenciaOcio(){
     var fila = [f.nombre];
     actividades.forEach(function(a, i){
       var d = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
-      fila.push(!!d.si, !!d.no, !!d.pagado);
+      fila.push(d.si?'✓':'', d.no?'✗':'', d.pagado?'✓':'');
     });
     filas.push(fila);
   });
@@ -1329,15 +1330,20 @@ function hexAColorSheets(hex){
 }
 function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
   var actividades = obtenerActividadesDelMes(_ocioMesActual);
-  var numUsuarios = filasUsuariosDelMes(_ocioMesActual).length;
+  var filasUsuarios = filasUsuariosDelMes(_ocioMesActual);
+  var numUsuarios = filasUsuarios.length;
   var numCols = 1 + actividades.length*3;
   var filaTotalIdx = 3 + numUsuarios; // 0-index: 0,1,2 cabeceras; 3..3+n-1 usuarios; filaTotalIdx = total
 
   var AZUL = hexAColorSheets('#0270c4');
   var AZUL_CLARO = hexAColorSheets('#5cc4f2');
   var GRIS_TOTAL = hexAColorSheets('#f1f5f9');
+  var GRIS_CELDA = hexAColorSheets('#e5e7eb');
+  var GRIS_NO = hexAColorSheets('#9ca3af');
+  var ORO_PAGADO = hexAColorSheets('#d9a521');
   var BLANCO = {red:1,green:1,blue:1};
   var NEGRO = {red:0.08,green:0.08,blue:0.1};
+  var GRIS_TEXTO = {red:0.29,green:0.34,blue:0.4};
 
   function borde(color){ return {style:'SOLID', width:1, color: color||NEGRO}; }
   function bordesCompletos(color){ return {top:borde(color), bottom:borde(color), left:borde(color), right:borde(color)}; }
@@ -1380,12 +1386,27 @@ function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
   // Bordes en toda la tabla
   requests.push({ updateBorders: { range: {sheetId:sheetId, startRowIndex:0, endRowIndex:filaTotalIdx+1, startColumnIndex:0, endColumnIndex:numCols},
     top:borde(), bottom:borde(), left:borde(), right:borde(), innerHorizontal:borde(), innerVertical:borde() } });
-  // Centrar todas las celdas de datos
-  requests.push({ repeatCell: { range: {sheetId:sheetId, startRowIndex:3, endRowIndex:filaTotalIdx, startColumnIndex:1, endColumnIndex:numCols},
-    cell: { userEnteredFormat: { horizontalAlignment:'CENTER' } }, fields: 'userEnteredFormat(horizontalAlignment)' } });
-  // Convertir las celdas de datos (SI/NO/Pagado) en checkboxes reales
-  requests.push({ setDataValidation: { range: {sheetId:sheetId, startRowIndex:3, endRowIndex:filaTotalIdx, startColumnIndex:1, endColumnIndex:numCols},
-    rule: { condition: { type:'BOOLEAN' }, strict:true } } });
+  // Colorear cada celda de datos según su estado real (Sí=azul, No=gris, Pagado=oro; en blanco = gris clarito),
+  // igual que se ve en pantalla y en la vista previa de imprimir. Ya no son casillas interactivas de Sheets,
+  // son celdas normales con su marca (✓/✗) y su color, para que se vea "bonito" al abrir el archivo.
+  filasUsuarios.forEach(function(f, fi){
+    var filaRowIdx = 3 + fi;
+    actividades.forEach(function(a, ai){
+      var d = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[ai] || {};
+      var colSi = 1+ai*3;
+      [
+        {col: colSi,   on: !!d.si,     colorOn: AZUL},
+        {col: colSi+1, on: !!d.no,     colorOn: GRIS_NO},
+        {col: colSi+2, on: !!d.pagado, colorOn: ORO_PAGADO}
+      ].forEach(function(e){
+        requests.push({ repeatCell: {
+          range: {sheetId:sheetId, startRowIndex:filaRowIdx, endRowIndex:filaRowIdx+1, startColumnIndex:e.col, endColumnIndex:e.col+1},
+          cell: { userEnteredFormat: { backgroundColor: e.on?e.colorOn:GRIS_CELDA, horizontalAlignment:'CENTER', textFormat:{bold:true, foregroundColor: e.on?BLANCO:GRIS_TEXTO} } },
+          fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)'
+        }});
+      });
+    });
+  });
   // Inmovilizar cabeceras (3 filas) y columna de usuario (1 columna)
   requests.push({ updateSheetProperties: { properties: { sheetId:sheetId, gridProperties: { frozenRowCount:3, frozenColumnCount:1 } }, fields: 'gridProperties(frozenRowCount,frozenColumnCount)' } });
   // Ancho de columnas: usuario más ancha, el resto más estrechas
@@ -3086,19 +3107,23 @@ function renderTablaAsistenciaOcio(){
   var el = document.getElementById('ocio-tabla-contenido');
   var actividades = obtenerActividadesDelMes(_ocioMesActual);
   var filasUsuarios = filasUsuariosDelMes(_ocioMesActual);
+  var espaciador = '<th class="ocio-espaciador"></th>';
+  var espaciadorTd = '<td class="ocio-espaciador"></td>';
   var h = '<div style="overflow-x:auto"><table class="ocio-tabla" oncontextmenu="return manejarContextMenuOcio(event)"><thead>';
   h += '<tr><th class="ocio-th-usuario" rowspan="3">Usuario</th>';
-  actividades.forEach(function(a, i){ h += '<th class="ocio-th-fecha" colspan="3" data-act="'+i+'" data-parte="fecha">'+(a.fecha||'<span class="ocio-vacio">— fecha —</span>')+'</th>'; });
+  actividades.forEach(function(a, i){ if(i>0) h += espaciador; h += '<th class="ocio-th-fecha" colspan="3" data-act="'+i+'" data-parte="fecha">'+(a.fecha||'<span class="ocio-vacio">— fecha —</span>')+'</th>'; });
   h += '</tr><tr>';
   actividades.forEach(function(a, i){
+    if(i>0) h += espaciador;
     h += '<th class="ocio-th-actividad" colspan="3" data-act="'+i+'" data-parte="nombre">'+esc(a.nombre.toUpperCase())+(a.precio?' — '+esc(a.precio):'')+'</th>';
   });
   h += '</tr><tr>';
-  actividades.forEach(function(a, i){ h += '<th class="ocio-th-si" data-act="'+i+'">SI</th><th class="ocio-th-no" data-act="'+i+'">NO</th><th class="ocio-th-pagado" data-act="'+i+'">Pagado</th>'; });
+  actividades.forEach(function(a, i){ if(i>0) h += espaciador; h += '<th class="ocio-th-si" data-act="'+i+'">SI</th><th class="ocio-th-no" data-act="'+i+'">NO</th><th class="ocio-th-pagado" data-act="'+i+'">Pagado</th>'; });
   h += '</tr></thead><tbody>';
   filasUsuarios.forEach(function(f, idxFila){
     h += '<tr data-fila="'+idxFila+'"><td class="ocio-td-usuario" data-fila="'+idxFila+'">'+(idxFila+1)+'. <span class="ocio-nombre-editable" onclick="editarNombreFilaOcio(this,'+idxFila+')">'+esc(f.nombre)+'</span></td>';
     actividades.forEach(function(a, i){
+      if(i>0) h += espaciadorTd;
       var fila = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {si:false,no:false,pagado:false};
       h += '<td class="ocio-celda'+(fila.si?' ocio-si-on':'')+'" data-fila="'+idxFila+'" data-act="'+i+'" onclick="toggleOcioCelda(\''+f.id+'\','+i+',\'si\')" title="Sí asiste">'+(fila.si?'✓':'')+'</td>';
       h += '<td class="ocio-celda'+(fila.no?' ocio-no-on':'')+'" data-fila="'+idxFila+'" data-act="'+i+'" onclick="toggleOcioCelda(\''+f.id+'\','+i+',\'no\')" title="No asiste">'+(fila.no?'✗':'')+'</td>';
@@ -3108,6 +3133,7 @@ function renderTablaAsistenciaOcio(){
   });
   h += '<tr class="ocio-fila-total"><td>Total</td>';
   actividades.forEach(function(a, i){
+    if(i>0) h += espaciadorTd;
     var totalSi=0, totalNo=0, totalPagado=0;
     filasUsuarios.forEach(function(f){
       var fila = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
@@ -3136,7 +3162,7 @@ function toggleOcioCelda(userId, idx, campo){
   if(!filas || !filas[idx]) return;
   var estado = filas[idx];
   if(campo==='si'){ estado.si = !estado.si; if(estado.si) estado.no=false; }
-  if(campo==='no'){ estado.no = !estado.no; if(estado.no) estado.si=false; }
+  if(campo==='no'){ estado.no = !estado.no; if(estado.no){ estado.si=false; estado.pagado=false; } }
   if(campo==='pagado'){ estado.pagado = !estado.pagado; }
   renderTablaAsistenciaOcio();
 }
