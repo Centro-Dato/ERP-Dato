@@ -5545,11 +5545,22 @@ function volverARegistrosDesdeConfirmacion(){
 /* ===================== CONFIGURACIÓN / PERMISOS ===================== */
 var MODULOS_PERM = ['usuarios','registros','paap'];
 var _mostrarEmpleadosOcultos = false;
+// Ver/mostrar empleados ocultos es a propósito una lista fija por correo, NO un permiso más
+// dentro de la tabla de Configuración: Ana, Tere y Carlos tenéis todos "Configuración: Todo",
+// así que si esto fuera un permiso normal cualquiera de los tres podría concedérselo a sí mismo
+// desde la propia tabla. Poniéndolo aquí, a mano, solo Ana puede verlo y nadie más puede
+// activarlo por su cuenta. Si en el futuro hace falta añadir a alguien más, se añade su correo aquí.
+var CORREOS_VEN_EMPLEADOS_OCULTOS = ['a.carrizosa@centrodato.org'];
+function puedeVerEmpleadosOcultos(){
+  var email = (USUARIO_ACTUAL && USUARIO_ACTUAL.email || '').toLowerCase();
+  return CORREOS_VEN_EMPLEADOS_OCULTOS.indexOf(email) > -1;
+}
 function renderConfig(){
   var h = '';
+  var vePermisoOcultos = puedeVerEmpleadosOcultos();
   var lista = ordenarAlfabetico(EMPLEADOS, function(e){ return e.nombre; });
   var ocultos = lista.filter(function(e){ return e.oculto; });
-  var visibles = _mostrarEmpleadosOcultos ? lista : lista.filter(function(e){ return !e.oculto; });
+  var visibles = (vePermisoOcultos && _mostrarEmpleadosOcultos) ? lista : lista.filter(function(e){ return !e.oculto; });
   visibles.forEach(function(emp){
     var marcaOculto = emp.oculto ? ' <span style="font-size:11px;color:#94a3b8">🙈 oculto</span>' : '';
     h += '<tr'+(emp.oculto?' style="opacity:.6"':'')+'><td><div class="name-cell"><div class="avatar">'+emp.nombre[0]+'</div><div><div class="name-text">'+emp.nombre+marcaOculto+'</div><div style="font-size:12px;color:#94a3b8">'+emp.usuario+'</div></div></div></td>';
@@ -5578,13 +5589,13 @@ function renderConfig(){
       '<option value="no" '+(!emp.permisos.puedeVerMediasTransporte?'selected':'')+'>No</option>'+
       '<option value="si" '+(emp.permisos.puedeVerMediasTransporte?'selected':'')+'>Sí</option>'+
       '</select></td>';
-    h += '<td><button class="btn-secondary btn-sm" onclick="alternarOcultoEmpleado('+emp.id+')">'+(emp.oculto?'👁 Mostrar':'🙈 Ocultar')+'</button></td>';
+    h += '<td>'+(vePermisoOcultos ? '<button class="btn-secondary btn-sm" onclick="alternarOcultoEmpleado('+emp.id+')">'+(emp.oculto?'👁 Mostrar':'🙈 Ocultar')+'</button>' : '')+'</td>';
     h += '</tr>';
   });
   document.getElementById('tbl-config').innerHTML = h;
   var elToggle = document.getElementById('toggle-empleados-ocultos');
   if(elToggle){
-    if(ocultos.length===0){
+    if(!vePermisoOcultos || ocultos.length===0){
       elToggle.innerHTML = '';
     } else if(_mostrarEmpleadosOcultos){
       elToggle.innerHTML = '<button class="btn-secondary btn-sm" onclick="_mostrarEmpleadosOcultos=false;renderConfig()">🙈 Ocultar de nuevo ('+ocultos.length+')</button>';
