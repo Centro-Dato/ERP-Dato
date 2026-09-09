@@ -604,6 +604,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-secondary" onclick="verPreviaHorarios()">👁 Vista previa</button>
           <button class="btn-secondary" onclick="guardarHorarios()">💾 Guardar</button>
+          <button class="btn-primary" id="btn-horarios-guardar-drive" onclick="guardarHorarioEnDrive()">☁️ Guardar en Drive</button>
           <button class="btn-secondary" onclick="descargarHorarios()">⬇ Descargar</button>
           <button class="btn-secondary" onclick="imprimirHtml(generarHtmlHorarioSemana(), true)">🖨 Imprimir</button>
           <button class="btn-secondary" onclick="abrirHistoricoHorarios()">🕐 Histórico</button>
@@ -688,7 +689,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         </div>
         <div style="border-top:1px solid #e2e8f0;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px" id="estado-carpetas-piloto"></div>
-          <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexiones de Horarios, Transporte y Ocio</button>
+          <button class="btn-secondary btn-sm" onclick="reiniciarConexionesDrivePiloto()">🔄 Reiniciar conexión con Google Drive</button>
         </div>
         <div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:14px">
           <div style="font-size:13px;color:#475569;margin-bottom:8px">Curso académico de Registros Digitales: <strong id="texto-curso-registros"></strong> — cada curso guarda sus propios archivos, sin tocar los de cursos anteriores.</div>
@@ -1083,7 +1084,7 @@ function aplicarPermisosVisuales(){
   // Botones/avisos de "Ver carpeta en Drive" / "Guardar en hoja de cálculo real": solo para quien
   // administra las conexiones de Drive (Coordinadores). Los empleados solo rellenan formularios.
   ['btn-drive-registro','btn-paap-detalle-drive','btn-ocio-carpeta-drive',
-   'btn-ocio-guardar-drive','btn-horarios-carpeta-drive','btn-registros-carpeta-drive',
+   'btn-ocio-guardar-drive','btn-horarios-carpeta-drive','btn-horarios-guardar-drive','btn-registros-carpeta-drive',
    'btn-registros-carpeta-drive-principal','banner-registros-drive'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = PERMISOS_ACTUAL.puedeVerConexionDrive ? '' : 'none';
@@ -2235,7 +2236,9 @@ function estadoTextoCarpetaPiloto(tipoId, nombre){
 function renderEstadoCarpetasPiloto(){
   var el = document.getElementById('estado-carpetas-piloto');
   if(!el) return;
-  el.innerHTML = estadoTextoCarpetaPiloto('horarios','Horarios') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('transporte','Transporte') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('ocio','Ocio') + ' &nbsp;·&nbsp; ' + estadoTextoCarpetaPiloto('registros','Registros Digitales');
+  // Horarios, Transporte y Ocio ya guardan de verdad por su cuenta (no dependen de esta
+  // vinculación), así que aquí solo tiene sentido mostrar Registros Digitales.
+  el.innerHTML = estadoTextoCarpetaPiloto('registros','Registros Digitales');
 }
 function reiniciarConexionesDrivePiloto(){
   localStorage.removeItem('drive_real_horarios');
@@ -2246,7 +2249,7 @@ function reiniciarConexionesDrivePiloto(){
   _tokenActual = null;
   _tokenClient = null;
   renderEstadoCarpetasPiloto();
-  mostrarAviso('Conexiones de Horarios, Transporte, Ocio y Registros Digitales reiniciadas del todo. La próxima vez que conectes cualquiera, se abrirá el selector desde cero.', '🔄');
+  mostrarAviso('Conexión con Google Drive reiniciada del todo (incluye Registros Digitales). La próxima vez que hagas algo que necesite Drive, te volverá a pedir autorizar.', '🔄');
 }
 
 /* ===================== BUZÓN DE SUGERENCIAS Y QUEJAS ===================== */
@@ -3844,6 +3847,60 @@ function verPreviaHorarios(){
 }
 function descargarHorarios(){
   descargarComoDocx(generarHtmlHorarioSemana(), 'Horarios Centro Dato', {apaisado:true});
+}
+
+/* ---- Guardar de verdad en Google Drive (carpeta real "Horarios") ---- */
+var CARPETA_HORARIOS_ARCHIVOS_ID = '1-XmXxxCHkNd4UP42FF7EXgfLqot0rxYB';
+function nombreArchivoHorarios(){ return 'Horarios Centro Dato'; }
+// Ver la carpeta real de Horarios en Drive (enlace directo, sin pasar por la API)
+function verCarpetaHorariosDrive(){
+  window.open('https://drive.google.com/drive/folders/'+CARPETA_HORARIOS_ARCHIVOS_ID, '_blank');
+}
+function construirFilasHorarioSemana(){
+  var filas = [['Día','Horario','Área','Profesional','Alumnos']];
+  DIAS_SEMANA.forEach(function(dia){
+    (HORARIOS_POR_DIA[dia]||[]).forEach(function(f){
+      (f.areas||[]).forEach(function(a){
+        filas.push([dia, f.inicio+'–'+f.fin, a.nombre||'', a.profesional||'', (a.alumnos||[]).join(', ')]);
+      });
+    });
+  });
+  return filas;
+}
+function guardarHorarioEnDrive(){
+  mostrarAviso('Guardando el horario en la carpeta de Drive…', '⏳');
+  autorizarGoogleDrive(function(){
+    var nombre = nombreArchivoHorarios();
+    gapi.client.drive.files.list({
+      q: "name='"+nombre.replace(/'/g,"\\'")+"' and '"+CARPETA_HORARIOS_ARCHIVOS_ID+"' in parents and trashed=false",
+      fields: 'files(id,name)'
+    }).then(function(resp){
+      var existentes = resp.result.files || [];
+      if(existentes.length>0){
+        escribirDatosEnHojaHorarios(existentes[0].id, false);
+      } else {
+        gapi.client.drive.files.create({
+          resource: { name: nombre, mimeType: 'application/vnd.google-apps.spreadsheet', parents: [CARPETA_HORARIOS_ARCHIVOS_ID] },
+          fields: 'id'
+        }).then(function(resp2){
+          escribirDatosEnHojaHorarios(resp2.result.id, true);
+        }, function(){ mostrarAviso('No se pudo crear el archivo en Drive. Comprueba que esa carpeta existe y que tu cuenta tiene acceso.', '⚠️'); });
+      }
+    }, function(){ mostrarAviso('No se pudo comprobar la carpeta de Drive.', '⚠️'); });
+  });
+}
+function escribirDatosEnHojaHorarios(spreadsheetId, esNuevo){
+  var filas = construirFilasHorarioSemana();
+  gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: spreadsheetId,
+    range: 'A1',
+    valueInputOption: 'RAW',
+    resource: { values: filas }
+  }).then(function(){
+    mostrarAviso((esNuevo?'Archivo creado y guardado':'Actualizado')+' en Drive: "'+nombreArchivoHorarios()+'".', '✅');
+  }, function(){
+    mostrarAviso('No se pudo guardar en Drive.', '⚠️');
+  });
 }
 var HISTORICO_HORARIOS = [];
 (function cargarHistoricoHorariosGuardado(){
