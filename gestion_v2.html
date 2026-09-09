@@ -1420,42 +1420,57 @@ function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
 /* ---- Descargar / Imprimir / Guardar en Drive (carpeta fija de Ocio) ---- */
 var CARPETA_OCIO_ARCHIVOS_ID = '1YUJHBEx93tD5xTEJvaJzOMYeLvHfPmuu';
 function nombreArchivoMesOcio(mes){ return 'Asistencia Ocio - '+mes; }
-var _xlsxCargado = false;
-function cargarXLSX(callback){
-  if(_xlsxCargado && window.XLSX){ callback(true); return; }
-  var script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-  script.onload = function(){ _xlsxCargado = true; callback(true); };
-  script.onerror = function(){ callback(false); };
-  document.head.appendChild(script);
-}
-function descargarMesOcioExcel(){
-  cargarXLSX(function(ok){
-    if(!ok){ mostrarAviso('No se pudo cargar la librería para generar el Excel (revisa la conexión a internet).', '⚠️'); return; }
-    var filas = construirFilasAsistenciaOcio();
-    var ws = window.XLSX.utils.aoa_to_sheet(filas);
-    var wb = window.XLSX.utils.book_new();
-    window.XLSX.utils.book_append_sheet(wb, ws, _ocioMesActual.substring(0,31));
-    window.XLSX.writeFile(wb, nombreArchivoMesOcio(_ocioMesActual)+'.xlsx');
-  });
-}
-function imprimirMesOcio(){
+// Tabla HTML con los mismos colores que se ven en pantalla (azul=Sí, gris=No, dorado=Pagado,
+// gris clarito=sin marcar). La reutilizamos tanto para imprimir como para la descarga.
+function construirHtmlTablaOcioColoreada(){
   var actividades = obtenerActividadesDelMes(_ocioMesActual);
   var filasUsuarios = filasUsuariosDelMes(_ocioMesActual);
-  var h = '<h2>Asistencia Ocio — '+esc(_ocioMesActual)+'</h2><table><thead><tr><th>Usuario</th>';
-  actividades.forEach(function(a){ h += '<th colspan="3">'+esc(a.nombre)+(a.precio?' — '+esc(a.precio):'')+'<br>'+esc(a.fecha||'')+'</th>'; });
-  h += '</tr><tr><th></th>';
-  actividades.forEach(function(){ h += '<th>SI</th><th>NO</th><th>Pagado</th>'; });
-  h += '</tr></thead><tbody>';
+  var estiloBase = 'text-align:center;font-weight:bold;border:1px solid #14141a;padding:6px 10px';
+  var h = '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt">';
+  h += '<tr><th rowspan="3" style="'+estiloBase+';background:#5cc4f2;color:#000;text-align:left">USUARIO</th>';
+  actividades.forEach(function(a){ h += '<th colspan="3" style="'+estiloBase+';background:#0270c4;color:#fff">'+esc(a.fecha||'')+'</th>'; });
+  h += '</tr><tr>';
+  actividades.forEach(function(a){ h += '<th colspan="3" style="'+estiloBase+';background:#ffffff;font-style:italic">'+esc(a.nombre.toUpperCase())+(a.precio?' — '+esc(a.precio):'')+'</th>'; });
+  h += '</tr><tr>';
+  actividades.forEach(function(){ h += '<th style="'+estiloBase+';background:#5cc4f2;color:#000">SI</th><th style="'+estiloBase+';background:#5cc4f2;color:#000">NO</th><th style="'+estiloBase+';background:#5cc4f2;color:#000">Pagado</th>'; });
+  h += '</tr>';
   filasUsuarios.forEach(function(f){
-    h += '<tr><td>'+esc(f.nombre)+'</td>';
+    h += '<tr><td style="'+estiloBase+';text-align:left;background:#fff">'+esc(f.nombre)+'</td>';
     actividades.forEach(function(a,i){
       var d = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
-      h += '<td style="text-align:center">'+(d.si?'✓':'')+'</td><td style="text-align:center">'+(d.no?'✗':'')+'</td><td style="text-align:center">'+(d.pagado?'✓':'')+'</td>';
+      h += '<td style="'+estiloBase+';'+(d.si?'background:#0270c4;color:#fff':'background:#e5e7eb;color:#475569')+'">'+(d.si?'✓':'')+'</td>';
+      h += '<td style="'+estiloBase+';'+(d.no?'background:#9ca3af;color:#fff':'background:#e5e7eb;color:#475569')+'">'+(d.no?'✗':'')+'</td>';
+      h += '<td style="'+estiloBase+';'+(d.pagado?'background:#d9a521;color:#fff':'background:#e5e7eb;color:#475569')+'">'+(d.pagado?'✓':'')+'</td>';
     });
     h += '</tr>';
   });
-  h += '</tbody></table>';
+  h += '<tr style="background:#f1f5f9;font-weight:bold"><td style="'+estiloBase+';text-align:left">TOTAL</td>';
+  actividades.forEach(function(a,i){
+    var totalSi=0, totalNo=0, totalPagado=0;
+    filasUsuarios.forEach(function(f){
+      var d = (OCIO_ASISTENCIA[_ocioMesActual][f.id]||[])[i] || {};
+      if(d.si) totalSi++; if(d.no) totalNo++; if(d.pagado) totalPagado++;
+    });
+    h += '<td style="'+estiloBase+'">'+totalSi+'</td><td style="'+estiloBase+'">'+totalNo+'</td><td style="'+estiloBase+'">'+totalPagado+'</td>';
+  });
+  h += '</tr></table>';
+  return h;
+}
+function descargarMesOcioExcel(){
+  var tablaHtml = construirHtmlTablaOcioColoreada();
+  var doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">'+
+    '<head><meta charset="UTF-8"/><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>'+
+    '<x:Name>'+esc(_ocioMesActual.substring(0,31))+'</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>'+
+    '<body>'+tablaHtml+'</body></html>';
+  var blob = new Blob(['\ufeff'+doc], {type:'application/vnd.ms-excel'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = nombreArchivoMesOcio(_ocioMesActual)+'.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function imprimirMesOcio(){
+  var h = '<h2>Asistencia Ocio — '+esc(_ocioMesActual)+'</h2>' + construirHtmlTablaOcioColoreada();
   imprimirHtml(h, true);
 }
 function guardarMesOcioEnDrive(){
@@ -3054,10 +3069,18 @@ function programarGuardadoOcio(mes){
 function guardarDatosOcioAhora(){
   var mes = _ocioMesActual;
   if(_ocioGuardadoPendiente[mes]){ clearTimeout(_ocioGuardadoPendiente[mes]); delete _ocioGuardadoPendiente[mes]; }
-  mostrarAviso('Guardando "'+mes+'" para todo el equipo…', '⏳');
+  var tambienDrive = !!PERMISOS_ACTUAL.puedeVerConexionDrive;
+  mostrarAviso(tambienDrive ? 'Guardando "'+mes+'" para todo el equipo y en Drive…' : 'Guardando "'+mes+'" para todo el equipo…', '⏳');
   guardarOpcionesPersonalizadas('ocio_datos', mes, [datosOcioParaGuardar(mes)], function(err){
-    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
-    mostrarAviso('Guardado — ya lo puede ver el resto del equipo en cuanto entren a Ocio.', '✅');
+    if(err){ mostrarAviso('No se pudo guardar para el equipo: '+err, '⚠️'); return; }
+    if(tambienDrive){
+      // Además de compartirlo con el equipo, lo guardamos también de verdad en el archivo de Drive
+      // de este mes — así una sola pulsación hace las dos cosas. Solo para quien tiene acceso a Drive
+      // (coordinadores); a un empleado normal no le pedimos permisos de Drive que no necesita.
+      guardarMesOcioEnDrive();
+    } else {
+      mostrarAviso('Guardado — ya lo puede ver el resto del equipo en cuanto entren a Ocio.', '✅');
+    }
   });
 }
 function abrirAsistenciaOcio(){
