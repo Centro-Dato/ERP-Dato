@@ -591,6 +591,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div class="tabs-bar" id="ocio-meses-tabs" style="margin-bottom:0"></div>
         <button class="btn-secondary btn-sm" onclick="abrirModalNuevaPestanaOcio()">+ Añadir pestaña</button>
         <button class="btn-secondary btn-sm" onclick="abrirModalCopiarHojaOcio()">📋 Copiar hoja</button>
+        <button class="btn-primary btn-sm" onclick="guardarDatosOcioAhora()">💾 Guardar</button>
       </div>
       <div id="toggle-filas-ocultas-ocio" style="margin-bottom:10px"></div>
       <div id="ocio-tabla-contenido"></div>
@@ -2815,14 +2816,18 @@ function completarPermisosFaltantes(lista){
   });
   return huboCambios;
 }
-function cargarOpcionesPersonalizadas(){
+function cargarOpcionesPersonalizadas(callback){
   fetch(APPS_SCRIPT_URL + '?accion=leerOpciones')
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data && data.ok && data.opciones){ OPCIONES_PERSONALIZADAS = data.opciones; }
       if(typeof renderAgendaInicio === 'function') renderAgendaInicio();
+      if(typeof callback === 'function') callback();
     })
-    .catch(function(){ /* si falla, se quedan las opciones de fábrica, sin romper nada */ });
+    .catch(function(){
+      /* si falla, se quedan las opciones de fábrica, sin romper nada */
+      if(typeof callback === 'function') callback();
+    });
 }
 function guardarOpcionesPersonalizadas(tipoId, campoK, listaOpciones, callback){
   var clave = claveOpciones(tipoId, campoK);
@@ -2978,11 +2983,69 @@ function inicializarAsistenciaOcio(){
     });
   });
 }
+
+/* ---- Guardado compartido de Ocio: reutiliza el mismo almacén de "Opciones del formulario"
+   (una entrada por mes, más una para los nombres corregidos), para que lo que edite cualquiera
+   del equipo lo vea también el resto — no solo quien lo escribió en su propio navegador. ---- */
+var PREFIJO_OCIO_DATOS = 'ocio_datos__';
+function datosOcioParaGuardar(mes){
+  return JSON.stringify({
+    actividades: OCIO_ACTIVIDADES[mes] || [],
+    asistencia: OCIO_ASISTENCIA[mes] || {},
+    manuales: OCIO_FILAS_MANUALES[mes] || [],
+    ocultas: OCIO_FILAS_OCULTAS[mes] || []
+  });
+}
+function cargarDatosOcioDesdeOpciones(){
+  Object.keys(OPCIONES_PERSONALIZADAS).forEach(function(k){
+    if(k.indexOf(PREFIJO_OCIO_DATOS)!==0) return;
+    var campo = k.slice(PREFIJO_OCIO_DATOS.length);
+    var lista = OPCIONES_PERSONALIZADAS[k] || [];
+    if(!lista[0]) return;
+    try {
+      var datos = JSON.parse(lista[0]);
+      if(campo==='_nombreOverride'){
+        OCIO_NOMBRE_OVERRIDE = datos || {};
+      } else {
+        var mes = campo;
+        OCIO_ACTIVIDADES[mes] = datos.actividades || obtenerActividadesDelMes(mes);
+        OCIO_ASISTENCIA[mes] = datos.asistencia || {};
+        OCIO_FILAS_MANUALES[mes] = datos.manuales || [];
+        OCIO_FILAS_OCULTAS[mes] = datos.ocultas || [];
+      }
+    } catch(e){ /* si algo quedó mal guardado, no rompemos nada: se ignora esa entrada */ }
+  });
+}
+var _ocioGuardadoPendiente = {};
+// Guardado silencioso y con un pequeño retraso (para no lanzar una petición por cada clic
+// suelto); se llama automáticamente después de cualquier cambio.
+function programarGuardadoOcio(mes){
+  mes = mes || _ocioMesActual;
+  if(_ocioGuardadoPendiente[mes]) clearTimeout(_ocioGuardadoPendiente[mes]);
+  _ocioGuardadoPendiente[mes] = setTimeout(function(){
+    delete _ocioGuardadoPendiente[mes];
+    guardarOpcionesPersonalizadas('ocio_datos', mes, [datosOcioParaGuardar(mes)], function(){});
+  }, 900);
+}
+// Guardado inmediato con confirmación visible (botón "💾 Guardar" junto a "Copiar hoja").
+function guardarDatosOcioAhora(){
+  var mes = _ocioMesActual;
+  if(_ocioGuardadoPendiente[mes]){ clearTimeout(_ocioGuardadoPendiente[mes]); delete _ocioGuardadoPendiente[mes]; }
+  mostrarAviso('Guardando "'+mes+'" para todo el equipo…', '⏳');
+  guardarOpcionesPersonalizadas('ocio_datos', mes, [datosOcioParaGuardar(mes)], function(err){
+    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    mostrarAviso('Guardado — ya lo puede ver el resto del equipo en cuanto entren a Ocio.', '✅');
+  });
+}
 function abrirAsistenciaOcio(){
-  inicializarAsistenciaOcio();
-  renderMesesTabsOcio();
-  renderTablaAsistenciaOcio();
   navTo('ocio');
+  mostrarAviso('Cargando la asistencia de todo el equipo…', '⏳');
+  cargarOpcionesPersonalizadas(function(){
+    cargarDatosOcioDesdeOpciones();
+    inicializarAsistenciaOcio();
+    renderMesesTabsOcio();
+    renderTablaAsistenciaOcio();
+  });
 }
 function renderMesesTabsOcio(){
   var h='';
@@ -3054,6 +3117,7 @@ function renderTablaAsistenciaOcio(){
   h += '</tr></tbody></table></div>';
   el.innerHTML = h;
   renderToggleFilasOcultasOcio();
+  programarGuardadoOcio();
 }
 function renderToggleFilasOcultasOcio(){
   var cont = document.getElementById('toggle-filas-ocultas-ocio');
@@ -3093,6 +3157,7 @@ function editarNombreFilaOcio(span, idxFila){
         if(m) m.nombre = nuevo;
       } else {
         OCIO_NOMBRE_OVERRIDE[f.id] = nuevo;
+        guardarOpcionesPersonalizadas('ocio_datos', '_nombreOverride', [JSON.stringify(OCIO_NOMBRE_OVERRIDE)], function(){});
       }
     }
     renderTablaAsistenciaOcio();
