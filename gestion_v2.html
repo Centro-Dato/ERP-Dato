@@ -3714,26 +3714,37 @@ function confirmarCopiarDia(){
   }
 }
 // Un alumno que ya está marcado en OTRA área de la misma franja desaparece de la lista de esa
-// otra área, para que sea más fácil ver de un vistazo a quién falta por asignar todavía. Para
-// los casos en que dos áreas comparten el mismo grupo (p.ej. Fisioterapia y Terapia Ocupacional),
-// se usa "Duplicar área": copia a los alumnos directamente sin pasar por esta lista.
+// otra área, para que sea más fácil ver de un vistazo a quién falta por asignar todavía. Las
+// áreas creadas con "Duplicar área" comparten una misma etiqueta interna (grupoCompartido) y
+// se excluyen de esta regla ENTRE ELLAS, para poder editar cada una con total libertad sin que
+// se afecten la una a la otra — pero sí siguen excluyendo alumnos frente a cualquier otra área.
 function alumnosDisponiblesEnFranja(idxFranja, aIdxActual){
   var franja = HORARIOS_POR_DIA[_diaHorarioActual][idxFranja];
+  var areaActual = (franja.areas||[])[aIdxActual];
+  var grupoActual = areaActual && areaActual.grupoCompartido;
   var usadosEnOtras = {};
-  (franja.areas||[]).forEach(function(a, i){ if(i!==aIdxActual) (a.alumnos||[]).forEach(function(n){ usadosEnOtras[n]=true; }); });
+  (franja.areas||[]).forEach(function(a, i){
+    if(i===aIdxActual) return;
+    if(grupoActual && a.grupoCompartido===grupoActual) return;
+    (a.alumnos||[]).forEach(function(n){ usadosEnOtras[n]=true; });
+  });
   var todos = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;});
   return todos.filter(function(n){ return !usadosEnOtras[n]; });
 }
 // Duplica un área entera (nombre, profesional, alumnos y colores) dentro de la misma franja,
 // para no tener que volver a marcar uno por uno los mismos alumnos en la actividad "gemela".
+// A partir de ahí, cada una se puede editar (alumnos, nombre, color...) con total libertad,
+// sin que los cambios en una afecten a la otra.
+var _grupoCompartidoAreaSeq = 1;
 function duplicarAreaEnFranja(idx, aIdx){
   var franja = HORARIOS_POR_DIA[_diaHorarioActual][idx];
   var original = (franja.areas||[])[aIdx];
   if(!original) return;
+  if(!original.grupoCompartido) original.grupoCompartido = 'grupo'+(_grupoCompartidoAreaSeq++);
   var copia = JSON.parse(JSON.stringify(original));
   franja.areas.splice(aIdx+1, 0, copia);
   renderFranjasDia();
-  mostrarAviso('Área duplicada con los mismos alumnos — cambia el nombre de la copia a la otra actividad.', '✅');
+  mostrarAviso('Área duplicada con los mismos alumnos — ya puedes editar cada una por separado (nombre, alumnos, color...) sin que se afecten entre sí.', '✅');
 }
 function usuariosSinAsignarEnDia(){
   var asignados = {};
