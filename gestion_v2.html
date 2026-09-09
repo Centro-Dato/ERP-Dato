@@ -1039,7 +1039,7 @@ function irA(modulo){
   if(modulo==='registros') navTo('registros');
   if(modulo==='transporte'){ renderAccesoRegistroEnArea('transporte-acceso-registro','transporte'); navTo('transporte'); }
   if(modulo==='ocio'){ abrirAsistenciaOcio(); }
-  if(modulo==='horarios'){ renderHorarios(); navTo('horarios'); }
+  if(modulo==='horarios'){ abrirVistaHorarios(); }
   if(modulo==='paap'){ renderPaapGrid(); navTo('paap'); }
 }
 
@@ -3599,13 +3599,45 @@ function descargarComoDocx(html, nombreArchivoBase, opciones){
 var DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 var _diaHorarioActual = 'Miércoles';
 var _subvistaHorarios = 'area';
-var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','COMIDA','DESAYUNO','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
+var ACTIVIDADES_HORARIO = ['ATENCIÓN PSICOLÓGICA','COMIDA','DESAYUNO','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','HISTORIA','LIBROJUEGO','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','PINTURA','TECNOLOGÍA','TERAPIA OCUPACIONAL'];
 var PROFESIONALES_HORARIO = ['Ana','Lola','Marcial','Mª Jose','Patri','Tere'];
 var ACTIVIDADES_TODOS_LOS_USUARIOS = ['DESAYUNO','COMIDA'];
 var HORARIOS_POR_DIA = {
   'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': []
 };
 
+/* ---- Guardado compartido de Horarios (igual que Ocio): cada día se guarda por separado,
+   reutilizando el mismo almacén de "Opciones del formulario" — así lo que cambie cualquiera
+   del equipo lo ve el resto, no solo quien lo escribió en su propio navegador. Los horarios
+   normalmente no cambian mucho, así que basta con recargar al entrar a la sección. ---- */
+var PREFIJO_HORARIOS_DATOS = 'horarios_datos__';
+function datosHorariosParaGuardar(dia){ return JSON.stringify(HORARIOS_POR_DIA[dia] || []); }
+function cargarDatosHorariosDesdeOpciones(){
+  Object.keys(OPCIONES_PERSONALIZADAS).forEach(function(k){
+    if(k.indexOf(PREFIJO_HORARIOS_DATOS)!==0) return;
+    var dia = k.slice(PREFIJO_HORARIOS_DATOS.length);
+    var lista = OPCIONES_PERSONALIZADAS[k] || [];
+    if(!lista[0]) return;
+    try { HORARIOS_POR_DIA[dia] = JSON.parse(lista[0]) || []; } catch(e){ /* si algo quedó mal guardado, se ignora esa entrada */ }
+  });
+}
+var _horariosGuardadoPendiente = {};
+function programarGuardadoHorarios(dia){
+  dia = dia || _diaHorarioActual;
+  if(_horariosGuardadoPendiente[dia]) clearTimeout(_horariosGuardadoPendiente[dia]);
+  _horariosGuardadoPendiente[dia] = setTimeout(function(){
+    delete _horariosGuardadoPendiente[dia];
+    guardarOpcionesPersonalizadas('horarios_datos', dia, [datosHorariosParaGuardar(dia)], function(){});
+  }, 900);
+}
+function abrirVistaHorarios(){
+  navTo('horarios');
+  mostrarAviso('Cargando los horarios de todo el equipo…', '⏳');
+  cargarOpcionesPersonalizadas(function(){
+    cargarDatosHorariosDesdeOpciones();
+    renderHorarios();
+  });
+}
 function renderHorarios(){
   inicializarFechaHorarioSiHaceFalta();
   renderDiasTabsHorarios();
@@ -3657,6 +3689,7 @@ function confirmarCopiarDia(){
     HORARIOS_POR_DIA[destino] = JSON.parse(JSON.stringify(HORARIOS_POR_DIA[origen] || []));
     cerrarModalCopiarDia();
     if(_diaHorarioActual===destino) renderFranjasDia();
+    programarGuardadoHorarios(destino);
     mostrarAviso('Copiado el horario de '+origen+' a '+destino+'.', '✅');
   }
   var destinoTieneAlgo = (HORARIOS_POR_DIA[destino]||[]).length>0;
@@ -3666,12 +3699,23 @@ function confirmarCopiarDia(){
     copiarAhora();
   }
 }
+// Antes esta función quitaba de la lista a los alumnos ya usados en OTRA área de la misma
+// franja, para evitar duplicarlos. Se ha quitado esa restricción a propósito: hay actividades
+// (p.ej. Fisioterapia y Terapia Ocupacional) que comparten el mismo grupo de alumnos a la misma
+// hora, y ahora se puede duplicar el área entera para reflejarlo (ver duplicarAreaEnFranja).
 function alumnosDisponiblesEnFranja(idxFranja, aIdxActual){
-  var franja = HORARIOS_POR_DIA[_diaHorarioActual][idxFranja];
-  var usadosEnOtras = {};
-  (franja.areas||[]).forEach(function(a, i){ if(i!==aIdxActual) (a.alumnos||[]).forEach(function(n){ usadosEnOtras[n]=true; }); });
-  var todos = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;});
-  return todos.filter(function(n){ return !usadosEnOtras[n]; });
+  return ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;});
+}
+// Duplica un área entera (nombre, profesional, alumnos y colores) dentro de la misma franja,
+// para no tener que volver a marcar uno por uno los mismos alumnos en la actividad "gemela".
+function duplicarAreaEnFranja(idx, aIdx){
+  var franja = HORARIOS_POR_DIA[_diaHorarioActual][idx];
+  var original = (franja.areas||[])[aIdx];
+  if(!original) return;
+  var copia = JSON.parse(JSON.stringify(original));
+  franja.areas.splice(aIdx+1, 0, copia);
+  renderFranjasDia();
+  mostrarAviso('Área duplicada con los mismos alumnos — cambia el nombre de la copia a la otra actividad.', '✅');
 }
 function usuariosSinAsignarEnDia(){
   var asignados = {};
@@ -3692,6 +3736,7 @@ function renderFranjasDia(){
   var el = document.getElementById('horarios-area-contenido');
   if(franjas.length===0){
     el.innerHTML = '<div class="empty-state">Sin horario todavía para '+_diaHorarioActual+'. Añade una franja horaria para empezar.</div>';
+    programarGuardadoHorarios();
     return;
   }
   var h = '';
@@ -3703,9 +3748,9 @@ function renderFranjasDia(){
     h += '<div class="card" style="margin-bottom:16px">';
     h += '<div class="card-header" style="flex-wrap:wrap;gap:10px">';
     h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
-    h += '<input class="form-input" style="width:90px" value="'+f.inicio+'" onchange="cambiarCampoFranja('+idx+',\'inicio\',this.value)"/>';
+    h += '<input type="time" class="form-input" style="width:120px" value="'+f.inicio+'" onchange="cambiarCampoFranja('+idx+',\'inicio\',this.value)"/>';
     h += '<span>–</span>';
-    h += '<input class="form-input" style="width:90px" value="'+f.fin+'" onchange="cambiarCampoFranja('+idx+',\'fin\',this.value)"/>';
+    h += '<input type="time" class="form-input" style="width:120px" value="'+f.fin+'" onchange="cambiarCampoFranja('+idx+',\'fin\',this.value)"/>';
     h += '</div>';
     h += '<button class="btn-secondary btn-sm" onclick="eliminarFranja('+idx+')">🗑️ Quitar franja</button>';
     h += '</div>';
@@ -3752,6 +3797,7 @@ function renderFranjasDia(){
         h += '<button class="btn-secondary btn-sm" onclick="quitarResaltadoArea('+idx+','+aIdx+')">Quitar</button>';
         h += '</div>';
       }
+      h += '<button class="btn-secondary btn-sm" style="margin-top:8px" onclick="duplicarAreaEnFranja('+idx+','+aIdx+')">📋 Duplicar área</button>';
       h += '<button class="btn-secondary btn-sm" style="margin-top:8px" onclick="eliminarArea('+idx+','+aIdx+')">🗑️ Quitar área</button>';
       h += '</div>';
     });
@@ -3760,6 +3806,7 @@ function renderFranjasDia(){
     h += '</div>';
   });
   el.innerHTML = h;
+  programarGuardadoHorarios();
 }
 function ordenarFranjasDia(){
   if(!HORARIOS_POR_DIA[_diaHorarioActual]) return;
