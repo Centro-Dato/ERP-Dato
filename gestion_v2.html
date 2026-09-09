@@ -4378,13 +4378,19 @@ function renderAvataresEquipoLogin(){
       var segunda = segundaInicialNombre(e.nombre);
       if(segunda) texto += segunda;
     }
-    return '<div title="'+esc(e.nombre)+'" onclick="iniciarSesionDesdeAvatar()" style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;font-size:'+(texto.length>1?'10.5px':'12.5px')+';font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer">'+texto+'</div>';
+    return '<div title="'+esc(e.nombre)+'" onclick="iniciarSesionDesdeAvatar(\''+e.usuario+'\')" style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;font-size:'+(texto.length>1?'10.5px':'12.5px')+';font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer">'+texto+'</div>';
   }).join('');
 }
-function iniciarSesionDesdeAvatar(){
-  if(typeof google !== 'undefined' && google.accounts && google.accounts.id){
-    google.accounts.id.prompt();
+function iniciarSesionDesdeAvatar(email){
+  if(typeof google === 'undefined' || !google.accounts || !google.accounts.id){
+    mostrarAviso('Todavía se está cargando el inicio de sesión de Google — espera un segundo e inténtalo de nuevo.');
+    return;
   }
+  // "login_hint" le pide a Google que intente entrar directamente con ESA cuenta si ya está
+  // activa en el navegador, en vez de mostrar el selector genérico de cuentas — así tocar tu
+  // inicial es de verdad más directo que el botón normal, no solo decorativo.
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle, login_hint: email, auto_select:false, cancel_on_tap_outside:false });
+  google.accounts.id.prompt();
 }
 var _intentosInicializarGoogle = 0;
 function inicializarLoginGoogle(){
