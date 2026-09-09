@@ -4038,8 +4038,9 @@ function generarHtmlHorarioSemana(datos){
       (f.areas||[]).forEach(function(a){
         var coloresAlumnos = a.coloresAlumnos || {};
         var listaAlumnos = (ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)>-1) ? '' : (a.alumnos||[]).map(function(n){
+          var texto = esc(abreviarNombreCompleto(n));
           var c = coloresAlumnos[n];
-          return c ? '<span style="background:'+(c.fondo||'transparent')+';color:'+(c.texto||'inherit')+'">'+n+'</span>' : n;
+          return c ? '<span style="background:'+(c.fondo||'transparent')+';color:'+(c.texto||'inherit')+'">'+texto+'</span>' : texto;
         }).join('<br>');
         h += '<td style="border:1px solid #94a3b8;padding:6px 8px;vertical-align:top;background:'+(a.colorFondo?a.colorFondo:'#fff')+'">'+listaAlumnos+'</td>';
       });
