@@ -983,6 +983,30 @@ function ordenarAlfabetico(lista, obtenerTexto){
   });
 }
 
+/* ===================== NOMBRE ABREVIADO (solo para mostrar, nunca para guardar) =====================
+   En Horarios, en los formularios de Registros y en Ocio, mostramos "Nombre + iniciales de
+   apellidos" (ej. "Alan H.P.") en vez del nombre completo, para que quepa mejor. El nombre
+   completo real de cada usuario NO cambia en ningún sitio: sigue siendo el que se guarda en las
+   hojas de cálculo y el que se ve en el listado de Usuarios/Expedientes. Esto es solo una forma
+   distinta de escribirlo en pantalla en esos tres sitios. */
+function inicialesApellidos(apellidos){
+  return (apellidos||'').trim().split(/\s+/)
+    .filter(function(p){ return p.length > 2; }) // se saltan conectores cortos como "de", "la", "los"
+    .map(function(p){ return p.charAt(0).toUpperCase()+'.'; })
+    .join('');
+}
+function nombreAbreviado(u){
+  var iniciales = inicialesApellidos(u.apellidos);
+  return iniciales ? (u.nombre+' '+iniciales) : u.nombre;
+}
+// A partir del "Nombre Apellidos" completo (tal como se guarda de verdad), busca al usuario
+// correspondiente y devuelve su forma abreviada para mostrar. Si no lo encuentra (por ejemplo,
+// una fila añadida a mano en Ocio que no es un usuario real), devuelve el texto tal cual.
+function abreviarNombreCompleto(nombreCompleto){
+  var u = USUARIOS.filter(function(x){ return (x.nombre+' '+x.apellidos)===nombreCompleto; })[0];
+  return u ? nombreAbreviado(u) : nombreCompleto;
+}
+
 /* ===================== PISTA VISUAL DE SCROLL EN TABLAS ===================== */
 // Añade "← Desliza para ver más →" encima de cualquier tabla que no quepa entera en pantalla.
 function actualizarPistasScrollTablas(){
@@ -2998,7 +3022,7 @@ function obtenerActividadesDelMes(mes){
   return OCIO_ACTIVIDADES[mes];
 }
 function nombreMostradoUsuarioOcio(u){
-  return OCIO_NOMBRE_OVERRIDE[u.id] || (u.nombre+' '+u.apellidos);
+  return OCIO_NOMBRE_OVERRIDE[u.id] || nombreAbreviado(u);
 }
 // Lista unificada de filas a mostrar ese mes: usuarios reales (menos los ocultados) + filas manuales.
 function filasUsuariosDelMes(mes){
@@ -3742,7 +3766,7 @@ function renderFranjasDia(){
   var h = '';
   var sinAsignar = usuariosSinAsignarEnDia();
   if(sinAsignar.length>0){
-    h += '<div class="info-banner" style="background:#fef3c7;border-color:#fde68a;color:#92400e">⚠️ Todavía sin asignar en ningún área hoy ('+sinAsignar.length+'): '+sinAsignar.join(', ')+'</div>';
+    h += '<div class="info-banner" style="background:#fef3c7;border-color:#fde68a;color:#92400e">⚠️ Todavía sin asignar en ningún área hoy ('+sinAsignar.length+'): '+sinAsignar.map(abreviarNombreCompleto).join(', ')+'</div>';
   }
   franjas.forEach(function(f, idx){
     h += '<div class="card" style="margin-bottom:16px">';
@@ -3779,14 +3803,14 @@ function renderFranjasDia(){
         var marcado = (a.alumnos||[]).indexOf(n)>-1;
         var resaltado = coloresAlumnos[n];
         var estiloLabel = resaltado ? 'background:'+(resaltado.fondo||'transparent')+';color:'+(resaltado.texto||'inherit') : '';
-        h += '<label class="chk-item" style="'+estiloLabel+'"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleAlumnoArea('+idx+','+aIdx+',\''+n.replace(/'/g,"")+'\',this.checked)"/> '+n+'</label>';
+        h += '<label class="chk-item" style="'+estiloLabel+'"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleAlumnoArea('+idx+','+aIdx+',\''+n.replace(/'/g,"")+'\',this.checked)"/> '+esc(abreviarNombreCompleto(n))+'</label>';
       });
       h += '</div>';
       }
       if((a.alumnos||[]).length>0 && ACTIVIDADES_TODOS_LOS_USUARIOS.indexOf(a.nombre)===-1){
         h += '<div class="fl-lbl" style="margin-top:10px;margin-bottom:4px">🎨 Resaltar en esta caja</div>';
         h += '<select multiple id="resaltar-sel-'+idx+'-'+aIdx+'" class="form-input" style="height:80px;margin-bottom:6px">';
-        (a.alumnos||[]).forEach(function(n){ h += '<option value="'+n+'">'+n+'</option>'; });
+        (a.alumnos||[]).forEach(function(n){ h += '<option value="'+n+'">'+esc(abreviarNombreCompleto(n))+'</option>'; });
         h += '</select>';
         h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">';
         h += '<label style="font-size:11px;color:#94a3b8;font-weight:700">Letra</label><input type="color" id="resaltar-texto-'+idx+'-'+aIdx+'" value="#14141a" style="width:22px;height:22px;padding:0;border:none;cursor:pointer"/>';
@@ -3905,7 +3929,7 @@ function renderSelectAlumnosHorario(){
   if(!sel) return;
   var actual = sel.value;
   var lista = obtenerListaAlumnosHorario();
-  sel.innerHTML = lista.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
+  sel.innerHTML = lista.map(function(n){return '<option value="'+n+'">'+esc(abreviarNombreCompleto(n))+'</option>';}).join('');
   if(lista.indexOf(actual)>-1) sel.value = actual;
 }
 function renderHorarioIndividual(){
@@ -5331,7 +5355,7 @@ function actualizarMatrizAspectos(){
   aspectos.forEach(function(a){ h += '<th>'+a+'</th>'; });
   h += '</tr></thead><tbody>';
   alumnos.forEach(function(alumno, idx){
-    h += '<tr data-fila-alumno="'+alumno.replace(/"/g,'')+'"><td class="aspectos-matriz-nombre">'+alumno+'</td>';
+    h += '<tr data-fila-alumno="'+alumno.replace(/"/g,'')+'"><td class="aspectos-matriz-nombre">'+esc(abreviarNombreCompleto(alumno))+'</td>';
     aspectos.forEach(function(a){
       h += '<td style="text-align:center"><input type="checkbox" class="aspectos-matriz-chk" data-alumno="'+alumno.replace(/"/g,'')+'" data-aspecto="'+a.replace(/"/g,'')+'"/></td>';
     });
@@ -5389,7 +5413,8 @@ function renderCampoFormulario(tipoId, campo){
     campo.columnas.forEach(function(col){ h += '<th style="text-align:center">'+col+'</th>'; });
     h += '</tr></thead><tbody>';
     filasMatrizChk.forEach(function(fila, fi){
-      h += '<tr><td>'+fila+'</td>';
+      var textoFila = (campo.filas==='BD') ? abreviarNombreCompleto(fila) : fila;
+      h += '<tr><td>'+esc(textoFila)+'</td>';
       campo.columnas.forEach(function(col, ci){
         h += '<td style="text-align:center"><input type="checkbox" data-fila="'+fi+'" data-col="'+ci+'" style="width:18px;height:18px;cursor:pointer"/></td>';
       });
@@ -5401,7 +5426,8 @@ function renderCampoFormulario(tipoId, campo){
     var onchangeChk = esAlumnosActividad ? ' onchange="actualizarMatrizAspectos()"' : '';
     h += '<div class="chk-group" id="grupo_'+tipoId+'_'+campo.k+'">';
     opcionesDeCampo(campo, tipoId).forEach(function(op,i){
-      h += '<label class="chk-item"><input type="checkbox" value="'+op+'"'+onchangeChk+'/> '+op+'</label>';
+      var textoMostrado = (campo.opts==='BD') ? abreviarNombreCompleto(op) : op;
+      h += '<label class="chk-item"><input type="checkbox" value="'+op+'"'+onchangeChk+'/> '+esc(textoMostrado)+'</label>';
     });
     h += '</div>';
   } else if(campo.type==='lista-numero'){
