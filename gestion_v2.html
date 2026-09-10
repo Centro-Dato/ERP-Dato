@@ -4766,10 +4766,47 @@ function proximosEventosAgenda(dias){
     return diff >= 0 && diff <= dias;
   });
 }
+// Convierte el texto de fecha de una actividad de Ocio (p.ej. "vie, 11 sep 2026" o "27-30 jul
+// 2026") en una fecha real, para poder mostrarla en la agenda. Si no se reconoce el formato
+// (algún caso suelto muy antiguo), simplemente se ignora esa actividad en la agenda, sin romper
+// nada — Ocio en sí sigue funcionando igual.
+function parsearFechaOcioParaAgenda(texto){
+  if(!texto) return null;
+  var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var m = texto.match(/(\d{1,2})[\s\-]*(?:-\s*\d{1,2}\s+)?([a-zA-Zá-ú]{3,})\w*\s+(\d{4})/i);
+  if(!m) return null;
+  var dia = parseInt(m[1],10);
+  var mesTxt = m[2].toLowerCase().substring(0,3).replace('á','a');
+  var mesIdx = meses.indexOf(mesTxt);
+  if(mesIdx===-1) return null;
+  var anio = parseInt(m[3],10);
+  var f = new Date(anio, mesIdx, dia);
+  if(isNaN(f.getTime())) return null;
+  return f;
+}
+// Salidas de Ocio reales (las que ya se ven en Actividades de Ocio), conectadas directamente a
+// la agenda — así no hay que apuntarlas dos veces en sitios distintos.
+function proximasActividadesOcio(dias){
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var resultado = [];
+  Object.keys(OCIO_ACTIVIDADES).forEach(function(mes){
+    (OCIO_ACTIVIDADES[mes]||[]).forEach(function(a){
+      var f = parsearFechaOcioParaAgenda(a.fecha);
+      if(!f) return;
+      f.setHours(0,0,0,0);
+      var diff = Math.round((f - hoy) / 86400000);
+      if(diff >= 0 && diff <= dias){
+        resultado.push({fecha: f, texto: 'Ocio — '+a.nombre, tipo:'accent', icono:'🎉'});
+      }
+    });
+  });
+  return resultado;
+}
 function renderAgendaInicio(){
   var cont = document.getElementById('lista-agenda');
   if(!cont) return;
-  var todos = proximosCumpleanos(14).concat(proximosEventosAgenda(14));
+  if(typeof cargarDatosOcioDesdeOpciones === 'function') cargarDatosOcioDesdeOpciones();
+  var todos = proximosCumpleanos(14).concat(proximosEventosAgenda(14)).concat(proximasActividadesOcio(14));
   todos.sort(function(a,b){ return a.fecha - b.fecha; });
   if(todos.length===0){
     cont.innerHTML = '<div class="empty-state">Sin cumpleaños ni eventos en los próximos 14 días.</div>';
