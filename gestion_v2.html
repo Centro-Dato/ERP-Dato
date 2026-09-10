@@ -4668,9 +4668,8 @@ function inicializarLoginGoogle(){
     return;
   }
   document.getElementById('google-signin-cargando').classList.add('hidden');
-  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle, auto_select: true, cancel_on_tap_outside: false });
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle, auto_select: false, cancel_on_tap_outside: true });
   google.accounts.id.renderButton(document.getElementById('google-signin-btn'), {theme:'outline', size:'large', text:'signin_with', width:280});
-  google.accounts.id.prompt();
 }
 inicializarLoginGoogle();
 cargarEmpleadosDeVerdad(function(){
