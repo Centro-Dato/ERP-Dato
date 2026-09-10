@@ -4586,6 +4586,13 @@ function mostrarErrorLogin(msg){
   el.classList.remove('hidden');
 }
 function manejarLoginGoogle(respuesta){
+  if(!_empleadosCargadosDeVerdad){
+    // El botón de Google ya puede pulsarse antes de que termine de llegar la lista de quién
+    // puede entrar (para que no haya que esperar sin necesidad) — si alguien es más rápido que
+    // esa lista, esperamos un poco en vez de decir "no tienes acceso" por error.
+    setTimeout(function(){ manejarLoginGoogle(respuesta); }, 400);
+    return;
+  }
   try{
     var partes = respuesta.credential.split('.');
     var payload = JSON.parse(decodeURIComponent(atob(partes[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(function(c){
@@ -4665,9 +4672,9 @@ function inicializarLoginGoogle(){
   google.accounts.id.renderButton(document.getElementById('google-signin-btn'), {theme:'outline', size:'large', text:'signin_with', width:280});
   google.accounts.id.prompt();
 }
+inicializarLoginGoogle();
 cargarEmpleadosDeVerdad(function(){
   renderAvataresEquipoLogin();
-  inicializarLoginGoogle();
 });
 document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
