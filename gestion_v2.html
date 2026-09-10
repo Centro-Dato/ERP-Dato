@@ -132,6 +132,9 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .perm-select.v-nada{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}
 /* REGISTROS - BOTONES GRANDES */
 .reg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.reg-grid-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-bottom:28px}
+.reg-grupo-titulo{font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 12px;padding-top:6px;border-top:1px solid #e2e8f0}
+.reg-grupo-titulo:first-child{border-top:none;padding-top:0;margin-top:0}
 .reg-btn{background:#fff;border:2.5px solid #14141a;border-radius:18px;padding:26px 22px;cursor:pointer;text-align:left;transition:all .18s;display:flex;flex-direction:column;gap:14px}
 .reg-btn:hover{box-shadow:6px 6px 0 #14141a;transform:translateY(-3px)}
 .reg-btn.disabled{opacity:.5;cursor:default;pointer-events:none}
@@ -359,7 +362,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
             <div><div class="home-txt-title">TRANSPORTE</div><div class="home-txt-sub">Registro y estadísticas</div></div>
           </div>
           <div class="home-btn c-rojo" id="home-horarios" onclick="irA('horarios')">
-            <span class="cinta-construccion">EN CONSTRUCCIÓN</span>
             <div class="home-ic">🕐</div>
             <div><div class="home-txt-title">HORARIOS</div><div class="home-txt-sub">Por área e individuales</div></div>
           </div>
@@ -493,7 +495,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         </div>
       </div>
       <div class="info-banner" id="banner-registros-drive">ℹ️ Cada registro que rellenes se guarda automáticamente en la hoja de cálculo individual de ese usuario, dentro de su carpeta en Drive. En "📁 Ver Carpeta de Registros Digitales" puedes ver, para cada tipo, el archivo con todos los usuarios juntos (actividades de todos, caídas de todos, sanitario de todos...).</div>
-      <div class="reg-grid" id="reg-grid"></div>
+      <div id="reg-grid"></div>
     </div>
 
     <div id="view-editar-registros" class="page hidden">
@@ -512,6 +514,22 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
       <div id="editar-opciones-contenido" style="margin-bottom:20px"></div>
       <div id="editar-registros-contenido"></div>
+    </div>
+
+    <!-- ===== REGISTRO DE MENÚS (fusión de Control de Dietas + Solicitud de Menús) ===== -->
+    <div id="view-registro-menus" class="page hidden">
+      <button class="btn-back" onclick="navTo('registros')">← Volver a Registros</button>
+      <div class="page-header">
+        <div><div class="page-title">R. Menús</div><div class="page-subtitle">Selecciona los usuarios de cada tipo de menú, día a día</div></div>
+        <button class="btn-primary" id="btn-menus-guardar" onclick="guardarMenusDelDia()">💾 Guardar</button>
+      </div>
+      <div class="info-banner">ℹ️ Un mismo usuario solo puede estar en un tipo de menú por día: al marcarlo en uno, desaparece de los demás. El número de menús se cuenta solo según vas marcando.</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <label class="fl-lbl" style="margin:0" for="input-fecha-menus">📅 Fecha</label>
+        <input type="date" class="form-input" id="input-fecha-menus" style="max-width:170px" onchange="cambiarFechaMenus(this.value)"/>
+        <button class="btn-secondary btn-sm" onclick="anadirMenuDelDia()">+ Añadir menú</button>
+      </div>
+      <div id="menus-dia-contenido"></div>
     </div>
 
     <!-- ===== REGISTROS - FORMULARIO ===== -->
@@ -1557,16 +1575,182 @@ function confirmarCopiarHojaOcio(){
   });
 }
 
+/* ===================== REGISTRO DE MENÚS (fusión de Control de Dietas + Solicitud de Menús) =====================
+   Funciona igual que Horarios: por cada fecha hay "bloques" (uno por tipo de menú), y dentro de
+   cada uno se marcan los usuarios con casillas. Un usuario desaparece de los demás bloques en
+   cuanto se marca en uno (mismo comportamiento que en Horarios), y el número de menús de cada
+   bloque se cuenta solo. Se guarda de dos formas: compartido con el equipo (automático, como
+   Ocio/Horarios) y de verdad en la hoja de cálculo real de Registros Digitales (una fila por
+   cada tipo de menú con usuarios marcados), igual que el resto de registros. */
+var TIPOS_MENU = ['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA'];
+var MENUS_POR_FECHA = {};
+var _fechaMenusActual = '';
+function obtenerFechaMenusHoyISO(){
+  var hoy = new Date();
+  return hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+}
+function obtenerBloquesDelDiaMenus(){
+  if(!MENUS_POR_FECHA[_fechaMenusActual]) MENUS_POR_FECHA[_fechaMenusActual] = [];
+  return MENUS_POR_FECHA[_fechaMenusActual];
+}
+function abrirRegistroMenus(){
+  if(nivelRegistro('menus')==='nada'){ mostrarAviso('No tienes acceso a este tipo de registro.'); return; }
+  if(!_fechaMenusActual) _fechaMenusActual = obtenerFechaMenusHoyISO();
+  navTo('registro-menus');
+  var nivel = nivelRegistro('menus');
+  var btnGuardar = document.getElementById('btn-menus-guardar');
+  if(btnGuardar) btnGuardar.style.display = (nivel==='editar'||nivel==='todo') ? '' : 'none';
+  document.getElementById('input-fecha-menus').value = _fechaMenusActual;
+  mostrarAviso('Cargando los menús de todo el equipo…', '⏳');
+  cargarOpcionesPersonalizadas(function(){
+    cargarDatosMenusDesdeOpciones();
+    renderBloquesMenus();
+  });
+}
+function cambiarFechaMenus(iso){
+  _fechaMenusActual = iso;
+  renderBloquesMenus();
+}
+// Un usuario ya marcado en OTRO bloque de la misma fecha desaparece de la lista de este, igual
+// que en Horarios — para ese caso raro de necesitar lo mismo en dos sitios, se puede usar el
+// desplegable de "Añadir usuario" de abajo, que no tiene este filtro.
+function alumnosDisponiblesEnMenu(bIdxActual){
+  var bloques = obtenerBloquesDelDiaMenus();
+  var usadosEnOtros = {};
+  bloques.forEach(function(b,i){ if(i!==bIdxActual) (b.alumnos||[]).forEach(function(n){ usadosEnOtros[n]=true; }); });
+  return ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;}).filter(function(n){ return !usadosEnOtros[n]; });
+}
+function anadirMenuDelDia(){
+  var bloques = obtenerBloquesDelDiaMenus();
+  var usados = {}; bloques.forEach(function(b){ usados[b.tipo]=true; });
+  var siguienteTipo = TIPOS_MENU.filter(function(t){return !usados[t];})[0] || TIPOS_MENU[0];
+  bloques.push({tipo: siguienteTipo, alumnos: []});
+  renderBloquesMenus();
+}
+function eliminarBloqueMenu(bIdx){
+  pedirConfirmacion('Quitar menú', '¿Quitar este tipo de menú de este día? Se pierde la lista de usuarios marcados en él.', function(){
+    obtenerBloquesDelDiaMenus().splice(bIdx,1);
+    renderBloquesMenus();
+  });
+}
+function cambiarTipoMenu(bIdx, valor){
+  obtenerBloquesDelDiaMenus()[bIdx].tipo = valor;
+  renderBloquesMenus();
+}
+function toggleAlumnoMenu(bIdx, nombre, marcado){
+  var b = obtenerBloquesDelDiaMenus()[bIdx];
+  if(!b.alumnos) b.alumnos = [];
+  if(marcado){ if(b.alumnos.indexOf(nombre)===-1) b.alumnos.push(nombre); }
+  else { b.alumnos = b.alumnos.filter(function(n){ return n!==nombre; }); }
+  renderBloquesMenus();
+}
+function anadirAlumnoManualMenu(bIdx){
+  var sel = document.getElementById('anadir-alumno-menu-sel-'+bIdx);
+  if(!sel || !sel.value) return;
+  var b = obtenerBloquesDelDiaMenus()[bIdx];
+  if(!b.alumnos) b.alumnos = [];
+  if(b.alumnos.indexOf(sel.value)===-1) b.alumnos.push(sel.value);
+  renderBloquesMenus();
+}
+function renderBloquesMenus(){
+  var el = document.getElementById('menus-dia-contenido');
+  if(!el) return;
+  var bloques = obtenerBloquesDelDiaMenus();
+  if(bloques.length===0){
+    el.innerHTML = '<div class="empty-state">Sin menús añadidos todavía para este día. Usa "+ Añadir menú" para empezar.</div>';
+    programarGuardadoMenus();
+    return;
+  }
+  var h = '';
+  bloques.forEach(function(b, bIdx){
+    var disponibles = alumnosDisponiblesEnMenu(bIdx);
+    h += '<div class="card" style="margin-bottom:16px">';
+    h += '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">';
+    h += '<select class="form-input" style="max-width:260px" onchange="cambiarTipoMenu('+bIdx+',this.value)">';
+    TIPOS_MENU.forEach(function(t){ h += '<option value="'+t+'" '+(b.tipo===t?'selected':'')+'>'+t+'</option>'; });
+    h += '</select>';
+    h += '<div style="font-weight:800;background:#f1f5f9;padding:6px 12px;border-radius:20px;font-size:13px">Nº de menús: '+(b.alumnos||[]).length+'</div>';
+    h += '<button class="btn-secondary btn-sm" onclick="eliminarBloqueMenu('+bIdx+')">🗑️ Quitar</button>';
+    h += '</div>';
+    h += '<div class="fl-lbl" style="margin-bottom:4px">Usuarios</div>';
+    h += '<div class="chk-group" style="max-height:190px;overflow-y:auto;flex-direction:column;gap:4px">';
+    disponibles.forEach(function(n){
+      var marcado = (b.alumnos||[]).indexOf(n)>-1;
+      h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleAlumnoMenu('+bIdx+',\''+n.replace(/'/g,"")+'\',this.checked)"/> '+esc(abreviarNombreCompleto(n))+'</label>';
+    });
+    h += '</div>';
+    h += '<div style="display:flex;gap:6px;margin-top:8px">';
+    h += '<select id="anadir-alumno-menu-sel-'+bIdx+'" class="form-input" style="flex:1;font-size:12.5px"><option value="">— Añadir usuario —</option>';
+    ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).forEach(function(u){
+      var nombreCompleto = u.nombre+' '+u.apellidos;
+      h += '<option value="'+nombreCompleto+'">'+esc(nombreAbreviado(u))+'</option>';
+    });
+    h += '</select><button class="btn-secondary btn-sm" onclick="anadirAlumnoManualMenu('+bIdx+')">+ Añadir</button></div>';
+    h += '</div>';
+  });
+  el.innerHTML = h;
+  programarGuardadoMenus();
+}
+/* ---- Guardado compartido (equipo), igual que Ocio/Horarios ---- */
+var PREFIJO_MENUS_DATOS = 'menus_datos__';
+function datosMenusParaGuardar(fecha){ return JSON.stringify(MENUS_POR_FECHA[fecha] || []); }
+function cargarDatosMenusDesdeOpciones(){
+  Object.keys(OPCIONES_PERSONALIZADAS).forEach(function(k){
+    if(k.indexOf(PREFIJO_MENUS_DATOS)!==0) return;
+    var fecha = k.slice(PREFIJO_MENUS_DATOS.length);
+    var lista = OPCIONES_PERSONALIZADAS[k] || [];
+    if(!lista[0]) return;
+    try { MENUS_POR_FECHA[fecha] = JSON.parse(lista[0]) || []; } catch(e){ /* entrada mal guardada: se ignora */ }
+  });
+}
+var _menusGuardadoPendiente = {};
+function programarGuardadoMenus(fecha){
+  fecha = fecha || _fechaMenusActual;
+  if(_menusGuardadoPendiente[fecha]) clearTimeout(_menusGuardadoPendiente[fecha]);
+  _menusGuardadoPendiente[fecha] = setTimeout(function(){
+    delete _menusGuardadoPendiente[fecha];
+    guardarOpcionesPersonalizadas('menus_datos', fecha, [datosMenusParaGuardar(fecha)], function(){});
+  }, 900);
+}
+/* ---- Guardado real en la hoja de cálculo de Registros Digitales (una fila por cada tipo de
+   menú con usuarios marcados), reutilizando el mismo mecanismo que el resto de registros. ---- */
+function guardarMenusDelDia(){
+  var bloques = obtenerBloquesDelDiaMenus().filter(function(b){ return (b.alumnos||[]).length>0; });
+  if(bloques.length===0){ mostrarAviso('No hay ningún menú con usuarios marcados todavía.'); return; }
+  if(_menusGuardadoPendiente[_fechaMenusActual]){ clearTimeout(_menusGuardadoPendiente[_fechaMenusActual]); delete _menusGuardadoPendiente[_fechaMenusActual]; }
+  guardarOpcionesPersonalizadas('menus_datos', _fechaMenusActual, [datosMenusParaGuardar(_fechaMenusActual)], function(){});
+  mostrarAviso('Guardando los menús de '+_fechaMenusActual+'…', '⏳');
+  var partesFecha = _fechaMenusActual.split('-');
+  var fechaBonita = partesFecha[2]+'/'+partesFecha[1]+'/'+partesFecha[0];
+  var tipoMenus = REGISTRO_TIPOS.filter(function(t){ return t.id==='menus'; })[0];
+  var nombreArchivo = tipoMenus.titulo+' '+CURSO_REGISTROS_ACTUAL();
+  var color = '#'+(REGISTRO_COLOR['menus'] || '2563EB');
+  var headers = ['Fecha','Tipo de menú','Nº de menús','Usuarios'];
+  var pendientes = bloques.length;
+  var huboError = null;
+  bloques.forEach(function(b){
+    var fila = [fechaBonita, b.tipo, (b.alumnos||[]).length, (b.alumnos||[]).join(', ')];
+    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, 'General', headers, fila, color, function(err){
+      if(err) huboError = err;
+      pendientes--;
+      if(pendientes<=0){
+        if(huboError) mostrarAviso('Guardado parcialmente, con algún aviso: '+huboError, '⚠️');
+        else mostrarAviso('Menús de '+fechaBonita+' guardados en la hoja de cálculo real.', '✅');
+      }
+    });
+  });
+}
+
 /* ===================== REGISTROS DIGITALES: GUARDADO REAL (General + pestaña por usuario) ===================== */
 var REGISTRO_COLOR = {
   actividades:'7E22CE', caidas:'DC2626', cambios_posturales:'059669', comunicacion_familias:'2563EB',
-  sanitario:'DB2777', control_dietas:'16A34A', crisis_epilepticas:'EA580C', desaparicion_usuarios:'991B1B',
+  sanitario:'DB2777', menus:'16A34A', crisis_epilepticas:'EA580C', desaparicion_usuarios:'991B1B',
   entradas_salidas:'0EA5E9', hidratacion:'0891B2', higiene:'15803D', incontinencias:'7C3AED',
   limpieza:'64748B', medicacion:'9333EA', abvd:'0D9488', quejas_sugerencias:'CA8A04',
-  recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA', solicitud_menus:'C2410C',
+  recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA',
   temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9'
 };
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['control_dietas','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
 
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
 // Si el registro tiene un campo de selección de usuario(s), genera UNA FILA POR PERSONA (misma
@@ -4180,7 +4364,7 @@ function eliminarHistoricoHorario(idx){
 }
 
 var REGISTRO_TIPOS = [
-  {id:'actividades',titulo:'Registro Actividades',icon:'🎨',color:'#fdf4ff',iconColor:'#7e22ce',desc:'Actividades realizadas con los usuarios',
+  {id:'actividades',titulo:'R. Actividades',icon:'🎨',color:'#fdf4ff',iconColor:'#7e22ce',desc:'Actividades realizadas con los usuarios',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'actividad',label:'Actividad / Área',type:'select',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
@@ -4188,7 +4372,7 @@ var REGISTRO_TIPOS = [
     {k:'tratamientos',label:'Aspectos trabajados',type:'aspectos-actividad',req:true},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
-  {id:'caidas',titulo:'Registro Caídas',icon:'🦵',color:'#fee2e2',iconColor:'#b91c1c',desc:'Historial de caídas del usuario',
+  {id:'caidas',titulo:'R. Caídas',icon:'🦵',color:'#fee2e2',iconColor:'#b91c1c',desc:'Historial de caídas del usuario',
    fields:[
     {k:'fecha',label:'Fecha caída',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
@@ -4202,21 +4386,21 @@ var REGISTRO_TIPOS = [
     {k:'estado',label:'Estado al encontrarle',type:'select',opts:['CRISIS EPILÉPTICA','MOVIMIENTOS ANORMALES','NORMAL','PÉRDIDA CONCIENCIA','RELAJACIÓN ESFÍNTERES','SANGRADO','OTRAS']},
     {k:'lesiones',label:'Lesiones / Atención',type:'checkboxes',opts:['ANTIINFLAMATORIOS/ANALGÉSICOS','AYUDAR A LEVANTARSE','CURA DE HERIDAS','HOSPITAL','PONER FRÍO','SUTURAS','112']}
    ]},
-  {id:'cambios_posturales',titulo:'Registro Cambios Posturales',icon:'🔄',color:'#d1fae5',iconColor:'#065f46',desc:'Control de cambios posturales',
+  {id:'cambios_posturales',titulo:'R. Cambios Posturales',icon:'🔄',color:'#d1fae5',iconColor:'#065f46',desc:'Control de cambios posturales',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'momento',label:'Momento del día',type:'checkboxes',opts:['EN LA COMIDA','MEDIA MAÑANA']},
     {k:'motivo',label:'Motivo',type:'checkboxes',opts:['ARTICULAR','CIRCULATORIO','HIGIENE CORPORAL','UPP']}
    ]},
-  {id:'comunicacion_familias',titulo:'Registro Comunicación Familias',icon:'📞',color:'#dbeafe',iconColor:'#1d4ed8',desc:'Log de llamadas y avisos a familias',
+  {id:'comunicacion_familias',titulo:'R. Comunicación Familias',icon:'📞',color:'#dbeafe',iconColor:'#1d4ed8',desc:'Log de llamadas y avisos a familias',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'medio',label:'Medio de comunicación',type:'select',opts:['CORREO ELECTRÓNICO','PRESENCIAL','TELÉFONO','WHATSAPP EMPRESA']},
     {k:'motivo',label:'Motivo',type:'textarea',req:true}
    ]},
-  {id:'sanitario',titulo:'Registro Sanitario',icon:'🩺',color:'#fce7f3',iconColor:'#9d174d',desc:'Incidencias y seguimiento sanitario',
+  {id:'sanitario',titulo:'R. Sanitario',icon:'🩺',color:'#fce7f3',iconColor:'#9d174d',desc:'Incidencias y seguimiento sanitario',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
@@ -4227,13 +4411,9 @@ var REGISTRO_TIPOS = [
     {k:'aspiracion',label:'Aspiración de secreciones',type:'checkboxes',opts:['SÍ']},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
-  {id:'control_dietas',titulo:'Registro Control Dietas',icon:'🥗',color:'#ecfdf5',iconColor:'#065f46',desc:'Control de dietas especiales',
-   fields:[
-    {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'dietas',label:'Dietas y nº de menús',type:'lista-numero',label2Nombres:'Dietas activas',label2Numeros:'Nº de menús',opts:['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA']},
-    {k:'observaciones',label:'Observaciones',type:'textarea'}
-   ]},
-  {id:'crisis_epilepticas',titulo:'Registro Crisis Epilépticas',icon:'⚡',color:'#fff7ed',iconColor:'#9a3412',desc:'Registro de crisis y su duración',
+  {id:'menus',titulo:'R. Menús',icon:'🥗',color:'#ecfdf5',iconColor:'#065f46',desc:'Menús especiales y solicitudes por usuario',
+   fields:[]},
+  {id:'crisis_epilepticas',titulo:'R. Crisis Epilépticas',icon:'⚡',color:'#fff7ed',iconColor:'#9a3412',desc:'Registro de crisis y su duración',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario',type:'select',opts:['Alejandro González','Carlos Velasco'],req:true},
@@ -4241,33 +4421,33 @@ var REGISTRO_TIPOS = [
     {k:'duracion',label:'Duración (HH:MM)',type:'time'},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
-  {id:'desaparicion_usuarios',titulo:'Registro Desaparición Usuarios',icon:'🚨',color:'#fef2f2',iconColor:'#7f1d1d',desc:'Protocolo ante desaparición',
+  {id:'desaparicion_usuarios',titulo:'R. Desaparición Usuarios',icon:'🚨',color:'#fef2f2',iconColor:'#7f1d1d',desc:'Protocolo ante desaparición',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'descripcion',label:'Descripción del suceso',type:'textarea',req:true},
     {k:'resolucion',label:'Tiempo y forma de resolución',type:'textarea',req:true}
    ]},
-  {id:'entradas_salidas',titulo:'Registro Entradas y Salidas',icon:'🚪',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Control de entradas y salidas de usuarios',
+  {id:'entradas_salidas',titulo:'R. Entradas y Salidas',icon:'🚪',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Control de entradas y salidas de usuarios',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'tipo',label:'Tipo',type:'select',opts:['ENTRADA','SALIDA'],req:true},
     {k:'motivo',label:'Motivo',type:'textarea',req:true}
    ]},
-  {id:'hidratacion',titulo:'Registro Hidratación',icon:'💧',color:'#e0f2fe',iconColor:'#0369a1',desc:'Control de ingesta de líquidos',
+  {id:'hidratacion',titulo:'R. Hidratación',icon:'💧',color:'#e0f2fe',iconColor:'#0369a1',desc:'Control de ingesta de líquidos',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'desayuno',label:'Hidratación desayuno',type:'matriz-checkbox',filas:'BD',columnas:['AGUA','ZUMO','LECHE','CAFÉ','INFUSIÓN','OTROS']},
     {k:'comida',label:'Hidratación comida',type:'matriz-checkbox',filas:'BD',columnas:['AGUA','OTROS']}
    ]},
-  {id:'higiene',titulo:'Registro Higiene',icon:'🧼',color:'#f0fdf4',iconColor:'#14532d',desc:'Registro de higiene personal',
+  {id:'higiene',titulo:'R. Higiene',icon:'🧼',color:'#f0fdf4',iconColor:'#14532d',desc:'Registro de higiene personal',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'items',label:'Higiene realizada',type:'checkboxes',opts:['CEPILLADO','MANOS','ROPA','SILLA']}
    ]},
-  {id:'incontinencias',titulo:'Registro Incontinencias',icon:'<svg viewBox="0 0 64 64" width="26" height="26" fill="none" stroke="#4c1d95" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20 Q12 9 23 9 H41 Q52 9 52 20 V28 Q52 47 32 51 Q12 47 12 28 Z"/><path d="M7 22 L12 22 M7 30 L12 30"/><path d="M52 22 L57 22 M52 30 L57 30"/><circle cx="9.5" cy="26" r="2.3"/><circle cx="54.5" cy="26" r="2.3"/></svg>',color:'#f5f3ff',iconColor:'#4c1d95',desc:'Control de incontinencias',
+  {id:'incontinencias',titulo:'R. Incontinencias',icon:'<svg viewBox="0 0 64 64" width="26" height="26" fill="none" stroke="#4c1d95" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20 Q12 9 23 9 H41 Q52 9 52 20 V28 Q52 47 32 51 Q12 47 12 28 Z"/><path d="M7 22 L12 22 M7 30 L12 30"/><path d="M52 22 L57 22 M52 30 L57 30"/><circle cx="9.5" cy="26" r="2.3"/><circle cx="54.5" cy="26" r="2.3"/></svg>',color:'#f5f3ff',iconColor:'#4c1d95',desc:'Control de incontinencias',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'tipoReg',label:'Registro de',type:'select',opts:['CAMBIO DE PAÑAL','INCONTINENCIA'],req:true},
@@ -4276,7 +4456,7 @@ var REGISTRO_TIPOS = [
     {k:'tipoInc',label:'Tipo incontinencia',type:'select',opts:['HECES','PIS','PIS Y HECES']},
     {k:'notas',label:'Notas',type:'textarea'}
    ]},
-  {id:'limpieza',titulo:'Registro Limpieza',icon:'🧹',color:'#f1f5f9',iconColor:'#475569',desc:'Limpieza de espacios e instrumental',
+  {id:'limpieza',titulo:'R. Limpieza',icon:'🧹',color:'#f1f5f9',iconColor:'#475569',desc:'Limpieza de espacios e instrumental',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'rutinaDiaria',label:'Rutina diaria (normal) — Realizada',type:'checkboxes',opts:['ASCENSORES','BAÑOS','COCINA','COMEDOR','ESCALERA','HALL','PASILLOS','REHABILITACIÓN FÍSICA']},
@@ -4284,33 +4464,33 @@ var REGISTRO_TIPOS = [
     {k:'limpiezaSemestral',label:'Limpieza semestral — Realizada',type:'checkboxes',opts:['FILTROS AIRE ACONDICIONADO']},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
-  {id:'medicacion',titulo:'Registro Medicación',icon:'💊',color:'#fdf4ff',iconColor:'#581c87',desc:'Administración de medicación crónica y temporal',
+  {id:'medicacion',titulo:'R. Medicación',icon:'💊',color:'#fdf4ff',iconColor:'#581c87',desc:'Administración de medicación crónica y temporal',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'cronica',label:'Medicación crónica — administrada',type:'checkboxes',opts:['Alfonso Luis Julián Vicaria','Edurne Chunchurreta Merino','María Tisca Porras Recio','Mercedes García Martínez','Patricia de Barrio López']},
     {k:'temporal',label:'Medicación temporal',type:'matriz-checkbox',filas:'BD',columnas:['IBUPROFENO','PARACETAMOL','OTROS']},
     {k:'incidencias',label:'Incidencias',type:'textarea'}
    ]},
-  {id:'abvd',titulo:'Registro ABVD',icon:'🏘️',color:'#f0fdfa',iconColor:'#134e4a',desc:'Actividades Básicas de la Vida Diaria',
+  {id:'abvd',titulo:'R. ABVD',icon:'🏘️',color:'#f0fdfa',iconColor:'#134e4a',desc:'Actividades Básicas de la Vida Diaria',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'taller',label:'Taller',type:'select',opts:['PREPARAR DESAYUNOS','PREPARAR LA MESA','TALLER DE COCINA','TALLER DE COMPRAS'],req:true},
     {k:'usuarios',label:'Participantes',type:'checkboxes',opts:'BD'}
    ]},
-  {id:'quejas_sugerencias',titulo:'Registro Quejas, Sugerencias y Felicitaciones',icon:'📣',color:'#fef9c3',iconColor:'#713f12',desc:'Quejas, sugerencias y felicitaciones',
+  {id:'quejas_sugerencias',titulo:'R. Quejas, Sugerencias y Felicitaciones',icon:'📣',color:'#fef9c3',iconColor:'#713f12',desc:'Quejas, sugerencias y felicitaciones',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'tipo',label:'Tipo de registro',type:'select',opts:['FELICITACIÓN','QUEJA','SUGERENCIA'],req:true},
     {k:'persona',label:'Persona que lo realiza',type:'text',req:true},
     {k:'contenido',label:'Contenido',type:'textarea',req:true}
    ]},
-  {id:'recepcion_medicacion',titulo:'Registro Recepción de Medicación',icon:'📦',color:'#f0f9ff',iconColor:'#0c4a6e',desc:'Recepción de medicación de familias',
+  {id:'recepcion_medicacion',titulo:'R. Recepción de Medicación',icon:'📦',color:'#f0f9ff',iconColor:'#0c4a6e',desc:'Recepción de medicación de familias',
    fields:[
     {k:'fecha',label:'Fecha recepción',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'medicacion',label:'Medicación que entrega',type:'textarea',req:true}
    ]},
-  {id:'plan_seguridad_alimentaria',titulo:'Registro de Recepción de Productos Alimenticios',icon:'🛡️',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Vigilancia en la recepción, temperaturas de catering y muestras',
+  {id:'plan_seguridad_alimentaria',titulo:'R. Recepción de Productos Alimenticios',icon:'🛡️',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Vigilancia en la recepción, temperaturas de catering y muestras',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'vigilanciaRecepcion',label:'Vigilancia en la Recepción — correcto',type:'checkboxes',listaVertical:true,
@@ -4335,24 +4515,14 @@ var REGISTRO_TIPOS = [
     {k:'muestrasRecogidas',label:'Muestras recogidas — recogida',type:'checkboxes',listaVertical:true,opts:['PLATO 1','PLATO 2','GUARNICIÓN']},
     {k:'recogidoPor',label:'Recogido por',type:'text'}
    ]},
-  {id:'solicitud_menus',titulo:'Registro Solicitud de Menús',icon:'🍽️',color:'#fff7ed',iconColor:'#7c2d12',desc:'Solicitudes de menús especiales por usuario',
-   fields:[
-    {k:'fecha',label:'Fecha de solicitud',type:'date',req:true},
-    {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
-    {k:'tipoMenu',label:'Tipo de menú',type:'select',req:true,opts:['ALERGIA/INTOLERANCIA','BASAL','DIABÉTICO','SIN SAL','TRITURADO','OTROS']},
-    {k:'motivo',label:'Motivo',type:'textarea'},
-    {k:'fechaInicio',label:'Fecha inicio',type:'date'},
-    {k:'fechaFin',label:'Fecha fin (si es temporal)',type:'date'},
-    {k:'solicitadoPor',label:'Solicitado por',type:'text'}
-   ]},
-  {id:'temperaturas_nevera',titulo:'Registro Temperaturas Nevera',icon:'🧊',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Control diario de temperatura de la nevera',
+  {id:'temperaturas_nevera',titulo:'R. Temperaturas Nevera',icon:'🧊',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Control diario de temperatura de la nevera',
    fields:[
     {k:'correo',label:'Correo',type:'text',req:true},
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'temp_maxima',label:'Temperatura Máxima',type:'text',req:true},
     {k:'temp_minima',label:'Temperatura Mínima',type:'text',req:true}
    ]},
-  {id:'transporte',titulo:'Registro Transporte',icon:'🚌',color:'#f0f9ff',iconColor:'#1e3a8a',desc:'Incidencias y control de rutas',
+  {id:'transporte',titulo:'R. Transporte',icon:'🚌',color:'#f0f9ff',iconColor:'#1e3a8a',desc:'Incidencias y control de rutas',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'furgoneta',label:'Furgoneta',type:'select',opts:['1293-HNF','6737-MRP','7159-GTR','8751-JDT'],req:true},
@@ -4362,13 +4532,13 @@ var REGISTRO_TIPOS = [
     {k:'horaFin',label:'Hora fin',type:'time'},
     {k:'incidencia',label:'Incidencia',type:'select',opts:['ATASCO','CLIMATOLOGÍA','NINGUNA','RETRASO USUARIO','OTROS']}
    ]},
-  {id:'visitas_centro',titulo:'Registro Visitas al Centro',icon:'🚶',color:'#e0e7ff',iconColor:'#4338ca',desc:'Registro de visitas de familiares',
+  {id:'visitas_centro',titulo:'R. Visitas al Centro',icon:'🚶',color:'#e0e7ff',iconColor:'#4338ca',desc:'Registro de visitas de familiares',
    fields:[
     {k:'fecha',label:'Fecha de la visita',type:'date',req:true},
     {k:'visitantes',label:'Visitantes',type:'text',req:true},
     {k:'motivo',label:'Motivo de la visita',type:'textarea'}
    ]},
-  {id:'registro_personal',titulo:'Registro Personal',icon:'🧑‍💼',color:'#f5f3ff',iconColor:'#4c1d95',desc:'Datos de nuevo empleado',
+  {id:'registro_personal',titulo:'R. Personal',icon:'🧑‍💼',color:'#f5f3ff',iconColor:'#4c1d95',desc:'Datos de nuevo empleado',
    fields:[
     {k:'nombre',label:'Nombre',type:'text',req:true},
     {k:'apellidos',label:'Apellidos',type:'text',req:true},
@@ -4513,7 +4683,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','transporte','ocio','horarios','historico-horarios','paap','paap-detalle','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','paap-detalle','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
@@ -5313,21 +5483,43 @@ function verCarpetaDrive(driveId, vistaOrigenExplicita){
 function volverDeDrive(){ navTo(_driveVistaAnterior); }
 
 /* ===================== REGISTROS ===================== */
+var GRUPOS_REGISTROS = [
+  { titulo: 'Registros de Usuarios', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incontinencias','medicacion','quejas_sugerencias','recepcion_medicacion','sanitario','transporte'] },
+  { titulo: 'Registros Alimentación', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
+  { titulo: 'Registros del Centro', ids: ['limpieza','registro_personal','visitas_centro'] }
+];
 function renderRegistrosGrid(){
   var h = '';
-  var lista = ordenarAlfabetico(REGISTRO_TIPOS, function(r){ return r.titulo; });
-  lista.forEach(function(r){
-    var nivel = nivelRegistro(r.id);
-    if(nivel==='nada') return;
-    h += '<div class="reg-btn" onclick="abrirFormRegistro(\''+r.id+'\',\''+r.titulo+'\')">';
-    h += '<div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div>';
-    h += '<div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div>';
-    h += '</div>';
+  var porId = {};
+  REGISTRO_TIPOS.forEach(function(r){ porId[r.id] = r; });
+  var idsColocados = {};
+  GRUPOS_REGISTROS.forEach(function(grupo){
+    var tarjetasGrupo = '';
+    grupo.ids.forEach(function(id){
+      var r = porId[id];
+      if(!r) return;
+      idsColocados[id] = true;
+      if(nivelRegistro(r.id)==='nada') return;
+      tarjetasGrupo += tarjetaRegistroHtml(r);
+    });
+    if(tarjetasGrupo){
+      h += '<div class="reg-grupo-titulo">'+grupo.titulo+'</div><div class="reg-grid-grupo">'+tarjetasGrupo+'</div>';
+    }
   });
+  // Por si algún tipo de registro nuevo no está todavía en ninguno de los 3 bloques de arriba,
+  // que no desaparezca sin más: se muestra igualmente en un bloque aparte al final.
+  var sueltos = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return !idsColocados[r.id] && nivelRegistro(r.id)!=='nada'; }), function(r){return r.titulo;});
+  if(sueltos.length){
+    h += '<div class="reg-grupo-titulo">Otros</div><div class="reg-grid-grupo">'+sueltos.map(tarjetaRegistroHtml).join('')+'</div>';
+  }
   if(!h){
     h = '<div class="empty-state">No tienes acceso a ningún tipo de registro. Pídele a un Coordinador que te dé permiso en Configuración.</div>';
   }
   document.getElementById('reg-grid').innerHTML = h;
+}
+function tarjetaRegistroHtml(r){
+  if(r.id==='menus') return '<div class="reg-btn" onclick="abrirRegistroMenus()"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
+  return '<div class="reg-btn" onclick="abrirFormRegistro(\''+r.id+'\',\''+r.titulo+'\')"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
 }
 // Aspectos trabajados según el área de actividad elegida (antes iban todos mezclados en una sola lista)
 var ASPECTOS_POR_AREA = {
