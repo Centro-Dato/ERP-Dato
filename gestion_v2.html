@@ -132,9 +132,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .perm-select.v-nada{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}
 /* REGISTROS - BOTONES GRANDES */
 .reg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
-.reg-grid-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-bottom:28px}
-.reg-grupo-titulo{font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 12px;padding-top:6px;border-top:1px solid #e2e8f0}
-.reg-grupo-titulo:first-child{border-top:none;padding-top:0;margin-top:0}
+.reg-grid-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.reg-carpeta{margin-bottom:30px}
+.reg-carpeta-tab{display:inline-flex;align-items:center;gap:8px;background:#14141a;color:#fff;padding:8px 20px;border-radius:14px 14px 0 0;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;position:relative;top:2.5px}
+.reg-carpeta-caja{background:#fff;border:2.5px solid #14141a;border-radius:0 18px 18px 18px;padding:20px}
 .reg-btn{background:#fff;border:2.5px solid #14141a;border-radius:18px;padding:26px 22px;cursor:pointer;text-align:left;transition:all .18s;display:flex;flex-direction:column;gap:14px}
 .reg-btn:hover{box-shadow:6px 6px 0 #14141a;transform:translateY(-3px)}
 .reg-btn.disabled{opacity:.5;cursor:default;pointer-events:none}
@@ -5572,14 +5573,14 @@ function renderRegistrosGrid(){
       tarjetasGrupo += tarjetaRegistroHtml(r);
     });
     if(tarjetasGrupo){
-      h += '<div class="reg-grupo-titulo">'+grupo.titulo+'</div><div class="reg-grid-grupo">'+tarjetasGrupo+'</div>';
+      h += '<div class="reg-carpeta"><div class="reg-carpeta-tab">📁 '+grupo.titulo+'</div><div class="reg-carpeta-caja"><div class="reg-grid-grupo">'+tarjetasGrupo+'</div></div></div>';
     }
   });
   // Por si algún tipo de registro nuevo no está todavía en ninguno de los 3 bloques de arriba,
   // que no desaparezca sin más: se muestra igualmente en un bloque aparte al final.
   var sueltos = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return !idsColocados[r.id] && nivelRegistro(r.id)!=='nada'; }), function(r){return r.titulo;});
   if(sueltos.length){
-    h += '<div class="reg-grupo-titulo">Otros</div><div class="reg-grid-grupo">'+sueltos.map(tarjetaRegistroHtml).join('')+'</div>';
+    h += '<div class="reg-carpeta"><div class="reg-carpeta-tab">📁 Otros</div><div class="reg-carpeta-caja"><div class="reg-grid-grupo">'+sueltos.map(tarjetaRegistroHtml).join('')+'</div></div></div>';
   }
   if(!h){
     h = '<div class="empty-state">No tienes acceso a ningún tipo de registro. Pídele a un Coordinador que te dé permiso en Configuración.</div>';
