@@ -1795,9 +1795,10 @@ var REGISTRO_COLOR = {
   entradas_salidas:'0EA5E9', hidratacion:'0891B2', higiene:'15803D', incontinencias:'7C3AED',
   limpieza:'64748B', medicacion:'9333EA', abvd:'0D9488', quejas_sugerencias:'CA8A04',
   recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA', incidencias:'B91C1C',
-  temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9'
+  temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9',
+  mantenimiento:'9A3412'
 };
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','mantenimiento','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
 
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
 // Si el registro tiene un campo de selección de usuario(s), genera UNA FILA POR PERSONA (misma
@@ -4514,6 +4515,27 @@ var REGISTRO_TIPOS = [
     {k:'tipoInc',label:'Tipo incontinencia',type:'select',opts:['HECES','PIS','PIS Y HECES']},
     {k:'notas',label:'Notas',type:'textarea'}
    ]},
+  {id:'mantenimiento',titulo:'R. Mantenimiento',icon:'🔧',color:'#fff7ed',iconColor:'#9a3412',desc:'Mantenimiento de edificios, equipos y piscina',
+   fields:[
+    {k:'fecha',label:'Fecha',type:'date',req:true},
+    {k:'seccionEdificios',label:'MANTENIMIENTO EDIFICIOS',type:'seccion'},
+    {k:'edificioMantenimiento',label:'Edificio',type:'select',opts:['EDIFICIO 1','EDIFICIO 2']},
+    {k:'banos',label:'Baños',type:'text'},
+    {k:'puertas',label:'Puertas',type:'text'},
+    {k:'ventanas',label:'Ventanas',type:'text'},
+    {k:'pintura',label:'Pintura',type:'text'},
+    {k:'azulejosSuelo',label:'Azulejos y suelo',type:'text'},
+    {k:'otrosMantenimiento',label:'Otros',type:'text'},
+    {k:'seccionEquipos',label:'EQUIPOS (AIRE ACONDICIONADO)',type:'seccion'},
+    {k:'edificioEquipos',label:'Edificio',type:'select',opts:['EDIFICIO 1','EDIFICIO 2']},
+    {k:'aireAcondicionado',label:'Aire acondicionado',type:'text'},
+    {k:'seccionOtrosElementos',label:'OTROS ELEMENTOS',type:'seccion'},
+    {k:'gruaTechoSalon',label:'Grúa techo salón',type:'text'},
+    {k:'seccionPiscina',label:'PISCINA',type:'seccion'},
+    {k:'piscinaCloro',label:'Cloro',type:'text'},
+    {k:'piscinaFondo',label:'Fondo',type:'text'},
+    {k:'observaciones',label:'Observaciones',type:'textarea'}
+   ]},
   {id:'limpieza',titulo:'R. Limpieza',icon:'🧹',color:'#f1f5f9',iconColor:'#475569',desc:'Limpieza de espacios e instrumental',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
@@ -5689,7 +5711,7 @@ function volverDeDrive(){ navTo(_driveVistaAnterior); }
 var GRUPOS_REGISTROS = [
   { id:'usuarios', titulo: 'Registros de Usuarios', icono:'🗂️', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','recepcion_medicacion','sanitario','transporte'] },
   { id:'alimentacion', titulo: 'Registros Alimentación', icono:'🍽️', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
-  { id:'centro', titulo: 'Registros del Centro', icono:'🏢', ids: ['limpieza','registro_personal','visitas_centro'] }
+  { id:'centro', titulo: 'Registros del Centro', icono:'🏢', ids: ['limpieza','mantenimiento','registro_personal','visitas_centro'] }
 ];
 function registrosAccesiblesDeGrupo(grupo){
   var porId = {};
