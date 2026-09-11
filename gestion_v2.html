@@ -1767,14 +1767,12 @@ function guardarMenusDelDia(){
   var tipoMenus = REGISTRO_TIPOS.filter(function(t){ return t.id==='menus'; })[0];
   var nombreArchivo = tipoMenus.titulo+' '+CURSO_REGISTROS_ACTUAL();
   var color = '#'+(REGISTRO_COLOR['menus'] || '2563EB');
-  var headers = ['Fecha','Tipo de menú','Usuario'];
-  // Una fila por cada usuario (no una fila por menú con todos los nombres juntos), igual que en
-  // el resto de registros — con el nombre abreviado (Nombre + iniciales de apellidos).
-  var filas = [];
-  bloques.forEach(function(b){
-    (b.alumnos||[]).forEach(function(nombreCompleto){
-      filas.push([fechaBonita, b.tipo, abreviarNombreCompleto(nombreCompleto)]);
-    });
+  var headers = ['Fecha','Tipo de menú','Usuario(s)'];
+  // Una fila por menú (no por usuario) — los nombres van todos en la misma celda, cada uno en
+  // su propia línea (como las listas verticales de otros registros), abreviados.
+  var filas = bloques.map(function(b){
+    var nombres = (b.alumnos||[]).map(function(n){ return abreviarNombreCompleto(n); });
+    return [fechaBonita, b.tipo, nombres.join('\n')];
   });
   var pendientes = filas.length;
   var huboError = null;
