@@ -1767,11 +1767,18 @@ function guardarMenusDelDia(){
   var tipoMenus = REGISTRO_TIPOS.filter(function(t){ return t.id==='menus'; })[0];
   var nombreArchivo = tipoMenus.titulo+' '+CURSO_REGISTROS_ACTUAL();
   var color = '#'+(REGISTRO_COLOR['menus'] || '2563EB');
-  var headers = ['Fecha','Tipo de menú','Nº de menús','Usuarios'];
-  var pendientes = bloques.length;
-  var huboError = null;
+  var headers = ['Fecha','Tipo de menú','Usuario'];
+  // Una fila por cada usuario (no una fila por menú con todos los nombres juntos), igual que en
+  // el resto de registros — con el nombre abreviado (Nombre + iniciales de apellidos).
+  var filas = [];
   bloques.forEach(function(b){
-    var fila = [fechaBonita, b.tipo, (b.alumnos||[]).length, (b.alumnos||[]).join(', ')];
+    (b.alumnos||[]).forEach(function(nombreCompleto){
+      filas.push([fechaBonita, b.tipo, abreviarNombreCompleto(nombreCompleto)]);
+    });
+  });
+  var pendientes = filas.length;
+  var huboError = null;
+  filas.forEach(function(fila){
     guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, 'General', headers, fila, color, function(err){
       if(err) huboError = err;
       pendientes--;
