@@ -385,7 +385,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="modal-editar-agenda" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalEditarAgenda()">
       <div class="modal-box" style="max-width:480px">
         <div class="modal-title">📅 Editar agenda</div>
-        <div class="modal-sub">Los cumpleaños se calculan solos desde la fecha de nacimiento de cada usuario. Aquí solo se añaden a mano las salidas de Ocio u otros eventos.</div>
+        <div class="modal-sub">Los cumpleaños de los usuarios se calculan solos desde su fecha de nacimiento. Aquí se añaden a mano las salidas de Ocio u otros eventos puntuales, y los cumpleaños de empleados o de cualquier otra persona.</div>
         <div id="lista-agenda-editable" style="margin:14px 0"></div>
         <div style="display:flex;gap:8px;align-items:flex-end;margin-top:6px;flex-wrap:wrap">
           <div style="flex:0 0 150px">
@@ -397,6 +397,22 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
             <input type="text" class="form-input" id="agenda-nuevo-texto" placeholder="Salida de Ocio — Cine"/>
           </div>
           <button class="btn-secondary btn-sm" onclick="anadirEventoAgenda()">+ Añadir</button>
+        </div>
+        <div style="border-top:1px solid #e2e8f0;margin:20px 0 14px;padding-top:14px">
+          <div class="form-lbl" style="margin-bottom:6px">🎂 Cumpleaños de empleados u otras personas</div>
+          <div class="modal-sub" style="margin-bottom:10px">Se repiten cada año automáticamente — no hace falta volver a añadirlos.</div>
+          <div id="lista-cumples-extra-editable" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:0 0 150px">
+              <label class="form-lbl" for="cumple-extra-fecha">Día y mes</label>
+              <input type="date" class="form-input" id="cumple-extra-fecha"/>
+            </div>
+            <div style="flex:1 1 200px">
+              <label class="form-lbl" for="cumple-extra-nombre">Nombre</label>
+              <input type="text" class="form-input" id="cumple-extra-nombre" placeholder="Nombre y apellidos"/>
+            </div>
+            <button class="btn-secondary btn-sm" onclick="anadirCumpleExtra()">+ Añadir</button>
+          </div>
         </div>
         <div class="modal-actions">
           <button class="btn-secondary" onclick="cerrarModalEditarAgenda()">Cancelar</button>
@@ -4876,7 +4892,7 @@ function renderAgendaInicio(){
   var cont = document.getElementById('lista-agenda');
   if(!cont) return;
   if(typeof cargarDatosOcioDesdeOpciones === 'function') cargarDatosOcioDesdeOpciones();
-  var todos = proximosCumpleanos(14).concat(proximosEventosAgenda(14)).concat(proximasActividadesOcio(14));
+  var todos = proximosCumpleanos(14).concat(proximosCumpleanosExtra(14)).concat(proximosEventosAgenda(14)).concat(proximasActividadesOcio(14));
   todos.sort(function(a,b){ return a.fecha - b.fecha; });
   if(todos.length===0){
     cont.innerHTML = '<div class="empty-state">Sin cumpleaños ni eventos en los próximos 14 días.</div>';
@@ -4898,11 +4914,82 @@ function renderAgendaInicio(){
 
 /* ---- Modal de edición de agenda (solo eventos manuales; los cumpleaños no se editan aquí) ---- */
 var _agendaEnEdicion = [];
+var _cumplesExtraEnEdicion = [];
+// Cumpleaños "extra" (empleados u otras personas que no están en Usuarios): se guardan solo con
+// día y mes (sin año), en el mismo almacén compartido, para que se repitan solos cada año sin
+// tener que volver a añadirlos.
+function leerCumplesExtraGuardados(){
+  var lista = OPCIONES_PERSONALIZADAS['agenda__cumples_extra'] || [];
+  return lista.map(function(linea){
+    var idx = linea.indexOf('|');
+    if(idx===-1) return null;
+    var fechaTxt = linea.slice(0, idx); // "MM-DD"
+    var nombre = linea.slice(idx+1);
+    var partes = fechaTxt.split('-');
+    if(partes.length!==2 || !nombre) return null;
+    var mes = parseInt(partes[0],10), dia = parseInt(partes[1],10);
+    if(!mes || !dia) return null;
+    return {mes: mes, dia: dia, nombre: nombre, fechaTxt: fechaTxt};
+  }).filter(Boolean);
+}
+function proximosCumpleanosExtra(dias){
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var resultado = [];
+  leerCumplesExtraGuardados().forEach(function(c){
+    var proximo = new Date(hoy.getFullYear(), c.mes-1, c.dia);
+    if(proximo < hoy) proximo = new Date(hoy.getFullYear()+1, c.mes-1, c.dia);
+    var diff = Math.round((proximo - hoy) / 86400000);
+    if(diff <= dias){
+      resultado.push({fecha: proximo, texto: 'Cumpleaños — '+c.nombre, tipo:'pro', icono:'🎂'});
+    }
+  });
+  return resultado;
+}
+function renderListaCumplesExtraEditable(){
+  var cont = document.getElementById('lista-cumples-extra-editable');
+  if(!cont) return;
+  if(_cumplesExtraEnEdicion.length===0){
+    cont.innerHTML = '<div class="empty-state">Todavía no hay ningún cumpleaños extra añadido.</div>';
+    return;
+  }
+  var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var ordenada = _cumplesExtraEnEdicion.slice().sort(function(a,b){ return a.fechaTxt < b.fechaTxt ? -1 : 1; });
+  var h = '';
+  ordenada.forEach(function(c){
+    var partes = c.fechaTxt.split('-');
+    var fechaBonita = partes[1]+' '+meses[parseInt(partes[0],10)-1];
+    h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">';
+    h += '<div style="flex:0 0 70px;font-size:12.5px;color:#64748b">'+fechaBonita+'</div>';
+    h += '<div style="flex:1;font-size:13.5px">'+esc(c.nombre)+'</div>';
+    h += '<button class="btn-secondary btn-sm" onclick="quitarCumpleExtra(\''+c.fechaTxt+'\',\''+c.nombre.replace(/'/g,"\\'")+'\')">🗑</button>';
+    h += '</div>';
+  });
+  cont.innerHTML = h;
+}
+function anadirCumpleExtra(){
+  var fecha = document.getElementById('cumple-extra-fecha').value;
+  var nombre = document.getElementById('cumple-extra-nombre').value.trim();
+  if(!fecha || !nombre){ mostrarAviso('Rellena el día/mes y el nombre.'); return; }
+  var partes = fecha.split('-'); // "AAAA-MM-DD"
+  var fechaTxt = partes[1]+'-'+partes[2];
+  _cumplesExtraEnEdicion.push({fechaTxt: fechaTxt, nombre: nombre});
+  document.getElementById('cumple-extra-fecha').value = '';
+  document.getElementById('cumple-extra-nombre').value = '';
+  renderListaCumplesExtraEditable();
+}
+function quitarCumpleExtra(fechaTxt, nombre){
+  _cumplesExtraEnEdicion = _cumplesExtraEnEdicion.filter(function(c){ return !(c.fechaTxt===fechaTxt && c.nombre===nombre); });
+  renderListaCumplesExtraEditable();
+}
 function abrirModalEditarAgenda(){
   _agendaEnEdicion = leerEventosAgendaGuardados().map(function(ev){ return {fechaISO: ev.fechaISO, texto: ev.texto}; });
+  _cumplesExtraEnEdicion = leerCumplesExtraGuardados().map(function(c){ return {fechaTxt: c.fechaTxt, nombre: c.nombre}; });
   document.getElementById('agenda-nueva-fecha').value = '';
   document.getElementById('agenda-nuevo-texto').value = '';
+  document.getElementById('cumple-extra-fecha').value = '';
+  document.getElementById('cumple-extra-nombre').value = '';
   renderListaAgendaEditable();
+  renderListaCumplesExtraEditable();
   document.getElementById('modal-editar-agenda').classList.remove('hidden');
 }
 function cerrarModalEditarAgenda(){
@@ -4942,11 +5029,15 @@ function quitarEventoAgenda(fechaISO, texto){
 }
 function guardarAgendaEditada(){
   var lista = _agendaEnEdicion.slice().sort(function(a,b){ return a.fechaISO < b.fechaISO ? -1 : 1; }).map(function(ev){ return ev.fechaISO+'|'+ev.texto; });
+  var listaCumples = _cumplesExtraEnEdicion.slice().sort(function(a,b){ return a.fechaTxt < b.fechaTxt ? -1 : 1; }).map(function(c){ return c.fechaTxt+'|'+c.nombre; });
   guardarOpcionesPersonalizadas('agenda', 'eventos', lista, function(err){
     if(err){ mostrarAviso('No se pudo guardar la agenda: '+err, '⚠️'); return; }
-    mostrarAviso('Agenda guardada — ya está disponible para todo el equipo.', '✅');
-    cerrarModalEditarAgenda();
-    renderAgendaInicio();
+    guardarOpcionesPersonalizadas('agenda', 'cumples_extra', listaCumples, function(err2){
+      if(err2){ mostrarAviso('Se guardaron los eventos, pero no los cumpleaños extra: '+err2, '⚠️'); return; }
+      mostrarAviso('Agenda guardada — ya está disponible para todo el equipo.', '✅');
+      cerrarModalEditarAgenda();
+      renderAgendaInicio();
+    });
   });
 }
 
