@@ -523,7 +523,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 
     <!-- ===== REGISTRO DE MENÚS (fusión de Control de Dietas + Solicitud de Menús) ===== -->
     <div id="view-registro-menus" class="page hidden">
-      <button class="btn-back" onclick="navTo('registros')">← Volver a Registros</button>
+      <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="page-header">
         <div><div class="page-title">R. Menús</div><div class="page-subtitle">Selecciona los usuarios de cada tipo de menú, día a día</div></div>
         <button class="btn-primary" id="btn-menus-guardar" onclick="guardarMenusDelDia()">💾 Guardar</button>
@@ -539,7 +539,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 
     <!-- ===== REGISTROS - FORMULARIO ===== -->
     <div id="view-form-registro" class="page hidden">
-      <button class="btn-back" onclick="navTo('registros')">← Volver a Registros</button>
+      <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="card">
         <div class="card-header">
           <div class="card-title" id="formreg-titulo">Registro</div>
@@ -550,7 +550,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         </div>
         <div class="form-grid" id="formreg-campos"></div>
         <div class="modal-actions">
-          <button class="btn-secondary" onclick="navTo('registros')">Cancelar</button>
+          <button class="btn-secondary" onclick="volverDeFormRegistro()">Cancelar</button>
           <button class="btn-primary" id="btn-guardar-registro" onclick="guardarRegistroDemo()">✓ Guardar registro</button>
         </div>
       </div>
@@ -2573,7 +2573,7 @@ function renderAccesoRegistroEnArea(contenedorId, tipoId){
   if(!t){ el.innerHTML=''; return; }
   var nivel = nivelRegistro(tipoId);
   if(nivel==='nada'){ el.innerHTML=''; return; }
-  var h = '<div class="reg-btn" onclick="abrirFormRegistro(\''+t.id+'\',\''+t.titulo+'\')">';
+  var h = '<div class="reg-btn" onclick="prepararVueltaRegistro(\'transporte\');abrirFormRegistro(\''+t.id+'\',\''+t.titulo+'\')">';
   h += '<div class="reg-ic" style="background:'+t.color+';color:'+t.iconColor+'">'+t.icon+'</div>';
   h += '<div><div class="reg-title">'+t.titulo+'</div><div class="reg-sub">'+t.desc+'</div></div>';
   h += '</div>';
@@ -5606,22 +5606,41 @@ function abrirCarpetaRegistros(grupoId){
   var tarjetas, titulo;
   if(grupo){
     titulo = grupo.titulo;
-    tarjetas = registrosAccesiblesDeGrupo(grupo).map(tarjetaRegistroHtml).join('');
+    tarjetas = registrosAccesiblesDeGrupo(grupo).map(function(r){ return tarjetaRegistroHtml(r, 'carpeta:'+grupoId); }).join('');
   } else {
     // "otros": tipos de registro que no están todavía en ninguno de los 3 bloques definidos
     titulo = 'Otros';
     var idsColocados = {};
     GRUPOS_REGISTROS.forEach(function(g){ g.ids.forEach(function(id){ idsColocados[id]=true; }); });
     var sueltos = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return !idsColocados[r.id] && nivelRegistro(r.id)!=='nada'; }), function(r){return r.titulo;});
-    tarjetas = sueltos.map(tarjetaRegistroHtml).join('');
+    tarjetas = sueltos.map(function(r){ return tarjetaRegistroHtml(r, 'carpeta:otros'); }).join('');
   }
   document.getElementById('registros-carpeta-titulo').textContent = titulo;
   document.getElementById('reg-grid-carpeta').innerHTML = '<div class="reg-grid-grupo">'+tarjetas+'</div>';
   navTo('registros-carpeta');
 }
-function tarjetaRegistroHtml(r){
-  if(r.id==='menus') return '<div class="reg-btn" onclick="abrirRegistroMenus()"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
-  return '<div class="reg-btn" onclick="abrirFormRegistro(\''+r.id+'\',\''+r.titulo+'\')"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
+// Recuerda a dónde hay que volver al terminar/cancelar un registro (la carpeta concreta de la
+// que vino, o la página de Transporte/Ocio si se abrió desde su acceso rápido). Por defecto,
+// si no se ha preparado nada, vuelve al listado general de carpetas.
+var _volverDespuesDeFormRegistro = null;
+function prepararVueltaRegistro(destino){
+  _volverDespuesDeFormRegistro = destino;
+}
+function volverDeFormRegistro(){
+  var destino = _volverDespuesDeFormRegistro;
+  _volverDespuesDeFormRegistro = null;
+  if(destino && destino.indexOf('carpeta:')===0){
+    abrirCarpetaRegistros(destino.slice('carpeta:'.length));
+  } else if(destino){
+    navTo(destino);
+  } else {
+    navTo('registros');
+  }
+}
+function tarjetaRegistroHtml(r, volverA){
+  var prep = volverA ? 'prepararVueltaRegistro(\''+volverA+'\');' : '';
+  if(r.id==='menus') return '<div class="reg-btn" onclick="'+prep+'abrirRegistroMenus()"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
+  return '<div class="reg-btn" onclick="'+prep+'abrirFormRegistro(\''+r.id+'\',\''+r.titulo+'\')"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
 }
 // Aspectos trabajados según el área de actividad elegida (antes iban todos mezclados en una sola lista)
 var ASPECTOS_POR_AREA = {
@@ -5858,7 +5877,7 @@ function otroRegistroIgual(){
 }
 function volverARegistrosDesdeConfirmacion(){
   document.getElementById('modal-confirmacion-registro').classList.add('hidden');
-  navTo('registros');
+  volverDeFormRegistro();
 }
 
 /* ===================== CONFIGURACIÓN / PERMISOS ===================== */
