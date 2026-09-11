@@ -4595,6 +4595,17 @@ function mostrarErrorLogin(msg){
   el.textContent = msg;
   el.classList.remove('hidden');
 }
+// Acceso "invitado": correos autorizados a entrar y rellenar registros SIN tener un perfil de
+// empleado de verdad — no aparecen en Configuración, ni en los avatares del login, ni en ningún
+// listado. Se añaden aquí a mano (dile a Claude el correo y el nombre a mostrar). Empieza vacía:
+// nadie tiene este acceso hasta que se añada explícitamente.
+var CORREOS_INVITADOS_DIRECTOS = [
+  // { email: 'ejemplo@gmail.com', nombre: 'Nombre a mostrar' }
+];
+var PERMISOS_INVITADO_POR_DEFECTO = {usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}};
+function buscarCorreoInvitado_(email){
+  return CORREOS_INVITADOS_DIRECTOS.filter(function(c){ return c.email.toLowerCase()===email; })[0];
+}
 function manejarLoginGoogle(respuesta){
   if(!_empleadosCargadosDeVerdad){
     // El botón de Google ya puede pulsarse antes de que termine de llegar la lista de quién
@@ -4610,6 +4621,12 @@ function manejarLoginGoogle(respuesta){
     }).join('')));
     var email = (payload.email||'').toLowerCase();
     var persona = EMPLEADOS.filter(function(e){ return e.usuario.toLowerCase()===email; })[0];
+    if(!persona){
+      var invitado = buscarCorreoInvitado_(email);
+      if(invitado){
+        persona = { nombre: invitado.nombre, rol: 'invitado', permisos: JSON.parse(JSON.stringify(PERMISOS_INVITADO_POR_DEFECTO)) };
+      }
+    }
     if(!persona){
       mostrarErrorLogin('La cuenta '+email+' no tiene acceso al programa. Si crees que es un error, pídele a la coordinación que te dé de alta en Configuración.');
       return;
