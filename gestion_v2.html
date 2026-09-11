@@ -352,7 +352,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           </div>
           <div class="home-btn c-pink disabled" id="home-camdoc" title="Próximamente">
             <div class="home-ic">📄</div>
-            <div><div class="home-txt-title">DOCUMENTACIÓN CAM</div><div class="home-txt-sub">Próximamente.</div></div>
+            <div><div class="home-txt-title">PROTOCOLOS</div><div class="home-txt-sub">Próximamente.</div></div>
           </div>
           <div class="home-btn c-pistacho" id="home-transporte" onclick="irA('transporte')">
             <div class="home-ic">🚌</div>
@@ -681,7 +681,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div id="toggle-empleados-ocultos" style="margin-bottom:10px"></div>
       <div class="table-card">
         <table class="tabla-config-sticky">
-          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Documentación<br>CAM</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th></th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Protocolos</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th></th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
       </div>
@@ -1589,7 +1589,7 @@ function confirmarCopiarHojaOcio(){
    bloque se cuenta solo. Se guarda de dos formas: compartido con el equipo (automático, como
    Ocio/Horarios) y de verdad en la hoja de cálculo real de Registros Digitales (una fila por
    cada tipo de menú con usuarios marcados), igual que el resto de registros. */
-var TIPOS_MENU = ['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA'];
+var TIPOS_MENU = ['ALERGIA PESCADO/MARISCO','ASTRINGENTE','BAJA EN GRASA/COLESTEROL','BASAL','DIABETES','FÁCIL MASTICACIÓN','HIPERPROTEÍCA','HIPOCALÓRICA','INTOLERANCIA AL HUEVO','INTOLERANTE LEGUMBRE','INTOLERANTE TOMATE','PARENTERAL/ENTERAL','PROTECCIÓN GÁSTRICA','SIN SAL','TRITURADA','VEGETARIANA'];
 var MENUS_POR_FECHA = {};
 var _fechaMenusActual = '';
 function obtenerFechaMenusHoyISO(){
@@ -1631,7 +1631,7 @@ function anadirMenuDelDia(){
   var bloques = obtenerBloquesDelDiaMenus();
   var usados = {}; bloques.forEach(function(b){ usados[b.tipo]=true; });
   var siguienteTipo = TIPOS_MENU.filter(function(t){return !usados[t];})[0] || TIPOS_MENU[0];
-  bloques.push({tipo: siguienteTipo, alumnos: []});
+  bloques.unshift({tipo: siguienteTipo, alumnos: []});
   renderBloquesMenus();
 }
 function eliminarBloqueMenu(bIdx){
@@ -1657,6 +1657,12 @@ function anadirAlumnoManualMenu(bIdx){
   var b = obtenerBloquesDelDiaMenus()[bIdx];
   if(!b.alumnos) b.alumnos = [];
   if(b.alumnos.indexOf(sel.value)===-1) b.alumnos.push(sel.value);
+  renderBloquesMenus();
+}
+function quitarAlumnoExtraMenu(bIdx, nombre){
+  var b = obtenerBloquesDelDiaMenus()[bIdx];
+  if(!b) return;
+  b.alumnos = (b.alumnos||[]).filter(function(n){ return n!==nombre; });
   renderBloquesMenus();
 }
 function renderBloquesMenus(){
@@ -1686,6 +1692,19 @@ function renderBloquesMenus(){
       h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleAlumnoMenu('+bIdx+',\''+n.replace(/'/g,"")+'\',this.checked)"/> '+esc(abreviarNombreCompleto(n))+'</label>';
     });
     h += '</div>';
+    // Alguien añadido a mano con "+ Añadir usuario" que ya está usado en OTRO menú de este mismo
+    // día no aparece en la lista de casillas de arriba (para no confundir), pero se muestra aquí
+    // con su nombre y un botón para quitarlo, en vez de quedar invisible una vez añadido.
+    var extras = (b.alumnos||[]).filter(function(n){ return disponibles.indexOf(n)===-1; });
+    if(extras.length){
+      h += '<div class="fl-lbl" style="margin-top:10px;margin-bottom:4px">Añadidos manualmente</div>';
+      extras.forEach(function(n){
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'+
+          '<span style="flex:1;font-size:13px">'+esc(abreviarNombreCompleto(n))+'</span>'+
+          '<button class="btn-secondary btn-sm" onclick="quitarAlumnoExtraMenu('+bIdx+',\''+n.replace(/'/g,"")+'\')">✕ Quitar</button>'+
+          '</div>';
+      });
+    }
     h += '<div style="display:flex;gap:6px;margin-top:8px">';
     h += '<select id="anadir-alumno-menu-sel-'+bIdx+'" class="form-input" style="flex:1;font-size:12.5px"><option value="">— Añadir usuario —</option>';
     ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).forEach(function(u){
