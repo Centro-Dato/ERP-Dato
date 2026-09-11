@@ -686,6 +686,8 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         </table>
       </div>
 
+      <div id="tarjeta-invitados-directos" style="margin-top:24px"></div>
+
       <div class="card" style="margin-top:24px">
         <div class="card-header">
           <div class="card-title">📊 Carpeta de Registros Digitales</div>
@@ -3066,6 +3068,7 @@ function cargarOpcionesPersonalizadas(callback){
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data && data.ok && data.opciones){ OPCIONES_PERSONALIZADAS = data.opciones; }
+      if(typeof cargarInvitadosDesdeOpciones === 'function') cargarInvitadosDesdeOpciones();
       if(typeof renderAgendaInicio === 'function') renderAgendaInicio();
       if(typeof callback === 'function') callback();
     })
@@ -4602,15 +4605,25 @@ function mostrarErrorLogin(msg){
   el.classList.remove('hidden');
 }
 // Acceso "invitado": correos autorizados a entrar y rellenar registros SIN tener un perfil de
-// empleado de verdad — no aparecen en Configuración, ni en los avatares del login, ni en ningún
-// listado. Se añaden aquí a mano (dile a Claude el correo y el nombre a mostrar). Empieza vacía:
-// nadie tiene este acceso hasta que se añada explícitamente.
-var CORREOS_INVITADOS_DIRECTOS = [
-  { email: 'c.trapero@centrodato.org', nombre: 'Carlos Trapero' }
+// empleado de verdad — no aparecen en Configuración (en la tabla normal), ni en los avatares del
+// login, ni en ningún listado. Cada uno tiene sus propios permisos (no todos iguales). Se gestionan
+// desde Configuración → "Accesos invitados" (solo visible para quien también ve empleados ocultos).
+// Este valor de aquí es solo el de fábrica, hasta que se cargue lo guardado de verdad al iniciar.
+var INVITADOS_DIRECTOS = [
+  { email: 'c.trapero@centrodato.org', nombre: 'Carlos Trapero', permisos: {usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}} }
 ];
 var PERMISOS_INVITADO_POR_DEFECTO = {usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}};
+function cargarInvitadosDesdeOpciones(){
+  var lista = OPCIONES_PERSONALIZADAS['config__invitados_directos'];
+  if(lista && lista[0]){
+    try{ INVITADOS_DIRECTOS = JSON.parse(lista[0]); }catch(e){ /* si algo quedó mal guardado, se ignora y se queda lo que ya había */ }
+  }
+}
+function guardarInvitadosEnOpciones(callback){
+  guardarOpcionesPersonalizadas('config', 'invitados_directos', [JSON.stringify(INVITADOS_DIRECTOS)], callback);
+}
 function buscarCorreoInvitado_(email){
-  return CORREOS_INVITADOS_DIRECTOS.filter(function(c){ return c.email.toLowerCase()===email; })[0];
+  return INVITADOS_DIRECTOS.filter(function(c){ return c.email.toLowerCase()===email; })[0];
 }
 function manejarLoginGoogle(respuesta){
   if(!_empleadosCargadosDeVerdad){
@@ -4630,7 +4643,7 @@ function manejarLoginGoogle(respuesta){
     if(!persona){
       var invitado = buscarCorreoInvitado_(email);
       if(invitado){
-        persona = { nombre: invitado.nombre, rol: 'invitado', permisos: JSON.parse(JSON.stringify(PERMISOS_INVITADO_POR_DEFECTO)) };
+        persona = { nombre: invitado.nombre, rol: 'invitado', permisos: JSON.parse(JSON.stringify(invitado.permisos || PERMISOS_INVITADO_POR_DEFECTO)) };
       }
     }
     if(!persona){
@@ -5911,8 +5924,81 @@ function renderConfig(){
   }
   renderBuzonSugerencias();
   renderEstadoCarpetasPiloto();
+  renderInvitadosDirectos();
   var elCurso = document.getElementById('texto-curso-registros');
   if(elCurso) elCurso.textContent = CURSO_REGISTROS_ACTUAL();
+}
+// "Accesos invitados": gestión de correos con acceso directo pero sin perfil de empleado.
+// Solo lo ve/gestiona quien también puede ver empleados ocultos (de momento, solo Ana) — igual
+// que con los ocultos, si esto fuera un permiso normal cualquier coordinador con Configuración:
+// Todo podría vérselo, así que se restringe igual, por correo, directamente en el código.
+function renderInvitadosDirectos(){
+  var cont = document.getElementById('tarjeta-invitados-directos');
+  if(!cont) return;
+  if(!puedeVerEmpleadosOcultos()){ cont.innerHTML = ''; return; }
+  var camposPermiso = ['usuarios','registros','ocio','horarios','paap','configuracion'];
+  var etiquetas = {usuarios:'Usuarios',registros:'Registros',ocio:'Ocio',horarios:'Horarios',paap:'PAAP',configuracion:'Configuración'};
+  var h = '<div class="card-header"><div class="card-title">👤 Accesos invitados</div></div>';
+  h += '<p style="color:#64748b;font-size:13.5px;line-height:1.6;margin-bottom:14px">Correos con acceso al programa sin tener un perfil de empleado — no aparecen en la tabla de arriba ni en los avatares del login. Cada uno tiene sus propios permisos, ajustables aquí mismo.</p>';
+  if(INVITADOS_DIRECTOS.length===0){
+    h += '<div class="empty-state">Todavía no hay ningún acceso invitado.</div>';
+  } else {
+    h += '<div class="table-card"><table class="tabla-config-sticky"><thead><tr><th>Correo / Nombre</th>';
+    camposPermiso.forEach(function(c){ h += '<th>'+etiquetas[c]+'</th>'; });
+    h += '<th></th></tr></thead><tbody>';
+    INVITADOS_DIRECTOS.forEach(function(inv, idx){
+      h += '<tr><td><div class="name-cell"><div class="avatar" style="background:#64748b">'+esc(inv.nombre[0])+'</div><div><div class="name-text">'+esc(inv.nombre)+'</div><div style="font-size:12px;color:#94a3b8">'+esc(inv.email)+'</div></div></div></td>';
+      camposPermiso.forEach(function(campo){
+        var val = inv.permisos[campo] || 'nada';
+        h += '<td><select class="perm-select v-'+val+'" onchange="cambiarPermisoInvitado('+idx+',\''+campo+'\',this)">'+
+          ['todo','ver','editar','nada'].map(function(op){ return '<option value="'+op+'" '+(op===val?'selected':'')+'>'+PERM_LABELS[op]+'</option>'; }).join('')+
+          '</select></td>';
+      });
+      h += '<td><button class="btn-secondary btn-sm" onclick="quitarInvitadoDirecto('+idx+')">🗑</button></td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+  }
+  h += '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">';
+  h += '<input type="text" class="form-input" id="nuevo-invitado-email" placeholder="correo@ejemplo.com" style="max-width:220px"/>';
+  h += '<input type="text" class="form-input" id="nuevo-invitado-nombre" placeholder="Nombre a mostrar" style="max-width:180px"/>';
+  h += '<button class="btn-secondary btn-sm" onclick="anadirInvitadoDirecto()">+ Añadir invitado</button>';
+  h += '</div>';
+  cont.innerHTML = '<div class="card">'+h+'</div>';
+}
+function cambiarPermisoInvitado(idx, campo, sel){
+  var inv = INVITADOS_DIRECTOS[idx];
+  if(!inv) return;
+  inv.permisos[campo] = sel.value;
+  sel.className = 'perm-select v-'+sel.value;
+  guardarInvitadosEnOpciones(function(err){
+    if(err) mostrarAviso('No se pudo guardar: '+err, '⚠️');
+  });
+}
+function quitarInvitadoDirecto(idx){
+  var inv = INVITADOS_DIRECTOS[idx];
+  if(!inv) return;
+  pedirConfirmacion('Quitar acceso invitado', '¿Quitar el acceso de "'+inv.nombre+'" ('+inv.email+')? Ya no podrá entrar al programa.', function(){
+    INVITADOS_DIRECTOS.splice(idx,1);
+    guardarInvitadosEnOpciones(function(err){
+      if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+      renderInvitadosDirectos();
+      mostrarAviso('Acceso quitado.', '✅');
+    });
+  });
+}
+function anadirInvitadoDirecto(){
+  var email = document.getElementById('nuevo-invitado-email').value.trim().toLowerCase();
+  var nombre = document.getElementById('nuevo-invitado-nombre').value.trim();
+  if(!email || !nombre){ mostrarAviso('Escribe el correo y el nombre a mostrar.'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ mostrarAviso('Ese correo no parece válido.'); return; }
+  if(INVITADOS_DIRECTOS.some(function(i){ return i.email.toLowerCase()===email; })){ mostrarAviso('Ya hay un acceso invitado con ese correo.'); return; }
+  INVITADOS_DIRECTOS.push({ email: email, nombre: nombre, permisos: JSON.parse(JSON.stringify(PERMISOS_INVITADO_POR_DEFECTO)) });
+  guardarInvitadosEnOpciones(function(err){
+    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    mostrarAviso('Acceso invitado añadido — ya puede entrar con ese correo de Google.', '✅');
+    renderInvitadosDirectos();
+  });
 }
 function alternarOcultoEmpleado(empId){
   var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
