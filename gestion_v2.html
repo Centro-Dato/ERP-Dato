@@ -1897,6 +1897,9 @@ function cambiarCursoRegistros(){
   if(!nuevo){ mostrarAviso('Escribe el curso, por ejemplo 2027-2028.'); return; }
   if(!/^\d{4}-\d{4}$/.test(nuevo)){ mostrarAviso('Usa el formato AAAA-AAAA, por ejemplo 2027-2028.'); return; }
   localStorage.setItem('curso_registros_actual', nuevo);
+  // También se guarda para todo el equipo (no solo en este navegador), porque el rellenado
+  // automático de Incidencias corre dentro de Google y necesita saber qué curso usar.
+  guardarOpcionesPersonalizadas('config', 'curso_actual', [nuevo], function(){});
   mostrarAviso('Curso actualizado a '+nuevo+'. A partir de ahora, los registros nuevos crearán sus propios archivos para este curso — los del curso '+actual+' se quedan intactos y los puedes ver siempre en Drive.', '✅');
   renderEstadoCarpetasPiloto();
   var elCurso = document.getElementById('texto-curso-registros');
@@ -4444,7 +4447,7 @@ var REGISTRO_TIPOS = [
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD'},
-    {k:'tipo',label:'Incidencia',type:'select',opts:['ALIMENTACIÓN','ACTIVIDAD','BAÑO','CLIMATOLÓGICA','OTROS']},
+    {k:'tipo',label:'Incidencia',type:'select',opts:['SIN INCIDENCIAS','ALIMENTACIÓN','ACTIVIDAD','BAÑO','CLIMATOLÓGICA','OTROS']},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
   {id:'higiene',titulo:'R. Higiene',icon:'🧼',color:'#f0fdf4',iconColor:'#14532d',desc:'Registro de higiene personal',
