@@ -5944,7 +5944,7 @@ function renderInvitadosDirectos(){
     h += '<div class="empty-state">Todavía no hay ningún acceso invitado.</div>';
   } else {
     h += '<div class="table-card"><table class="tabla-config-sticky"><thead><tr><th>Correo / Nombre</th>';
-    camposPermiso.forEach(function(c){ h += '<th>'+etiquetas[c]+'</th>'; });
+    camposPermiso.forEach(function(c){ h += '<th>'+etiquetas[c]+'</th>'; if(c==='registros') h += '<th></th>'; });
     h += '<th></th></tr></thead><tbody>';
     INVITADOS_DIRECTOS.forEach(function(inv, idx){
       h += '<tr><td><div class="name-cell"><div class="avatar" style="background:#64748b">'+esc(inv.nombre[0])+'</div><div><div class="name-text">'+esc(inv.nombre)+'</div><div style="font-size:12px;color:#94a3b8">'+esc(inv.email)+'</div></div></div></td>';
@@ -5953,6 +5953,7 @@ function renderInvitadosDirectos(){
         h += '<td><select class="perm-select v-'+val+'" onchange="cambiarPermisoInvitado('+idx+',\''+campo+'\',this)">'+
           ['todo','ver','editar','nada'].map(function(op){ return '<option value="'+op+'" '+(op===val?'selected':'')+'>'+PERM_LABELS[op]+'</option>'; }).join('')+
           '</select></td>';
+        if(campo==='registros') h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetalleRegistrosInvitado('+idx+')">⚙ Detalle</button></td>';
       });
       h += '<td><button class="btn-secondary btn-sm" onclick="quitarInvitadoDirecto('+idx+')">🗑</button></td>';
       h += '</tr>';
@@ -6061,12 +6062,28 @@ function cambiarPermiso(empId, modulo, sel){
 
 /* ---- Detalle de permisos por tipo de registro (20 tipos) ---- */
 var _empDetalleActual = null;
+var _empDetalleEsInvitado = false;
 function abrirDetalleRegistros(empId){
   _empDetalleActual = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
+  _empDetalleEsInvitado = false;
   document.getElementById('detalle-emp-nombre').textContent = _empDetalleActual.nombre + ' — nivel general de Registros: ' + PERM_LABELS[_empDetalleActual.permisos.registros];
   if(!_empDetalleActual.permisos.registrosDetalle) _empDetalleActual.permisos.registrosDetalle = {};
   renderTablaDetalleRegistros();
   document.getElementById('modal-registros-detalle').classList.remove('hidden');
+}
+// Igual que abrirDetalleRegistros, pero para un acceso invitado (INVITADOS_DIRECTOS en vez de
+// EMPLEADOS) — reutiliza el mismo modal y la misma tabla, solo cambia dónde se guarda al final.
+function abrirDetalleRegistrosInvitado(idx){
+  _empDetalleActual = INVITADOS_DIRECTOS[idx];
+  _empDetalleEsInvitado = true;
+  document.getElementById('detalle-emp-nombre').textContent = _empDetalleActual.nombre + ' (invitado) — nivel general de Registros: ' + PERM_LABELS[_empDetalleActual.permisos.registros];
+  if(!_empDetalleActual.permisos.registrosDetalle) _empDetalleActual.permisos.registrosDetalle = {};
+  renderTablaDetalleRegistros();
+  document.getElementById('modal-registros-detalle').classList.remove('hidden');
+}
+function guardarDetalleRegistrosActual_(callback){
+  if(_empDetalleEsInvitado) guardarInvitadosEnOpciones(callback||function(){});
+  else guardarEmpleadosLocalStorage();
 }
 function renderTablaDetalleRegistros(){
   var det = _empDetalleActual.permisos.registrosDetalle;
@@ -6085,7 +6102,7 @@ function renderTablaDetalleRegistros(){
 function cambiarDetalleRegistro(tipoId, sel){
   _empDetalleActual.permisos.registrosDetalle[tipoId] = sel.value;
   sel.className = 'perm-select v-'+sel.value;
-  guardarEmpleadosLocalStorage();
+  guardarDetalleRegistrosActual_();
 }
 function aplicarTodosDetalle(){
   var sel = document.getElementById('detalle-aplicar-todos');
@@ -6093,7 +6110,7 @@ function aplicarTodosDetalle(){
   REGISTRO_TIPOS.forEach(function(r){ _empDetalleActual.permisos.registrosDetalle[r.id] = sel.value; });
   renderTablaDetalleRegistros();
   sel.value = '';
-  guardarEmpleadosLocalStorage();
+  guardarDetalleRegistrosActual_();
 }
 function cerrarModalDetalleRegistros(){
   document.getElementById('modal-registros-detalle').classList.add('hidden');
