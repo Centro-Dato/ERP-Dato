@@ -133,9 +133,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 /* REGISTROS - BOTONES GRANDES */
 .reg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
 .reg-grid-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
-.reg-carpeta{margin-bottom:30px}
-.reg-carpeta-tab{display:inline-flex;align-items:center;gap:8px;background:#14141a;color:#fff;padding:8px 20px;border-radius:14px 14px 0 0;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;position:relative;top:2.5px}
-.reg-carpeta-caja{background:#fff;border:2.5px solid #14141a;border-radius:0 18px 18px 18px;padding:20px}
 .reg-btn{background:#fff;border:2.5px solid #14141a;border-radius:18px;padding:26px 22px;cursor:pointer;text-align:left;transition:all .18s;display:flex;flex-direction:column;gap:14px}
 .reg-btn:hover{box-shadow:6px 6px 0 #14141a;transform:translateY(-3px)}
 .reg-btn.disabled{opacity:.5;cursor:default;pointer-events:none}
@@ -488,7 +485,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="view-registros" class="page hidden">
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
       <div class="page-header">
-        <div><div class="page-title">Registros</div><div class="page-subtitle">Selecciona el tipo de registro que quieres rellenar</div></div>
+        <div><div class="page-title">Registros</div><div class="page-subtitle">Elige una carpeta para ver sus registros</div></div>
         <div style="display:flex;gap:8px">
           <button class="btn-secondary" id="btn-registros-carpeta-drive-principal" onclick="verCarpetaRegistrosDigitales('registros')">📁 Ver Carpeta de Registros Digitales</button>
           <button class="btn-secondary" id="btn-editar-registros-guardados" onclick="abrirEditarRegistrosGuardados()">✏️ Editar registros guardados</button>
@@ -496,6 +493,14 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
       <div class="info-banner" id="banner-registros-drive">ℹ️ Cada registro que rellenes se guarda automáticamente en la hoja de cálculo individual de ese usuario, dentro de su carpeta en Drive. En "📁 Ver Carpeta de Registros Digitales" puedes ver, para cada tipo, el archivo con todos los usuarios juntos (actividades de todos, caídas de todos, sanitario de todos...).</div>
       <div id="reg-grid"></div>
+    </div>
+
+    <div id="view-registros-carpeta" class="page hidden">
+      <button class="btn-back" onclick="navTo('registros')">← Volver a Registros</button>
+      <div class="page-header">
+        <div><div class="page-title" id="registros-carpeta-titulo">Carpeta</div><div class="page-subtitle">Selecciona el tipo de registro que quieres rellenar</div></div>
+      </div>
+      <div id="reg-grid-carpeta"></div>
     </div>
 
     <div id="view-editar-registros" class="page hidden">
@@ -4716,7 +4721,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios','expediente','documento','drive','registros','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','paap-detalle','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','paap-detalle','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
@@ -5554,38 +5559,52 @@ function volverDeDrive(){ navTo(_driveVistaAnterior); }
 
 /* ===================== REGISTROS ===================== */
 var GRUPOS_REGISTROS = [
-  { titulo: 'Registros de Usuarios', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','recepcion_medicacion','sanitario','transporte'] },
-  { titulo: 'Registros Alimentación', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
-  { titulo: 'Registros del Centro', ids: ['limpieza','registro_personal','visitas_centro'] }
+  { id:'usuarios', titulo: 'Registros de Usuarios', icono:'🗂️', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','recepcion_medicacion','sanitario','transporte'] },
+  { id:'alimentacion', titulo: 'Registros Alimentación', icono:'🍽️', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
+  { id:'centro', titulo: 'Registros del Centro', icono:'🏢', ids: ['limpieza','registro_personal','visitas_centro'] }
 ];
-function renderRegistrosGrid(){
-  var h = '';
+function registrosAccesiblesDeGrupo(grupo){
   var porId = {};
   REGISTRO_TIPOS.forEach(function(r){ porId[r.id] = r; });
+  return grupo.ids.map(function(id){ return porId[id]; }).filter(function(r){ return r && nivelRegistro(r.id)!=='nada'; });
+}
+function renderRegistrosGrid(){
+  var h = '';
   var idsColocados = {};
   GRUPOS_REGISTROS.forEach(function(grupo){
-    var tarjetasGrupo = '';
-    grupo.ids.forEach(function(id){
-      var r = porId[id];
-      if(!r) return;
-      idsColocados[id] = true;
-      if(nivelRegistro(r.id)==='nada') return;
-      tarjetasGrupo += tarjetaRegistroHtml(r);
-    });
-    if(tarjetasGrupo){
-      h += '<div class="reg-carpeta"><div class="reg-carpeta-tab">📁 '+grupo.titulo+'</div><div class="reg-carpeta-caja"><div class="reg-grid-grupo">'+tarjetasGrupo+'</div></div></div>';
-    }
+    var accesibles = registrosAccesiblesDeGrupo(grupo);
+    grupo.ids.forEach(function(id){ idsColocados[id] = true; });
+    if(accesibles.length===0) return;
+    h += '<div class="reg-btn" onclick="abrirCarpetaRegistros(\''+grupo.id+'\')"><div class="reg-ic" style="background:#f1f5f9;color:#14141a">'+grupo.icono+'</div><div><div class="reg-title">'+grupo.titulo+'</div><div class="reg-sub">'+accesibles.length+' registro'+(accesibles.length>1?'s':'')+'</div></div></div>';
   });
   // Por si algún tipo de registro nuevo no está todavía en ninguno de los 3 bloques de arriba,
-  // que no desaparezca sin más: se muestra igualmente en un bloque aparte al final.
+  // que no desaparezca sin más: se agrupan aparte en una carpeta "Otros".
   var sueltos = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return !idsColocados[r.id] && nivelRegistro(r.id)!=='nada'; }), function(r){return r.titulo;});
   if(sueltos.length){
-    h += '<div class="reg-carpeta"><div class="reg-carpeta-tab">📁 Otros</div><div class="reg-carpeta-caja"><div class="reg-grid-grupo">'+sueltos.map(tarjetaRegistroHtml).join('')+'</div></div></div>';
+    h += '<div class="reg-btn" onclick="abrirCarpetaRegistros(\'otros\')"><div class="reg-ic" style="background:#f1f5f9;color:#14141a">📁</div><div><div class="reg-title">Otros</div><div class="reg-sub">'+sueltos.length+' registro'+(sueltos.length>1?'s':'')+'</div></div></div>';
   }
   if(!h){
     h = '<div class="empty-state">No tienes acceso a ningún tipo de registro. Pídele a un Coordinador que te dé permiso en Configuración.</div>';
   }
-  document.getElementById('reg-grid').innerHTML = h;
+  document.getElementById('reg-grid').innerHTML = '<div class="reg-grid-grupo">'+h+'</div>';
+}
+function abrirCarpetaRegistros(grupoId){
+  var grupo = GRUPOS_REGISTROS.filter(function(g){ return g.id===grupoId; })[0];
+  var tarjetas, titulo;
+  if(grupo){
+    titulo = grupo.titulo;
+    tarjetas = registrosAccesiblesDeGrupo(grupo).map(tarjetaRegistroHtml).join('');
+  } else {
+    // "otros": tipos de registro que no están todavía en ninguno de los 3 bloques definidos
+    titulo = 'Otros';
+    var idsColocados = {};
+    GRUPOS_REGISTROS.forEach(function(g){ g.ids.forEach(function(id){ idsColocados[id]=true; }); });
+    var sueltos = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return !idsColocados[r.id] && nivelRegistro(r.id)!=='nada'; }), function(r){return r.titulo;});
+    tarjetas = sueltos.map(tarjetaRegistroHtml).join('');
+  }
+  document.getElementById('registros-carpeta-titulo').textContent = titulo;
+  document.getElementById('reg-grid-carpeta').innerHTML = '<div class="reg-grid-grupo">'+tarjetas+'</div>';
+  navTo('registros-carpeta');
 }
 function tarjetaRegistroHtml(r){
   if(r.id==='menus') return '<div class="reg-btn" onclick="abrirRegistroMenus()"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
