@@ -1746,7 +1746,7 @@ var REGISTRO_COLOR = {
   sanitario:'DB2777', menus:'16A34A', crisis_epilepticas:'EA580C', desaparicion_usuarios:'991B1B',
   entradas_salidas:'0EA5E9', hidratacion:'0891B2', higiene:'15803D', incontinencias:'7C3AED',
   limpieza:'64748B', medicacion:'9333EA', abvd:'0D9488', quejas_sugerencias:'CA8A04',
-  recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA',
+  recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA', incidencias:'B91C1C',
   temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9'
 };
 var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
@@ -4440,6 +4440,13 @@ var REGISTRO_TIPOS = [
     {k:'desayuno',label:'Hidratación desayuno',type:'matriz-checkbox',filas:'BD',columnas:['AGUA','ZUMO','LECHE','CAFÉ','INFUSIÓN','OTROS']},
     {k:'comida',label:'Hidratación comida',type:'matriz-checkbox',filas:'BD',columnas:['AGUA','OTROS']}
    ]},
+  {id:'incidencias',titulo:'R. Incidencias',icon:'⚠️',color:'#fef2f2',iconColor:'#991b1b',desc:'Incidencias de alimentación, actividad, baño, climatológicas u otras',
+   fields:[
+    {k:'fecha',label:'Fecha',type:'date',req:true},
+    {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD'},
+    {k:'tipo',label:'Incidencia',type:'select',opts:['ALIMENTACIÓN','ACTIVIDAD','BAÑO','CLIMATOLÓGICA','OTROS']},
+    {k:'observaciones',label:'Observaciones',type:'textarea'}
+   ]},
   {id:'higiene',titulo:'R. Higiene',icon:'🧼',color:'#f0fdf4',iconColor:'#14532d',desc:'Registro de higiene personal',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
@@ -5526,7 +5533,7 @@ function volverDeDrive(){ navTo(_driveVistaAnterior); }
 
 /* ===================== REGISTROS ===================== */
 var GRUPOS_REGISTROS = [
-  { titulo: 'Registros de Usuarios', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incontinencias','medicacion','quejas_sugerencias','recepcion_medicacion','sanitario','transporte'] },
+  { titulo: 'Registros de Usuarios', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','recepcion_medicacion','sanitario','transporte'] },
   { titulo: 'Registros Alimentación', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
   { titulo: 'Registros del Centro', ids: ['limpieza','registro_personal','visitas_centro'] }
 ];
