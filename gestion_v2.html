@@ -1801,7 +1801,7 @@ var REGISTRO_COLOR = {
   temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9',
   mantenimiento:'9A3412'
 };
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','mantenimiento','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','medicacion','hidratacion'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','mantenimiento','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','hidratacion'];
 
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
 // Si el registro tiene un campo de selección de usuario(s), genera UNA FILA POR PERSONA (misma
@@ -1833,6 +1833,9 @@ function recogerValoresFormulario(tipo){
   var campoUsuarioKey = null;
   var valorPorCampo = {};
   var aspectosPorAlumno = null;
+  // Solo para R. Medicación: no tiene un campo "usuario" normal, así que las pestañas
+  // individuales se deciden juntando a quién aparece marcado en "crónica" y en "temporal".
+  var usuariosMencionadosMedicacion = null;
   // Los campos "seccion" son solo encabezados visuales dentro del formulario: no representan
   // datos, así que no cuentan ni como columna ni como valor a guardar.
   var camposReales = tipo.fields.filter(function(c){ return c.type!=='seccion'; });
@@ -1847,6 +1850,9 @@ function recogerValoresFormulario(tipo){
     } else if(campo.type==='checkboxes'){
       var marcados = [];
       document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
+      if(tipo.id==='medicacion' && campo.k==='cronica'){
+        usuariosMencionadosMedicacion = (usuariosMencionadosMedicacion||[]).concat(marcados);
+      }
       if(campo.abreviarNombresGuardado) marcados = marcados.map(function(n){ return abreviarNombreCompleto(n); });
       valorPorCampo[campo.k] = marcados.join(campo.listaVertical ? '\n' : ', ');
     } else if(campo.type==='lista-numero'){
@@ -1880,17 +1886,23 @@ function recogerValoresFormulario(tipo){
       });
       valorPorCampo[campo.k] = partes.join(' | ');
     } else if(campo.type==='matriz-checkbox'){
-      var filasMC = (campo.filas==='BD')
-        ? ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return nombreAbreviado(u);})
+      var filasFullMC = (campo.filas==='BD')
+        ? ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;})
         : (campo.filas||[]);
       var lineasMC = [];
-      filasMC.forEach(function(nombreFila, fi){
+      filasFullMC.forEach(function(nombreCompletoFila, fi){
         var marcadasFila = [];
         campo.columnas.forEach(function(col, ci){
           var elCasilla = document.querySelector('#'+id+'_wrap input[data-fila="'+fi+'"][data-col="'+ci+'"]');
           if(elCasilla && elCasilla.checked) marcadasFila.push(col);
         });
-        if(marcadasFila.length>0) lineasMC.push(nombreFila+': '+marcadasFila.join(', '));
+        if(marcadasFila.length>0){
+          var nombreMostrado = (campo.filas==='BD') ? abreviarNombreCompleto(nombreCompletoFila) : nombreCompletoFila;
+          lineasMC.push(nombreMostrado+': '+marcadasFila.join(', '));
+          if(tipo.id==='medicacion' && campo.k==='temporal'){
+            usuariosMencionadosMedicacion = (usuariosMencionadosMedicacion||[]).concat([nombreCompletoFila]);
+          }
+        }
       });
       valorPorCampo[campo.k] = lineasMC.join('\n');
     } else {
@@ -1909,7 +1921,8 @@ function recogerValoresFormulario(tipo){
   camposReales.forEach(function(campo){ columnasDeCampo(campo).forEach(function(c){ columnas.push(c); }); });
   var headers = columnas.map(function(c){ return c.label; });
 
-  var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : [];
+  var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[])
+    : (usuariosMencionadosMedicacion ? Array.from(new Set(usuariosMencionadosMedicacion)) : []);
   var columnasIndividual = campoUsuarioKey ? columnas.filter(function(c){ return c.campo.k!==campoUsuarioKey; }) : columnas;
   var headersIndividual = campoUsuarioKey ? columnasIndividual.map(function(c){ return c.label; }) : headers;
   var filas = [];
