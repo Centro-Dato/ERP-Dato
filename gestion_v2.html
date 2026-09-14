@@ -1847,6 +1847,7 @@ function recogerValoresFormulario(tipo){
     } else if(campo.type==='checkboxes'){
       var marcados = [];
       document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
+      if(campo.abreviarNombresGuardado) marcados = marcados.map(function(n){ return abreviarNombreCompleto(n); });
       valorPorCampo[campo.k] = marcados.join(campo.listaVertical ? '\n' : ', ');
     } else if(campo.type==='lista-numero'){
       var nombresNum = [], numerosNum = [];
@@ -1880,7 +1881,7 @@ function recogerValoresFormulario(tipo){
       valorPorCampo[campo.k] = partes.join(' | ');
     } else if(campo.type==='matriz-checkbox'){
       var filasMC = (campo.filas==='BD')
-        ? ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return u.nombre+' '+u.apellidos;})
+        ? ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){return nombreAbreviado(u);})
         : (campo.filas||[]);
       var lineasMC = [];
       filasMC.forEach(function(nombreFila, fi){
@@ -4587,7 +4588,7 @@ var REGISTRO_TIPOS = [
   {id:'medicacion',titulo:'R. Medicación',icon:'💊',color:'#fdf4ff',iconColor:'#581c87',desc:'Administración de medicación crónica y temporal',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'cronica',label:'Medicación crónica — administrada',type:'checkboxes',opts:['Alfonso Luis Julián Vicaria','Edurne Chunchurreta Merino','María Tisca Porras Recio','Mercedes García Martínez','Patricia de Barrio López']},
+    {k:'cronica',label:'Medicación crónica — administrada',type:'checkboxes',listaVertical:true,abreviarNombresGuardado:true,opts:['Alfonso Luis Julián Vicaria','Edurne Chunchurreta Merino','María Tisca Porras Recio','Mercedes García Martínez','Patricia de Barrio López']},
     {k:'temporal',label:'Medicación temporal',type:'matriz-checkbox',filas:'BD',columnas:['IBUPROFENO','PARACETAMOL','OTROS']},
     {k:'incidencias',label:'Incidencias',type:'textarea'}
    ]},
