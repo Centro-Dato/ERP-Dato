@@ -1820,10 +1820,12 @@ function columnasDeCampo(campo){
 }
 function valorDeColumna(col, valorPorCampo, nombreUsuario, aspectosPorAlumno, campoUsuarioKey, usuarios){
   var campo = col.campo;
-  if(campo.k===campoUsuarioKey) return nombreUsuario!==undefined ? nombreUsuario : (usuarios||[]).join('\n');
+  // El nombre completo se sigue usando tal cual para repartir a la pestaña de cada persona
+  // (usuarios/nombreUsuario); aquí solo se abrevia lo que se ve escrito en la celda.
+  if(campo.k===campoUsuarioKey) return nombreUsuario!==undefined ? abreviarNombreCompleto(nombreUsuario) : (usuarios||[]).map(function(u){ return abreviarNombreCompleto(u); }).join('\n');
   if(campo.type==='aspectos-actividad'){
     if(nombreUsuario!==undefined) return aspectosPorAlumno ? (aspectosPorAlumno[nombreUsuario]||'') : '';
-    return (usuarios||[]).map(function(u){ return u+': '+((aspectosPorAlumno && aspectosPorAlumno[u])||''); }).join('\n');
+    return (usuarios||[]).map(function(u){ return abreviarNombreCompleto(u)+': '+((aspectosPorAlumno && aspectosPorAlumno[u])||''); }).join('\n');
   }
   var v = valorPorCampo[campo.k];
   if(col.sub && v && typeof v==='object') return v[col.sub] || '';
