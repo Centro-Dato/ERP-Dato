@@ -4755,6 +4755,7 @@ function manejarLoginGoogle(respuesta){
     document.getElementById('login-error').classList.add('hidden');
     USUARIO_ACTUAL = {nombre: persona.nombre, rol: persona.rol==='admin'?'Coordinador/a':'Empleado/a', email: email};
     PERMISOS_ACTUAL = persona.permisos;
+    localStorage.setItem('sesion_recordada_email', email);
     completarEntradaAlPrograma(email);
   } catch(e){
     mostrarErrorLogin('No se pudo verificar la cuenta de Google. Inténtalo de nuevo.');
@@ -4819,14 +4820,38 @@ function inicializarLoginGoogle(){
   google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: manejarLoginGoogle, auto_select: false, cancel_on_tap_outside: true });
   google.accounts.id.renderButton(document.getElementById('google-signin-btn'), {theme:'outline', size:'large', text:'signin_with', width:280});
 }
+// Si ya se había iniciado sesión antes en este navegador (y no se cerró sesión a propósito),
+// entra directamente sin volver a pedir elegir cuenta de Google.
+function intentarAutoLoginRecordado(){
+  var email = localStorage.getItem('sesion_recordada_email');
+  if(!email) return;
+  var persona = EMPLEADOS.filter(function(e){ return e.usuario.toLowerCase()===email; })[0];
+  if(!persona){
+    var invitado = buscarCorreoInvitado_(email);
+    if(invitado){ persona = { nombre: invitado.nombre, rol: 'invitado', permisos: JSON.parse(JSON.stringify(invitado.permisos || PERMISOS_INVITADO_POR_DEFECTO)) }; }
+  }
+  if(!persona){
+    // la cuenta recordada ya no tiene acceso (se le quitó el permiso, etc.) — se olvida y se
+    // sigue mostrando el login normal, sin decir nada raro.
+    localStorage.removeItem('sesion_recordada_email');
+    return;
+  }
+  USUARIO_ACTUAL = {nombre: persona.nombre, rol: persona.rol==='admin'?'Coordinador/a':'Empleado/a', email: email};
+  PERMISOS_ACTUAL = persona.permisos;
+  completarEntradaAlPrograma(email);
+}
 inicializarLoginGoogle();
 cargarEmpleadosDeVerdad(function(){
   renderAvataresEquipoLogin();
+  cargarOpcionesPersonalizadas(function(){
+    intentarAutoLoginRecordado();
+  });
 });
 document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
   cerrarMenuMovil();
+  localStorage.removeItem('sesion_recordada_email');
   if(typeof google !== 'undefined' && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
 };
 
