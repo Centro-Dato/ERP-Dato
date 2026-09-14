@@ -666,9 +666,12 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <!-- Horarios individuales -->
       <div id="horarios-sub-individual" class="hidden">
         <div class="form-grid" style="margin-bottom:18px">
-          <div class="span2" style="grid-column:1/-1">
-            <label class="form-lbl">Elige un alumno</label>
-            <select class="form-input" id="select-alumno-horario" onchange="renderHorarioIndividual()"></select>
+          <div class="span2" style="grid-column:1/-1;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label class="form-lbl">Elige un alumno</label>
+              <select class="form-input" id="select-alumno-horario" onchange="renderHorarioIndividual()"></select>
+            </div>
+            <button class="btn-secondary" onclick="imprimirHorarioIndividual()">🖨 Imprimir</button>
           </div>
         </div>
         <div id="horario-individual-contenido"></div>
@@ -4254,6 +4257,42 @@ function renderHorarioIndividual(){
     h += '</tbody></table></div></div>';
   });
   el.innerHTML = hSemana + h || '<div class="empty-state">Este alumno no aparece en ningún horario todavía.</div>';
+}
+// Imprime solo el horario semanal de ESE alumno (la tabla "Semana completa"), no el de toda el
+// área — porque los botones generales de arriba (Imprimir, etc.) solo sirven para "Por Área".
+function imprimirHorarioIndividual(){
+  var sel = document.getElementById('select-alumno-horario');
+  var alumno = sel ? sel.value : '';
+  if(!alumno){ mostrarAviso('Elige primero un alumno.'); return; }
+  var franjasUnicas = [];
+  DIAS_SEMANA.forEach(function(dia){
+    (HORARIOS_POR_DIA[dia]||[]).forEach(function(f){
+      var clave = f.inicio+'–'+f.fin;
+      if(franjasUnicas.filter(function(x){return x.clave===clave;}).length===0){
+        franjasUnicas.push({inicio:f.inicio, fin:f.fin, clave:clave});
+      }
+    });
+  });
+  franjasUnicas.sort(function(a,b){ return a.inicio.localeCompare(b.inicio); });
+  var h = '<h2>Horario de '+esc(abreviarNombreCompleto(alumno))+'</h2>';
+  h += '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Horario</th>';
+  DIAS_SEMANA.forEach(function(dia){ h += '<th>'+esc(dia)+'</th>'; });
+  h += '</tr>';
+  franjasUnicas.forEach(function(fu){
+    h += '<tr><td style="white-space:nowrap;font-weight:bold">'+esc(fu.clave)+'</td>';
+    DIAS_SEMANA.forEach(function(dia){
+      var franjaDia = (HORARIOS_POR_DIA[dia]||[]).filter(function(f){ return (f.inicio+'–'+f.fin)===fu.clave; })[0];
+      var contenido = '—';
+      if(franjaDia){
+        var areaDelAlumno = (franjaDia.areas||[]).filter(function(a){ return (a.alumnos||[]).indexOf(alumno)>-1; })[0];
+        if(areaDelAlumno) contenido = esc(areaDelAlumno.nombre)+(areaDelAlumno.profesional?'<br><span style="font-size:11px;color:#666">'+esc(areaDelAlumno.profesional)+'</span>':'');
+      }
+      h += '<td>'+contenido+'</td>';
+    });
+    h += '</tr>';
+  });
+  h += '</table>';
+  imprimirHtml(h, true);
 }
 
 /* ---- Vista previa, guardar/histórico y descarga de Horarios ---- */
