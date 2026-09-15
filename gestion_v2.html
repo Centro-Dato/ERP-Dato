@@ -5801,7 +5801,7 @@ function volverDeDrive(){ navTo(_driveVistaAnterior); }
 var GRUPOS_REGISTROS = [
   { id:'usuarios', titulo: 'Registros de Usuarios', icono:'🗂️', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','sanitario','transporte'] },
   { id:'alimentacion', titulo: 'Registros Alimentación', icono:'🍽️', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
-  { id:'centro', titulo: 'Registros del Centro', icono:'🏢', ids: ['limpieza','mantenimiento','registro_personal','visitas_centro'] }
+  { id:'centro', titulo: 'Registros del Centro', icono:'🏢', ids: ['limpieza','mantenimiento'] }
 ];
 function registrosAccesiblesDeGrupo(grupo){
   var porId = {};
@@ -5817,12 +5817,10 @@ function renderRegistrosGrid(){
     if(accesibles.length===0) return;
     h += '<div class="reg-btn" onclick="abrirCarpetaRegistros(\''+grupo.id+'\')"><div class="reg-ic" style="background:#f1f5f9;color:#14141a">'+grupo.icono+'</div><div><div class="reg-title">'+grupo.titulo+'</div><div class="reg-sub">'+accesibles.length+' registro'+(accesibles.length>1?'s':'')+'</div></div></div>';
   });
-  // Por si algún tipo de registro nuevo no está todavía en ninguno de los 3 bloques de arriba,
-  // que no desaparezca sin más: se agrupan aparte en una carpeta "Otros".
+  // Los tipos de registro que no están en ninguno de los bloques de arriba se muestran sueltos,
+  // aquí mismo, sin meterlos en ninguna carpeta.
   var sueltos = ordenarAlfabetico(REGISTRO_TIPOS.filter(function(r){ return !idsColocados[r.id] && nivelRegistro(r.id)!=='nada'; }), function(r){return r.titulo;});
-  if(sueltos.length){
-    h += '<div class="reg-btn" onclick="abrirCarpetaRegistros(\'otros\')"><div class="reg-ic" style="background:#f1f5f9;color:#14141a">📁</div><div><div class="reg-title">Otros</div><div class="reg-sub">'+sueltos.length+' registro'+(sueltos.length>1?'s':'')+'</div></div></div>';
-  }
+  sueltos.forEach(function(r){ h += tarjetaRegistroHtml(r, 'registros'); });
   if(!h){
     h = '<div class="empty-state">No tienes acceso a ningún tipo de registro. Pídele a un Coordinador que te dé permiso en Configuración.</div>';
   }
