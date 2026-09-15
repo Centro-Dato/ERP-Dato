@@ -386,6 +386,17 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
     </div>
 
+    <div id="modal-aviso-mensual" class="modal-overlay hidden" onclick="if(event.target===this)cerrarAvisoMensualMasTarde()">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-title" id="aviso-mensual-titulo">Aviso</div>
+        <div class="modal-sub" id="aviso-mensual-mensaje">Mensaje</div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="cerrarAvisoMensualMasTarde()">Recuérdamelo luego</button>
+          <button class="btn-primary" onclick="marcarAvisoMensualHecho()">✓ Ya lo he hecho este mes</button>
+        </div>
+      </div>
+    </div>
+
     <div id="modal-editar-agenda" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalEditarAgenda()">
       <div class="modal-box" style="max-width:480px">
         <div class="modal-title">📅 Editar agenda</div>
@@ -704,7 +715,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div id="toggle-empleados-ocultos" style="margin-bottom:10px"></div>
       <div class="table-card">
         <table class="tabla-config-sticky">
-          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Protocolos</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th></th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Protocolos</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th>Aviso Diario<br>Mensual Seguimiento</th><th>Aviso Evaluación<br>Mensual Ocio</th><th></th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
       </div>
@@ -3139,6 +3150,8 @@ function completarPermisosFaltantes(lista){
     completar('configuracion', esAdmin ? 'todo' : 'nada');
     completar('puedeVerConexionDrive', esAdmin);
     completar('puedeVerMediasTransporte', esAdmin);
+    completar('avisoSeguimientoMensual', false);
+    completar('avisoEvaluacionOcio', false);
     if(!p.registrosDetalle){ p.registrosDetalle = {}; huboCambios = true; }
     if(!p.paapDetalle){ p.paapDetalle = {}; huboCambios = true; }
   });
@@ -4734,8 +4747,54 @@ function completarEntradaAlPrograma(email){
   renderInicio(); renderUsuarios(); renderRegistrosGrid(); renderConfig();
   aplicarPermisosVisuales();
   navTo('inicio');
+  comprobarAvisosMensuales();
 }
 
+// ===== Avisos mensuales emergentes (Diario Mensual de Seguimiento / Evaluación Mensual Ocio) =====
+// Como el programa no puede "despertarse" solo a una hora exacta si nadie lo tiene abierto, el
+// aviso salta la primera vez que la persona marcada entra al programa a partir de la fecha
+// correspondiente, y se repite cada vez que entre hasta que lo marque como hecho ese mes.
+function claveMesActual(){
+  var hoy = new Date();
+  return hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+}
+function primerLunesDelMes(anio, mesIndex){
+  var d = new Date(anio, mesIndex, 1);
+  while(d.getDay()!==1){ d.setDate(d.getDate()+1); }
+  return d;
+}
+var _avisoMensualTipoActual = null;
+function comprobarAvisosMensuales(){
+  var hoy = new Date();
+  var claveMes = claveMesActual();
+  if(PERMISOS_ACTUAL.avisoSeguimientoMensual && localStorage.getItem('aviso_seg_'+claveMes)!=='hecho'){
+    mostrarAvisoMensual('seguimiento', '📔 Diario Mensual de Seguimiento', 'Todavía no has marcado como hecho el Diario Mensual de Seguimiento de este mes. En cuanto esté montado el registro, podrás rellenarlo desde aquí.');
+    return; // no se muestran los dos avisos a la vez
+  }
+  if(PERMISOS_ACTUAL.avisoEvaluacionOcio && localStorage.getItem('aviso_ocio_'+claveMes)!=='hecho'){
+    var primerLunes = primerLunesDelMes(hoy.getFullYear(), hoy.getMonth());
+    var yaToca = hoy.getTime() > primerLunes.getTime() && hoy.toDateString()!==primerLunes.toDateString();
+    if(!yaToca && hoy.toDateString()===primerLunes.toDateString() && hoy.getHours()>=10) yaToca = true;
+    if(yaToca){
+      mostrarAvisoMensual('ocio', '🎉 Evaluación Mensual de Actividades de Ocio', 'Ya ha pasado el primer lunes del mes a las 10:00 y todavía no has marcado como hecha la Evaluación Mensual de Actividades de Ocio. En cuanto esté montado el registro, podrás rellenarlo desde aquí.');
+    }
+  }
+}
+function mostrarAvisoMensual(tipo, titulo, mensaje){
+  _avisoMensualTipoActual = tipo;
+  document.getElementById('aviso-mensual-titulo').textContent = titulo;
+  document.getElementById('aviso-mensual-mensaje').textContent = mensaje;
+  document.getElementById('modal-aviso-mensual').classList.remove('hidden');
+}
+function cerrarAvisoMensualMasTarde(){
+  document.getElementById('modal-aviso-mensual').classList.add('hidden');
+}
+function marcarAvisoMensualHecho(){
+  var clave = (_avisoMensualTipoActual==='seguimiento' ? 'aviso_seg_' : 'aviso_ocio_') + claveMesActual();
+  localStorage.setItem(clave, 'hecho');
+  document.getElementById('modal-aviso-mensual').classList.add('hidden');
+  mostrarAviso('Marcado como hecho este mes. Gracias.', '✅');
+}
 function mostrarErrorLogin(msg){
   var el = document.getElementById('login-error');
   el.textContent = msg;
@@ -6162,6 +6221,17 @@ function renderConfig(){
       '<option value="no" '+(!emp.permisos.puedeVerMediasTransporte?'selected':'')+'>No</option>'+
       '<option value="si" '+(emp.permisos.puedeVerMediasTransporte?'selected':'')+'>Sí</option>'+
       '</select></td>';
+    // A quién le tiene que llegar el aviso emergente del Diario Mensual de Seguimiento, y de la
+    // Evaluación Mensual de Actividades de Ocio (dos avisos independientes, cada uno con su
+    // propia gente marcada).
+    h += '<td><select class="perm-select v-'+(emp.permisos.avisoSeguimientoMensual?'todo':'nada')+'" onchange="cambiarAvisoEmpleado('+emp.id+',\'avisoSeguimientoMensual\',this)">'+
+      '<option value="no" '+(!emp.permisos.avisoSeguimientoMensual?'selected':'')+'>No</option>'+
+      '<option value="si" '+(emp.permisos.avisoSeguimientoMensual?'selected':'')+'>Sí</option>'+
+      '</select></td>';
+    h += '<td><select class="perm-select v-'+(emp.permisos.avisoEvaluacionOcio?'todo':'nada')+'" onchange="cambiarAvisoEmpleado('+emp.id+',\'avisoEvaluacionOcio\',this)">'+
+      '<option value="no" '+(!emp.permisos.avisoEvaluacionOcio?'selected':'')+'>No</option>'+
+      '<option value="si" '+(emp.permisos.avisoEvaluacionOcio?'selected':'')+'>Sí</option>'+
+      '</select></td>';
     h += '<td>'+(vePermisoOcultos ? '<button class="btn-secondary btn-sm" onclick="alternarOcultoEmpleado('+emp.id+')">'+(emp.oculto?'👁 Mostrar':'🙈 Ocultar')+'</button>' : '')+'</td>';
     h += '</tr>';
   });
@@ -6295,6 +6365,14 @@ function cambiarPuedeVerMediasTransporte(empId, sel){
   var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
   emp.permisos.puedeVerMediasTransporte = (sel.value==='si');
   sel.className = 'perm-select v-'+(emp.permisos.puedeVerMediasTransporte?'todo':'nada');
+  guardarEmpleadosLocalStorage();
+}
+// Marca/desmarca a un empleado como destinatario de uno de los avisos emergentes mensuales
+// (campo puede ser 'avisoSeguimientoMensual' o 'avisoEvaluacionOcio').
+function cambiarAvisoEmpleado(empId, campo, sel){
+  var emp = EMPLEADOS.filter(function(e){return e.id===empId;})[0];
+  emp.permisos[campo] = (sel.value==='si');
+  sel.className = 'perm-select v-'+(emp.permisos[campo]?'todo':'nada');
   guardarEmpleadosLocalStorage();
 }
 function permSelectHtml(emp, mod){
