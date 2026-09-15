@@ -192,12 +192,12 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 /* ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) */
 .ocio-tabla{border-collapse:collapse;font-size:12.5px;table-layout:fixed;width:max-content}
 .ocio-tabla th,.ocio-tabla td{border:1.5px solid #14141a;padding:6px 10px;text-align:center}
-.ocio-tabla .ocio-th-usuario{background:#5cc4f2;color:#000;font-weight:800;text-transform:uppercase;font-size:12px;text-align:left;vertical-align:middle;width:170px;white-space:nowrap}
+.ocio-tabla .ocio-th-usuario{background:#5cc4f2;color:#000;font-weight:800;text-transform:uppercase;font-size:12px;text-align:left;vertical-align:middle;width:170px;white-space:nowrap;position:sticky;left:0;z-index:3}
 .ocio-th-fecha{background:var(--primary);color:#fff;font-weight:800;white-space:normal;cursor:context-menu;width:150px}
 .ocio-th-actividad{font-style:italic;font-weight:700;background:#fff;white-space:normal;word-wrap:break-word;cursor:context-menu;width:150px;line-height:1.3}
 .ocio-vacio{color:#94a3b8;font-style:normal}
 .ocio-th-si,.ocio-th-no,.ocio-th-pagado{background:#5cc4f2;color:#000;font-weight:800;font-size:11px;width:50px}
-.ocio-tabla .ocio-td-usuario{text-align:left;font-weight:700;white-space:nowrap;background:#fff;width:170px}
+.ocio-tabla .ocio-td-usuario{text-align:left;font-weight:700;white-space:nowrap;background:#fff;width:170px;position:sticky;left:0;z-index:2}
 .ocio-espaciador{border:none!important;background:transparent!important;padding:0!important;width:14px}
 .ocio-nombre-editable{cursor:pointer;border-bottom:1px dashed transparent}
 .ocio-nombre-editable:hover{border-bottom:1px dashed #94a3b8}
@@ -451,7 +451,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
       <div class="table-card">
         <table class="tabla-col1-fija">
-          <thead><tr><th>Nombre y Apellidos</th><th>Datos Persona Contacto</th><th>Expedientes</th><th>Registros</th></tr></thead>
+          <thead><tr><th>Nombre y Apellidos</th><th>Datos Persona Contacto</th><th>Expedientes</th><th>Registros</th><th>Ficha de Urgencias</th></tr></thead>
           <tbody id="tbl-usuarios"></tbody>
         </table>
       </div>
@@ -614,6 +614,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div><div class="page-title">Transporte</div><div class="page-subtitle">Registro de rutas y estadísticas de transporte</div></div>
       </div>
       <div class="reg-grid" style="margin-bottom:22px" id="transporte-acceso-registro"></div>
+      <div class="reg-grid" style="margin-bottom:22px">
+        <div class="reg-btn" onclick="abrirDocumentoTransporte('direcciones_rutas','Direcciones Rutas')"><div class="reg-ic" style="background:#e0f2fe;color:#0369a1">📍</div><div><div class="reg-title">Direcciones Rutas</div></div></div>
+        <div class="reg-btn" id="tarjeta-circulares" onclick="abrirDocumentoTransporte('circulares','Circulares (Teléfonos y Comunicación)')"><div class="reg-ic" style="background:#fef9c3;color:#713f12">📋</div><div><div class="reg-title">Circulares (Teléfonos y Comunicación)</div></div></div>
+      </div>
       <div class="card" id="tarjeta-medias-transporte">
         <div class="card-header">
           <div class="card-title">📁 Medias Transporte <span style="font-weight:400;font-size:12px;color:#94a3b8">(nombre provisional)</span></div>
@@ -711,7 +715,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div id="toggle-empleados-ocultos" style="margin-bottom:10px"></div>
       <div class="table-card">
         <table class="tabla-config-sticky">
-          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Protocolos</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th>Aviso Diario<br>Mensual Seguimiento</th><th>Aviso Evaluación<br>Mensual Ocio</th><th></th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Protocolos</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th>Circulares<br>(Transporte)</th><th>Aviso Diario<br>Mensual Seguimiento</th><th>Aviso Evaluación<br>Mensual Ocio</th><th></th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
       </div>
@@ -1142,6 +1146,10 @@ function aplicarPermisosVisuales(){
   var btnDocCam = document.getElementById('home-documentacioncam');
   if(btnDocCam){
     btnDocCam.style.display = (PERMISOS_ACTUAL.documentacionCam==='todo') ? '' : 'none';
+  }
+  var tarjetaCirculares = document.getElementById('tarjeta-circulares');
+  if(tarjetaCirculares){
+    tarjetaCirculares.style.display = PERMISOS_ACTUAL.puedeVerCirculares ? '' : 'none';
   }
   // Botón "+ Nuevo usuario": solo si puede editar
   var btnNuevo = document.getElementById('btn-nuevo-usuario');
@@ -3102,6 +3110,32 @@ var EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
 var _empleadosCargadosDeVerdad = false;
 // Los empleados se guardan de verdad (compartido para todo el equipo) en una hoja de cálculo,
 // a través de Apps Script. localStorage se usa solo como caché rápida mientras carga.
+// Carpeta real de Drive para Direcciones Rutas / Circulares. Vacía hasta que Ana me pase el enlace.
+var CARPETA_TRANSPORTE_DOCS_ID = '';
+function abrirDocumentoTransporte(id, titulo){
+  if(id==='circulares' && !PERMISOS_ACTUAL.puedeVerCirculares){
+    mostrarAviso('No tienes acceso a Circulares. Pídele a un Coordinador que te dé permiso.');
+    return;
+  }
+  document.getElementById('doc-titulo').textContent = titulo;
+  document.getElementById('doc-info').textContent = 'Transporte';
+  document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
+  var btnSubir = document.getElementById('doc-btn-subir');
+  btnSubir.classList.remove('hidden');
+  btnSubir.onclick = function(){
+    if(!CARPETA_TRANSPORTE_DOCS_ID){
+      mostrarAviso('Todavía no está conectada la carpeta de Drive de Transporte — en cuanto Ana me pase el enlace, aquí ya podrás subir el archivo de verdad.', 'ℹ️');
+      return;
+    }
+    abrirSelectorArchivoParaSubir(CARPETA_TRANSPORTE_DOCS_ID, function(){
+      mostrarAviso('"'+titulo+'" subido correctamente.', '✅');
+    });
+  };
+  document.getElementById('doc-btn-descargar').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
+  document.getElementById('doc-btn-imprimir').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
+  document.getElementById('btn-volver-documento').onclick = function(){ navTo('transporte'); };
+  navTo('documento');
+}
 function guardarEmpleadosLocalStorage(){
   try{ localStorage.setItem('empleados_guardado', JSON.stringify(EMPLEADOS)); }catch(e){}
   guardarEmpleadosEnAppsScript(EMPLEADOS, function(err){
@@ -3154,6 +3188,7 @@ function completarPermisosFaltantes(lista){
     completar('puedeVerMediasTransporte', esAdmin);
     completar('avisoSeguimientoMensual', false);
     completar('avisoEvaluacionOcio', false);
+    completar('puedeVerCirculares', esAdmin);
     if(!p.registrosDetalle){ p.registrosDetalle = {}; huboCambios = true; }
     if(!p.paapDetalle){ p.paapDetalle = {}; huboCambios = true; }
   });
@@ -4605,7 +4640,7 @@ var REGISTRO_TIPOS = [
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
-    {k:'momento',label:'Momento del día',type:'checkboxes',opts:['EN LA COMIDA','MEDIA MAÑANA']},
+    {k:'momento',label:'Momento del día',type:'checkboxes',opts:['DESPUÉS DE COMER','EN LA COMIDA','MEDIA MAÑANA']},
     {k:'motivo',label:'Motivo',type:'checkboxes',opts:['ARTICULAR','CIRCULATORIO','HIGIENE CORPORAL','UPP']}
    ]},
   {id:'comunicacion_familias',titulo:'R. Comunicación Familias',icon:'📞',color:'#dbeafe',iconColor:'#1d4ed8',desc:'Log de llamadas y avisos a familias',
@@ -5408,9 +5443,33 @@ function renderUsuarios(filtro){
     h += '<td>'+resumenPersonasContacto(us)+'</td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirExpediente('+us.id+')">📁 Ver expediente</button></td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();verCarpetaRegistrosDeUsuario('+us.id+')">📊 Carpeta de Registros</button></td>';
+    h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirFichaUrgencias('+us.id+',\''+(us.nombre+' '+us.apellidos).replace(/'/g,"\\'")+'\')">🚑 Ficha</button></td>';
     h += '</tr>';
   });
-  tbody.innerHTML = h || '<tr><td colspan="4"><div class="empty-state">No se encontraron usuarios</div></td></tr>';
+  tbody.innerHTML = h || '<tr><td colspan="5"><div class="empty-state">No se encontraron usuarios</div></td></tr>';
+}
+// Carpeta real de Drive donde se guardan las Fichas de Urgencias (una por usuario, con su
+// nombre). Está vacía hasta que Ana consiga acceso y me pase el enlace.
+var CARPETA_FICHAS_URGENCIAS_ID = '';
+function abrirFichaUrgencias(usuarioId, nombreCompleto){
+  document.getElementById('doc-titulo').textContent = 'Ficha de Urgencias';
+  document.getElementById('doc-info').textContent = nombreCompleto;
+  document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
+  var btnSubir = document.getElementById('doc-btn-subir');
+  btnSubir.classList.remove('hidden');
+  btnSubir.onclick = function(){
+    if(!CARPETA_FICHAS_URGENCIAS_ID){
+      mostrarAviso('Todavía no está conectada la carpeta de Drive de Fichas de Urgencias — en cuanto Ana me pase el enlace, aquí ya podrás subir el archivo de verdad.', 'ℹ️');
+      return;
+    }
+    abrirSelectorArchivoParaSubir(CARPETA_FICHAS_URGENCIAS_ID, function(){
+      mostrarAviso('Ficha de Urgencias de '+nombreCompleto+' subida correctamente.', '✅');
+    });
+  };
+  document.getElementById('doc-btn-descargar').onclick = function(){ mostrarAviso('Todavía no hay ninguna Ficha de Urgencias subida para '+nombreCompleto+'.'); };
+  document.getElementById('doc-btn-imprimir').onclick = function(){ mostrarAviso('Todavía no hay ninguna Ficha de Urgencias subida para '+nombreCompleto+'.'); };
+  document.getElementById('btn-volver-documento').onclick = function(){ navTo('usuarios'); };
+  navTo('documento');
 }
 function filtrarUsuarios(v){ renderUsuarios(v); }
 function darDeBajaUsuarioActual(){
@@ -6294,6 +6353,10 @@ function renderConfig(){
     h += '<td><select class="perm-select v-'+(emp.permisos.puedeVerMediasTransporte?'todo':'nada')+'" onchange="cambiarPuedeVerMediasTransporte('+emp.id+',this)">'+
       '<option value="no" '+(!emp.permisos.puedeVerMediasTransporte?'selected':'')+'>No</option>'+
       '<option value="si" '+(emp.permisos.puedeVerMediasTransporte?'selected':'')+'>Sí</option>'+
+      '</select></td>';
+    h += '<td><select class="perm-select v-'+(emp.permisos.puedeVerCirculares?'todo':'nada')+'" onchange="cambiarAvisoEmpleado('+emp.id+',\'puedeVerCirculares\',this)">'+
+      '<option value="no" '+(!emp.permisos.puedeVerCirculares?'selected':'')+'>No</option>'+
+      '<option value="si" '+(emp.permisos.puedeVerCirculares?'selected':'')+'>Sí</option>'+
       '</select></td>';
     // A quién le tiene que llegar el aviso emergente del Diario Mensual de Seguimiento, y de la
     // Evaluación Mensual de Actividades de Ocio (dos avisos independientes, cada uno con su
