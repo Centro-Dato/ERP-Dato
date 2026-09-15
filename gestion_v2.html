@@ -354,6 +354,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
             <div class="home-ic">📄</div>
             <div><div class="home-txt-title">PROTOCOLOS</div><div class="home-txt-sub">Próximamente.</div></div>
           </div>
+          <div class="home-btn c-blue disabled" id="home-documentacioncam" title="Próximamente">
+            <div class="home-ic">🗃️</div>
+            <div><div class="home-txt-title">DOCUMENTACIÓN CAM</div><div class="home-txt-sub">Próximamente.</div></div>
+          </div>
           <div class="home-btn c-pistacho" id="home-transporte" onclick="irA('transporte')">
             <div class="home-ic">🚌</div>
             <div><div class="home-txt-title">TRANSPORTE</div><div class="home-txt-sub">Registro y estadísticas</div></div>
@@ -1125,6 +1129,12 @@ function aplicarPermisosVisuales(){
   if(btnCamdoc){
     var tieneCamdoc = PERMISOS_ACTUAL.documentacionCam && PERMISOS_ACTUAL.documentacionCam!=='nada';
     btnCamdoc.style.display = tieneCamdoc ? '' : 'none';
+  }
+  // "Documentación CAM" (la carpeta nueva, distinta de Protocolos): de momento solo visible para
+  // quien tenga el permiso al máximo ("Todo"), ya que todavía está "Próximamente".
+  var btnDocCam = document.getElementById('home-documentacioncam');
+  if(btnDocCam){
+    btnDocCam.style.display = (PERMISOS_ACTUAL.documentacionCam==='todo') ? '' : 'none';
   }
   // Botón "+ Nuevo usuario": solo si puede editar
   var btnNuevo = document.getElementById('btn-nuevo-usuario');
@@ -3248,7 +3258,7 @@ var TABS = [
 ];
 
 /* ===================== ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) ===================== */
-var OCIO_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var OCIO_MESES = ['Septiembre','Octubre','Noviembre','Diciembre','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto'];
 var OCIO_PESTANAS_EXTRA = [];
 function todasLasPestanasOcio(){ return OCIO_MESES.concat(OCIO_PESTANAS_EXTRA); }
 var _ocioMesActual = 'Julio';
