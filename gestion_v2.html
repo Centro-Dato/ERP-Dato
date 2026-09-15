@@ -3105,7 +3105,13 @@ var _empleadosCargadosDeVerdad = false;
 function guardarEmpleadosLocalStorage(){
   try{ localStorage.setItem('empleados_guardado', JSON.stringify(EMPLEADOS)); }catch(e){}
   guardarEmpleadosEnAppsScript(EMPLEADOS, function(err){
-    if(err) mostrarAviso('Se guardó en este navegador, pero no se pudo compartir con todo el equipo (revisa la conexión). Vuelve a intentarlo.', '⚠️');
+    if(err){
+      // Un solo reintento automático antes de molestar con el aviso — Apps Script a veces
+      // tarda unos segundos de más y falla puntualmente sin que sea un problema real.
+      guardarEmpleadosEnAppsScript(EMPLEADOS, function(err2){
+        if(err2) mostrarAviso('Se guardó en este navegador, pero no se pudo compartir con todo el equipo (revisa la conexión). Vuelve a intentarlo.', '⚠️');
+      });
+    }
   });
 }
 function guardarEmpleadosEnAppsScript(lista, callback){
@@ -3186,16 +3192,14 @@ function cargarEmpleadosDeVerdad(callback){
         if(completarPermisosFaltantes(EMPLEADOS)) guardarEmpleadosEnAppsScript(EMPLEADOS, function(){});
         _empleadosCargadosDeVerdad = true;
         _intentosCargaEmpleados = 0;
-        cargarOpcionesPersonalizadas();
-        callback();
+        cargarOpcionesPersonalizadas(callback);
       } else if(data && data.ok===true && Array.isArray(data.empleados) && data.empleados.length===0){
         // La hoja existe de verdad y está vacía (primera vez de todas) -> la sembramos.
         guardarEmpleadosEnAppsScript(EMPLEADOS_OFICIAL, function(){});
         EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
         _empleadosCargadosDeVerdad = true;
         _intentosCargaEmpleados = 0;
-        cargarOpcionesPersonalizadas();
-        callback();
+        cargarOpcionesPersonalizadas(callback);
       } else {
         reintentarOFallarCargaEmpleados(callback);
       }
@@ -5007,9 +5011,7 @@ function intentarAutoLoginRecordado(){
 inicializarLoginGoogle();
 cargarEmpleadosDeVerdad(function(){
   renderAvataresEquipoLogin();
-  cargarOpcionesPersonalizadas(function(){
-    intentarAutoLoginRecordado();
-  });
+  intentarAutoLoginRecordado();
 });
 document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
