@@ -1797,11 +1797,11 @@ var REGISTRO_COLOR = {
   sanitario:'DB2777', menus:'16A34A', crisis_epilepticas:'EA580C', desaparicion_usuarios:'991B1B',
   entradas_salidas:'0EA5E9', hidratacion:'0891B2', higiene:'15803D', incontinencias:'7C3AED',
   limpieza:'64748B', medicacion:'9333EA', abvd:'0D9488', quejas_sugerencias:'CA8A04',
-  recepcion_medicacion:'0369A1', plan_seguridad_alimentaria:'4338CA', incidencias:'B91C1C',
+  plan_seguridad_alimentaria:'4338CA', incidencias:'B91C1C',
   temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9',
   mantenimiento:'9A3412'
 };
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','mantenimiento','temperaturas_nevera','recepcion_medicacion','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','hidratacion'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','mantenimiento','temperaturas_nevera','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','hidratacion'];
 
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
 // Si el registro tiene un campo de selección de usuario(s), genera UNA FILA POR PERSONA (misma
@@ -1822,7 +1822,11 @@ function valorDeColumna(col, valorPorCampo, nombreUsuario, aspectosPorAlumno, ca
   var campo = col.campo;
   // El nombre completo se sigue usando tal cual para repartir a la pestaña de cada persona
   // (usuarios/nombreUsuario); aquí solo se abrevia lo que se ve escrito en la celda.
-  if(campo.k===campoUsuarioKey) return nombreUsuario!==undefined ? abreviarNombreCompleto(nombreUsuario) : (usuarios||[]).map(function(u){ return abreviarNombreCompleto(u); }).join('\n');
+  // Ojo: para la fila general se usa valorPorCampo[campo.k] (lo que de verdad se marcó en ESTE
+  // campo), no el "usuarios" que llega por parámetro — en R. Medicación ese "usuarios" incluye
+  // también a la gente de otros campos (crónica/temporal), y aquí solo debe verse quién se marcó
+  // en este campo en concreto.
+  if(campo.k===campoUsuarioKey) return nombreUsuario!==undefined ? abreviarNombreCompleto(nombreUsuario) : (valorPorCampo[campo.k]||[]).map(function(u){ return abreviarNombreCompleto(u); }).join('\n');
   if(campo.type==='aspectos-actividad'){
     if(nombreUsuario!==undefined) return aspectosPorAlumno ? (aspectosPorAlumno[nombreUsuario]||'') : '';
     return (usuarios||[]).map(function(u){ return abreviarNombreCompleto(u)+': '+((aspectosPorAlumno && aspectosPorAlumno[u])||''); }).join('\n');
@@ -1923,8 +1927,15 @@ function recogerValoresFormulario(tipo){
   camposReales.forEach(function(campo){ columnasDeCampo(campo).forEach(function(c){ columnas.push(c); }); });
   var headers = columnas.map(function(c){ return c.label; });
 
-  var usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[])
-    : (usuariosMencionadosMedicacion ? Array.from(new Set(usuariosMencionadosMedicacion)) : []);
+  var usuarios;
+  if(tipo.id==='medicacion'){
+    // Aquí se reparte a la pestaña de CUALQUIERA que aparezca en crónica, en temporal, o en
+    // "usuario(s) que reciben medicación" — no solo en uno de los tres.
+    var todosLosMencionados = (usuariosMencionadosMedicacion||[]).concat(campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : []);
+    usuarios = Array.from(new Set(todosLosMencionados));
+  } else {
+    usuarios = campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : [];
+  }
   var columnasIndividual = campoUsuarioKey ? columnas.filter(function(c){ return c.campo.k!==campoUsuarioKey; }) : columnas;
   var headersIndividual = campoUsuarioKey ? columnasIndividual.map(function(c){ return c.label; }) : headers;
   var filas = [];
@@ -4600,12 +4611,16 @@ var REGISTRO_TIPOS = [
     {k:'limpiezaSemestral',label:'Limpieza semestral — Realizada',type:'checkboxes',opts:['FILTROS AIRE ACONDICIONADO']},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
    ]},
-  {id:'medicacion',titulo:'R. Medicación',icon:'💊',color:'#fdf4ff',iconColor:'#581c87',desc:'Administración de medicación crónica y temporal',
+  {id:'medicacion',titulo:'R. Medicación',icon:'💊',color:'#fdf4ff',iconColor:'#581c87',desc:'Administración de medicación crónica y temporal, y recepción de medicación de familias',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
+    {k:'seccionMedicacion',label:'MEDICACIÓN',type:'seccion'},
     {k:'cronica',label:'Medicación crónica — administrada',type:'checkboxes',listaVertical:true,abreviarNombresGuardado:true,opts:['Alfonso Luis Julián Vicaria','Edurne Chunchurreta Merino','María Tisca Porras Recio','Mercedes García Martínez','Patricia de Barrio López']},
     {k:'temporal',label:'Medicación temporal',type:'matriz-checkbox',filas:'BD',columnas:['IBUPROFENO','PARACETAMOL','OTROS']},
-    {k:'incidencias',label:'Incidencias',type:'textarea'}
+    {k:'incidencias',label:'Incidencias',type:'textarea'},
+    {k:'seccionRecepcion',label:'RECEPCIÓN DE MEDICACIÓN',type:'seccion'},
+    {k:'usuario',label:'Usuario(s) que reciben medicación',type:'checkboxes',opts:'BD'},
+    {k:'medicacionEntregada',label:'Medicación que entrega',type:'textarea'}
    ]},
   {id:'abvd',titulo:'R. Programa Autonomía en el Entorno Real',icon:'🏘️',color:'#f0fdfa',iconColor:'#134e4a',desc:'Actividades Básicas de la Vida Diaria',
    fields:[
@@ -4619,12 +4634,6 @@ var REGISTRO_TIPOS = [
     {k:'tipo',label:'Tipo de registro',type:'select',opts:['FELICITACIÓN','QUEJA','SUGERENCIA'],req:true},
     {k:'persona',label:'Persona que lo realiza',type:'text',req:true},
     {k:'contenido',label:'Contenido',type:'textarea',req:true}
-   ]},
-  {id:'recepcion_medicacion',titulo:'R. Recepción de Medicación',icon:'📦',color:'#f0f9ff',iconColor:'#0c4a6e',desc:'Recepción de medicación de familias',
-   fields:[
-    {k:'fecha',label:'Fecha recepción',type:'date',req:true},
-    {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
-    {k:'medicacion',label:'Medicación que entrega',type:'textarea',req:true}
    ]},
   {id:'plan_seguridad_alimentaria',titulo:'R. Recepción de Productos Alimenticios',icon:'🛡️',color:'#eff6ff',iconColor:'#1e3a8a',desc:'Vigilancia en la recepción, temperaturas de catering y muestras',
    fields:[
@@ -5790,7 +5799,7 @@ function volverDeDrive(){ navTo(_driveVistaAnterior); }
 
 /* ===================== REGISTROS ===================== */
 var GRUPOS_REGISTROS = [
-  { id:'usuarios', titulo: 'Registros de Usuarios', icono:'🗂️', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','recepcion_medicacion','sanitario','transporte'] },
+  { id:'usuarios', titulo: 'Registros de Usuarios', icono:'🗂️', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','sanitario','transporte'] },
   { id:'alimentacion', titulo: 'Registros Alimentación', icono:'🍽️', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
   { id:'centro', titulo: 'Registros del Centro', icono:'🏢', ids: ['limpieza','mantenimiento','registro_personal','visitas_centro'] }
 ];
