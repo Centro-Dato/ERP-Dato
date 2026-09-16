@@ -440,8 +440,21 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           </div>
         </div>
         <div class="modal-actions">
+          <button class="btn-secondary" onclick="mostrarListadoCompletoAgenda()">📋 Ver listado del año completo</button>
           <button class="btn-secondary" onclick="cerrarModalEditarAgenda()">Cancelar</button>
           <button class="btn-primary" onclick="guardarAgendaEditada()">💾 Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL: LISTADO COMPLETO DE LA AGENDA (TODO EL AÑO) ===== -->
+    <div id="modal-listado-agenda" class="modal-overlay hidden" onclick="if(event.target===this)cerrarListadoCompletoAgenda()">
+      <div class="modal-box" style="max-width:520px">
+        <div class="modal-title">📋 Listado del año completo</div>
+        <div class="modal-sub">Todo lo que va a aparecer en la agenda durante los próximos 365 días, en orden</div>
+        <div id="lista-completa-agenda" style="margin:14px 0;max-height:55vh;overflow-y:auto"></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="cerrarListadoCompletoAgenda()">Cerrar</button>
         </div>
       </div>
     </div>
@@ -4150,16 +4163,16 @@ function guardarMediasParticipacionOcioEnDrive(){
   var nombreArchivo = 'Medias de Participación Ocio '+curso;
   var tareas = [];
 
-  var cabeceraGeneral = ['Categoría','Nº de actividades','Media de asistentes','Media de participación'];
+  var cabeceraGeneral = ['Categoría','Nº de actividades','Media de asistentes','Media de participación (%)'];
   var filasGeneral = CATEGORIAS_OCIO.map(function(c){
     var lista = porCategoria[c.id];
     var mediaAsist = mediaDeLista(lista, 'asistentes');
     var mediaPorc = mediaDeLista(lista, 'porcentaje');
-    return [c.titulo, lista.length, mediaAsist===null?'':mediaAsist.toFixed(1), mediaPorc===null?'':mediaPorc.toFixed(0)+'%'];
+    return [c.titulo, lista.length, mediaAsist===null?'':Number(mediaAsist.toFixed(1)), mediaPorc===null?'':Number(mediaPorc.toFixed(0))];
   });
-  tareas.push({pestana: curso, cabecera: cabeceraGeneral, filas: filasGeneral});
+  tareas.push({pestana: curso, cabecera: cabeceraGeneral, filas: filasGeneral, conGrafico: true});
 
-  var cabeceraMes = ['Categoría','Media de asistentes','Media de participación'];
+  var cabeceraMes = ['Categoría','Media de asistentes','Media de participación (%)'];
   OCIO_MESES.forEach(function(mes){
     if(!OCIO_ACTIVIDADES[mes]) return; // mes nunca tocado: no se crea su pestaña
     var hayDatos = CATEGORIAS_OCIO.some(function(c){ return porMesYCategoria[mes][c.id].length>0; });
@@ -4168,9 +4181,9 @@ function guardarMediasParticipacionOcioEnDrive(){
       var lista = porMesYCategoria[mes][c.id];
       var mediaAsist = mediaDeLista(lista, 'asistentes');
       var mediaPorc = mediaDeLista(lista, 'porcentaje');
-      return [c.titulo, mediaAsist===null?'':mediaAsist.toFixed(1), mediaPorc===null?'':mediaPorc.toFixed(0)+'%'];
+      return [c.titulo, mediaAsist===null?'':Number(mediaAsist.toFixed(1)), mediaPorc===null?'':Number(mediaPorc.toFixed(0))];
     });
-    tareas.push({pestana: nombrePestanaMesOcio(mes), cabecera: cabeceraMes, filas: filasMes});
+    tareas.push({pestana: nombrePestanaMesOcio(mes), cabecera: cabeceraMes, filas: filasMes, conGrafico: true});
   });
 
   mostrarAviso('Guardando las medias en Drive…', '⏳');
@@ -4188,7 +4201,8 @@ function guardarMediasParticipacionOcioEnDrive(){
       nombreArchivo: nombreArchivo,
       pestana: t.pestana,
       cabecera: t.cabecera,
-      filas: t.filas
+      filas: t.filas,
+      conGrafico: t.conGrafico
     })})
       .then(function(r){ return r.json(); })
       .then(function(data){
@@ -5999,6 +6013,37 @@ function abrirModalEditarAgenda(){
   renderListaAgendaEditable();
   renderListaCumplesExtraEditable();
   document.getElementById('modal-editar-agenda').classList.remove('hidden');
+}
+// Reúne TODO lo que va a aparecer en la agenda durante el próximo año (cumpleaños de usuarios,
+// cumpleaños extra, eventos añadidos a mano, y actividades de Ocio), y lo enseña en orden, para
+// poder revisar de un vistazo qué va a salir durante todo el curso.
+function mostrarListadoCompletoAgenda(){
+  if(typeof cargarDatosOcioDesdeOpciones === 'function') cargarDatosOcioDesdeOpciones();
+  var dias = 366;
+  var todos = proximosCumpleanos(dias)
+    .concat(proximosCumpleanosExtra(dias))
+    .concat(proximosEventosAgenda(dias))
+    .concat(proximasActividadesOcio(dias));
+  todos.sort(function(a,b){ return a.fecha - b.fecha; });
+  var diasSemana = ['dom','lun','mar','mié','jue','vie','sáb'];
+  var h = '';
+  if(todos.length===0){
+    h = '<div class="empty-state">No hay ningún evento previsto en los próximos 365 días.</div>';
+  } else {
+    todos.forEach(function(ev){
+      var f = ev.fecha;
+      var fechaTexto = diasSemana[f.getDay()]+' '+String(f.getDate()).padStart(2,'0')+'/'+String(f.getMonth()+1).padStart(2,'0')+'/'+f.getFullYear();
+      h += '<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9">';
+      h += '<div style="flex:0 0 130px;font-size:12.5px;color:#64748b;font-weight:700">'+fechaTexto+'</div>';
+      h += '<div style="flex:1;font-size:13.5px">'+(ev.icono||'📌')+' '+esc(ev.texto)+'</div>';
+      h += '</div>';
+    });
+  }
+  document.getElementById('lista-completa-agenda').innerHTML = h;
+  document.getElementById('modal-listado-agenda').classList.remove('hidden');
+}
+function cerrarListadoCompletoAgenda(){
+  document.getElementById('modal-listado-agenda').classList.add('hidden');
 }
 function cerrarModalEditarAgenda(){
   document.getElementById('modal-editar-agenda').classList.add('hidden');
