@@ -1703,10 +1703,19 @@ function guardarMesOcioEnDrive(){
           fields: 'id'
         }).then(function(resp2){
           escribirDatosEnHojaOcio(resp2.result.id, nombre, true);
-        }, function(){ mostrarAviso('No se pudo crear el archivo en Drive. Comprueba que esa carpeta existe y que tu cuenta tiene acceso.', '⚠️'); });
+        }, function(err){ mostrarAviso('No se pudo crear el archivo en Drive: '+detalleErrorGapi_(err), '⚠️'); });
       }
-    }, function(){ mostrarAviso('No se pudo comprobar la carpeta de Drive.', '⚠️'); });
+    }, function(err){ mostrarAviso('No se pudo comprobar la carpeta de Drive: '+detalleErrorGapi_(err), '⚠️'); });
   });
+}
+// Saca el mensaje real que devuelve Google (código + motivo), en vez de un aviso genérico que no
+// dice nada — así se puede saber si es un problema de permisos, de carpeta no encontrada, etc.
+function detalleErrorGapi_(err){
+  try{
+    var codigo = err && err.status;
+    var motivo = (err && err.result && err.result.error && err.result.error.message) || (err && err.body) || '';
+    return (codigo?('['+codigo+'] '):'') + (motivo || 'sin más detalle');
+  }catch(e){ return 'sin más detalle'; }
 }
 function escribirDatosEnHojaOcio(spreadsheetId, nombre, esNuevo){
   var filas = construirFilasAsistenciaOcio();
@@ -4921,9 +4930,9 @@ function guardarHorarioEnDrive(){
           fields: 'id'
         }).then(function(resp2){
           escribirDatosEnHojaHorarios(resp2.result.id, true);
-        }, function(){ mostrarAviso('No se pudo crear el archivo en Drive. Comprueba que esa carpeta existe y que tu cuenta tiene acceso.', '⚠️'); });
+        }, function(err){ mostrarAviso('No se pudo crear el archivo en Drive: '+detalleErrorGapi_(err), '⚠️'); });
       }
-    }, function(){ mostrarAviso('No se pudo comprobar la carpeta de Drive.', '⚠️'); });
+    }, function(err){ mostrarAviso('No se pudo comprobar la carpeta de Drive: '+detalleErrorGapi_(err), '⚠️'); });
   });
 }
 function escribirDatosEnHojaHorarios(spreadsheetId, esNuevo){
