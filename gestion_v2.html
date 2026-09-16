@@ -4859,7 +4859,7 @@ var REGISTRO_TIPOS = [
   {id:'actividades',titulo:'R. Actividades',icon:'🎨',color:'#fdf4ff',iconColor:'#7e22ce',desc:'Actividades realizadas con los usuarios',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'actividad',label:'Actividad / Área',type:'select',req:true,opts:['ATENCIÓN PSICOLÓGICA','ESTIMULACIÓN COGNITIVA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA','OCIO','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
+    {k:'actividad',label:'Actividad / Área',type:'select',req:true,opts:['ATENCIÓN PSICOLÓGICA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA Y ESTIMULACIÓN COGNITIVA','OCIO','OCIO Y VIDA COMUNITARIA','TECNOLOGÍA','TERAPIA OCUPACIONAL']},
     {k:'alumnos',label:'Alumnos',type:'checkboxes',opts:'BD',req:true},
     {k:'tratamientos',label:'Aspectos trabajados',type:'aspectos-actividad',req:true},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
@@ -6315,20 +6315,19 @@ function tarjetaRegistroHtml(r, volverA){
 }
 // Aspectos trabajados según el área de actividad elegida (antes iban todos mezclados en una sola lista)
 var ASPECTOS_POR_AREA = {
-  'ATENCIÓN PSICOLÓGICA':['HHSS','VALORACIÓN POSITIVA','RELAJACIÓN','EVALUACIÓN','TERAPIA INDIVIDUAL'],
-  'ESTIMULACIÓN COGNITIVA':['ATENCIÓN','MEMORIA','PERCEPCIÓN','LENGUAJE','ORIENTACIÓN','CÁLCULO'],
-  'FISIOTERAPIA':['MOVILIDAD','FUERZA','COORDINACIÓN','EQUILIBRIO','DESCONTRACTURANTE','RESPIRATORIO'],
-  'LOGOPEDIA':['EXPRESIÓN','COMPRENSIÓN','LECTOESCRITURA','PRAXIAS','ELECTRO-ESTIMULACIÓN','FONO-RESPIRATORIO'],
-  'NEUROPSICOLOGÍA':['ATENCIÓN','MEMORIA','PERCEPCIÓN','LENGUAJE','ORIENTACIÓN ESPACIO-TEMPORAL','CÁLCULO'],
+  'ATENCIÓN PSICOLÓGICA':['ANSIEDAD','BIENESTAR EMOCIONAL','CONDUCTA ADAPTATIVA','HHSS'],
+  'FISIOTERAPIA':['MOVILIDAD','FUERZA','COORDINACIÓN Y EQUILIBRIO','TONO','MARCHA','PRODUCTOS DE APOYO','SILLA ELÉCTRICA'],
+  'LOGOPEDIA':['DISFAGIA','LENGUAJE ORAL','LENGUAJE ESCRITO','PRAXIAS','SAAC'],
+  'NEUROPSICOLOGÍA Y ESTIMULACIÓN COGNITIVA':['ATENCIÓN','MEMORIA','PLANIFICACIÓN Y FUNCIONES EJECUTIVAS','ORIENTACIÓN ESPACIO-TEMPORAL'],
   'OCIO':['CINE','ACTIVIDADES CULTURALES','FIESTAS TEMÁTICAS','RESTAURACIÓN','OTROS'],
-  'TECNOLOGÍA':['APPS','PLATAFORMAS ONLINE','COMUNICACIÓN','OFIMÁTICA','DISEÑO','WEB','OTROS'],
-  'TERAPIA OCUPACIONAL':['ABVD','MOTRICIDAD FINA','MOVILIDAD','SENSORIAL','FUNCIONES EJECUTIVAS','MANEJO DINERO','OTROS'],
-  'VIDA COMUNITARIA':['ACTUALIDAD','CINEFORUM','CONOCIMIENTOS','JUEGOS','MÚSICA','PINTURA']
+  'TECNOLOGÍA':['MICROSOFT','WEB','GOOGLE SHEETS','OFIMÁTICA','DISEÑO','OTROS'],
+  'TERAPIA OCUPACIONAL':['RANGO MMSS','MUSCULATURA MMSS','POSTURA','DESTREZA MANIPULATIVA','ESQUEMA CORPORAL Y COORDINACIÓN MOTORA','FUNCIONES EJECUTIVAS','ABVD','AIVD','AAVD'],
+  'OCIO Y VIDA COMUNITARIA':['PINTURA','LECTURA','MÚSICA','JUEGOS','OTROS']
 };
 // Solo en Fisioterapia, la tabla de aspectos se ve muy apretada con el texto completo en cada
 // columna — se abrevia a una inicial, con una leyenda debajo de la tabla que explica cada una.
 var ASPECTOS_ABREVIADOS_FISIO = {
-  'MOVILIDAD':'M', 'FUERZA':'F', 'COORDINACIÓN':'C', 'EQUILIBRIO':'E', 'DESCONTRACTURANTE':'D', 'RESPIRATORIO':'R'
+  'MOVILIDAD':'M', 'FUERZA':'F', 'COORDINACIÓN Y EQUILIBRIO':'CE', 'TONO':'T', 'MARCHA':'MC', 'PRODUCTOS DE APOYO':'PA', 'SILLA ELÉCTRICA':'SE'
 };
 function actualizarMatrizAspectos(){
   var cont = document.getElementById('wrap-aspectos-actividad');
