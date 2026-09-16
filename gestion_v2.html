@@ -3885,7 +3885,7 @@ function renderActividadesEvaluacionOcio(){
     actividades.forEach(function(a, ai){
       if(fc.asistidas[ai]){
         h += '<td><select class="form-input" id="evalocio-punt-'+rowIdx+'-'+ai+'">';
-        for(var n=1;n<=fc.numAsistidas;n++){ h += '<option value="'+n+'">'+n+'</option>'; }
+        for(var n=1;n<=5;n++){ h += '<option value="'+n+'">'+n+'</option>'; }
         h += '</select></td>';
       } else {
         h += '<td style="text-align:center;color:#cbd5e1">—</td>';
@@ -6527,8 +6527,9 @@ var ASPECTOS_POR_AREA = {
 };
 // Solo en Fisioterapia, la tabla de aspectos se ve muy apretada con el texto completo en cada
 // columna — se abrevia a una inicial, con una leyenda debajo de la tabla que explica cada una.
-var ASPECTOS_ABREVIADOS_FISIO = {
-  'MOVILIDAD':'M', 'FUERZA':'F', 'COORDINACIÓN Y EQUILIBRIO':'CE', 'TONO':'T', 'MARCHA':'MC', 'PRODUCTOS DE APOYO':'PA', 'SILLA ELÉCTRICA':'SE'
+var ASPECTOS_ABREVIADOS_POR_AREA = {
+  'FISIOTERAPIA': {'MOVILIDAD':'M', 'FUERZA':'F', 'COORDINACIÓN Y EQUILIBRIO':'CE', 'TONO':'T', 'MARCHA':'MC', 'PRODUCTOS DE APOYO':'PA', 'SILLA ELÉCTRICA':'SE'},
+  'TERAPIA OCUPACIONAL': {'RANGO MMSS':'RM', 'MUSCULATURA MMSS':'MM', 'POSTURA':'P', 'DESTREZA MANIPULATIVA':'DM', 'ESQUEMA CORPORAL Y COORDINACIÓN MOTORA':'EC', 'FUNCIONES EJECUTIVAS':'FE', 'ABVD':'ABVD', 'AIVD':'AIVD', 'AAVD':'AAVD'}
 };
 function actualizarMatrizAspectos(){
   var cont = document.getElementById('wrap-aspectos-actividad');
@@ -6546,14 +6547,14 @@ function actualizarMatrizAspectos(){
     alumnos = ordenarAlfabetico(USUARIOS, function(u){ return u.nombre+' '+u.apellidos; }).map(function(u){ return u.nombre+' '+u.apellidos; });
   }
   var aspectos = ASPECTOS_POR_AREA[area] || [];
-  var esFisio = (area==='FISIOTERAPIA');
+  var mapaAbreviado = ASPECTOS_ABREVIADOS_POR_AREA[area] || null;
   var h = '<div class="aspectos-matriz-card">';
   h += '<div class="aspectos-matriz-header">ELIGE LOS ASPECTOS TRABAJADOS</div>';
   h += '<div class="aspectos-matriz-body">';
   h += '<div class="aspectos-matriz-area">'+area+'</div>';
   h += '<div style="overflow-x:auto"><table class="aspectos-matriz-tabla tabla-col1-fija"><thead><tr><th></th>';
   aspectos.forEach(function(a){
-    var textoCol = (esFisio && ASPECTOS_ABREVIADOS_FISIO[a]) ? ASPECTOS_ABREVIADOS_FISIO[a] : a;
+    var textoCol = (mapaAbreviado && mapaAbreviado[a]) ? mapaAbreviado[a] : a;
     h += '<th title="'+esc(a)+'">'+esc(textoCol)+'</th>';
   });
   h += '</tr></thead><tbody>';
@@ -6565,9 +6566,9 @@ function actualizarMatrizAspectos(){
     h += '</tr>';
   });
   h += '</tbody></table></div>';
-  if(esFisio){
+  if(mapaAbreviado){
     h += '<div style="margin-top:10px;font-size:12px;color:#64748b;line-height:1.6"><strong>Leyenda:</strong> '+
-      aspectos.map(function(a){ return '<strong>'+esc(ASPECTOS_ABREVIADOS_FISIO[a]||a)+'</strong> = '+esc(a); }).join(' &nbsp;·&nbsp; ')+
+      aspectos.map(function(a){ return '<strong>'+esc(mapaAbreviado[a]||a)+'</strong> = '+esc(a); }).join(' &nbsp;·&nbsp; ')+
       '</div>';
   }
   h += '</div></div>';
