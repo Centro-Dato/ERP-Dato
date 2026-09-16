@@ -3850,11 +3850,14 @@ function renderActividadesEvaluacionOcio(){
   if(actividades.length===0){
     h = '<div class="empty-state">Ese mes todavía no tiene ninguna actividad guardada en Ocio.</div>';
   } else {
+    // La escala va de 1 al número de actividades que haya ese mes (si solo hay 3, se puntúa de
+    // 1 a 3), en vez de ir siempre fija del 1 al 5.
+    var maxPuntuacion = actividades.length;
     actividades.forEach(function(a, i){
       h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
       h += '<span style="flex:1;font-size:13.5px">'+esc(a.nombre)+'</span>';
       h += '<select class="form-input" style="max-width:90px" id="evalocio-punt-'+i+'" data-nombre="'+esc(a.nombre)+'">';
-      [1,2,3,4,5].forEach(function(n){ h += '<option value="'+n+'">'+n+'</option>'; });
+      for(var n=1;n<=maxPuntuacion;n++){ h += '<option value="'+n+'">'+n+'</option>'; }
       h += '</select></div>';
     });
   }
@@ -3876,7 +3879,7 @@ function guardarEvaluacionMensualOcio(){
   var headers = ['Fecha','Alumno','Puntuaciones','Propuesta de Actividades'];
   var fila = [fechaBonita, abreviarNombreCompleto(alumno), puntuaciones.join('\n'), propuesta];
   mostrarAviso('Guardando la evaluación…', '⏳');
-  guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, 'R. Evaluación Mensual Ocio '+CURSO_REGISTROS_ACTUAL(), 'General', headers, fila, '#EA580C', function(err){
+  guardarFilaViaAppsScript(CARPETA_OCIO_ARCHIVOS_ID, 'R. Evaluación Mensual Ocio '+CURSO_REGISTROS_ACTUAL(), 'General', headers, fila, '#EA580C', function(err){
     if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
     mostrarAviso('Evaluación guardada correctamente.', '✅');
   });
