@@ -1632,7 +1632,18 @@ function formatearHojaAsistenciaOcio(spreadsheetId, sheetId, callback){
 }
 /* ---- Descargar / Imprimir / Guardar en Drive (carpeta fija de Ocio) ---- */
 var CARPETA_OCIO_ARCHIVOS_ID = '1YUJHBEx93tD5xTEJvaJzOMYeLvHfPmuu';
-function nombreArchivoMesOcio(mes){ return 'Asistencia Ocio - '+mes; }
+// Ya no hay un archivo por mes: todos los meses del mismo curso van juntos en un solo archivo
+// ("OCIOS 2026-2027"), cada uno en su propia pestaña ("SEPT 2026", "OCT 2026", etc.).
+function nombreArchivoMesOcio(mes){ return 'OCIOS '+CURSO_REGISTROS_ACTUAL(); }
+var OCIO_MES_ABREV = {'Enero':'ENE','Febrero':'FEB','Marzo':'MAR','Abril':'ABR','Mayo':'MAY','Junio':'JUN','Julio':'JUL','Agosto':'AGO','Septiembre':'SEPT','Octubre':'OCT','Noviembre':'NOV','Diciembre':'DIC'};
+function nombrePestanaMesOcio(mes){
+  var curso = CURSO_REGISTROS_ACTUAL(); // "2026-2027"
+  var partesCurso = curso.split('-');
+  var anioInicio = parseInt(partesCurso[0], 10), anioFin = parseInt(partesCurso[1], 10);
+  var mesesSegundoAnio = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto'];
+  var anio = mesesSegundoAnio.indexOf(mes)>-1 ? anioFin : anioInicio;
+  return (OCIO_MES_ABREV[mes]||mes.toUpperCase()) + ' ' + anio;
+}
 // Tabla HTML con los mismos colores que se ven en pantalla (azul=Sí, gris=No, dorado=Pagado,
 // gris clarito=sin marcar). La reutilizamos tanto para imprimir como para la descarga.
 function construirHtmlTablaOcioColoreada(){
@@ -1699,6 +1710,7 @@ function detalleErrorGapi_(err){
 function guardarMesOcioEnDrive(){
   mostrarAviso('Guardando "'+_ocioMesActual+'" en la carpeta de Ocio de Drive…', '⏳');
   var nombre = nombreArchivoMesOcio(_ocioMesActual);
+  var pestana = nombrePestanaMesOcio(_ocioMesActual);
   var filas = construirFilasAsistenciaOcio();
   var actividades = obtenerActividadesDelMes(_ocioMesActual);
   var filasUsuarios = filasUsuariosDelMes(_ocioMesActual);
@@ -1706,6 +1718,7 @@ function guardarMesOcioEnDrive(){
     accion: 'guardarHojaOcioCompleta',
     carpetaId: CARPETA_OCIO_ARCHIVOS_ID,
     nombreArchivo: nombre,
+    pestana: pestana,
     filas: filas,
     numActividades: actividades.length,
     numUsuarios: filasUsuarios.length,
@@ -1714,7 +1727,7 @@ function guardarMesOcioEnDrive(){
   fetch(APPS_SCRIPT_URL, {method:'POST', body: JSON.stringify(payload)})
     .then(function(r){ return r.json(); })
     .then(function(data){
-      if(data && data.ok) mostrarAviso('Guardado en Drive: "'+nombre+'".', '✅');
+      if(data && data.ok) mostrarAviso('Guardado en Drive: "'+nombre+'" (pestaña "'+pestana+'").', '✅');
       else mostrarAviso('No se pudo guardar en Drive.', '⚠️');
     })
     .catch(function(){ mostrarAviso('No se pudo guardar en Drive (revisa la conexión).', '⚠️'); });
