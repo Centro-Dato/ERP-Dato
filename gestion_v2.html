@@ -4098,9 +4098,14 @@ function guardarMediasParticipacionOcioEnDrive(){
   });
 
   mostrarAviso('Guardando las medias en Drive…', '⏳');
-  var pendientes = tareas.length;
   var huboError = null;
-  tareas.forEach(function(t){
+  function guardarSiguienteTarea(indice){
+    if(indice>=tareas.length){
+      if(huboError) mostrarAviso('Guardado con algún aviso ('+huboError+').', '⚠️');
+      else mostrarAviso('Medias de Participación guardadas en Drive: "'+nombreArchivo+'".', '✅');
+      return;
+    }
+    var t = tareas[indice];
     fetch(APPS_SCRIPT_URL, {method:'POST', body: JSON.stringify({
       accion: 'guardarTablaCompletaPestana',
       carpetaId: CARPETA_OCIO_ARCHIVOS_ID,
@@ -4112,18 +4117,14 @@ function guardarMediasParticipacionOcioEnDrive(){
       .then(function(r){ return r.json(); })
       .then(function(data){
         if(!data || !data.ok) huboError = 'fallo en '+t.pestana;
-        pendientes--;
-        if(pendientes<=0){
-          if(huboError) mostrarAviso('Guardado con algún aviso ('+huboError+').', '⚠️');
-          else mostrarAviso('Medias de Participación guardadas en Drive: "'+nombreArchivo+'".', '✅');
-        }
+        guardarSiguienteTarea(indice+1);
       })
       .catch(function(){
         huboError = 'sin conexión en '+t.pestana;
-        pendientes--;
-        if(pendientes<=0) mostrarAviso('Guardado con algún aviso ('+huboError+').', '⚠️');
+        guardarSiguienteTarea(indice+1);
       });
-  });
+  }
+  guardarSiguienteTarea(0);
 }
 
 function abrirAsistenciaOcio(){
