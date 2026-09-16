@@ -230,6 +230,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .home-btn.c-mostaza{background:#f4c430}
 .home-btn.c-pistacho{background:#3ea86e}
 .home-btn.c-rojo{background:#e2574c}
+.home-btn.c-indigo{background:#5b6bd6}
 .home-btn.disabled{opacity:.55;cursor:default;pointer-events:none}
 .home-btn.disabled:hover{transform:none;box-shadow:none}
 @media(max-width:640px){.home-grid{grid-template-columns:1fr}.chk-group{flex-direction:column;align-items:stretch}.chk-item{width:100%;box-sizing:border-box}}
@@ -365,6 +366,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <div class="home-btn c-rojo" id="home-horarios" onclick="irA('horarios')">
             <div class="home-ic">🕐</div>
             <div><div class="home-txt-title">HORARIOS</div><div class="home-txt-sub">Por área e individuales</div></div>
+          </div>
+          <div class="home-btn c-indigo" id="home-personal" onclick="irA('personal')">
+            <div class="home-ic">🧑‍💼</div>
+            <div><div class="home-txt-title">PERSONAL</div><div class="home-txt-sub">Datos, formación y actas</div></div>
           </div>
         </div>
       </div>
@@ -607,6 +612,62 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="home-grid" id="pp-carpeta-grid"></div>
     </div>
 
+    <!-- ===== PERSONAL ===== -->
+    <div id="view-personal" class="page hidden">
+      <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
+      <div class="page-header">
+        <div><div class="page-title">Personal</div><div class="page-subtitle">Elige el apartado que quieres abrir</div></div>
+      </div>
+      <div class="home-grid" id="personal-grid"></div>
+    </div>
+
+    <!-- ===== PERSONAL - ACTAS DE REUNIONES ===== -->
+    <div id="view-actas-reuniones" class="page hidden">
+      <button class="btn-back" onclick="navTo('personal')">← Volver a Personal</button>
+      <div class="page-header">
+        <div><div class="page-title">Actas de Reuniones</div><div class="page-subtitle">Elige la fecha, añade a los profesionales que asisten y el objeto de la reunión</div></div>
+      </div>
+      <div class="info-banner">ℹ️ Los nombres y etiquetas de los profesionales son de momento un campo libre — en cuanto Ana confirme la lista exacta, se puede convertir en un desplegable fijo.</div>
+      <div class="card">
+        <div class="form-grid">
+          <div><label class="form-lbl">Fecha</label><input type="date" class="form-input" id="acta-fecha"/></div>
+        </div>
+        <div class="fl-lbl" style="margin:16px 0 8px">Profesionales que asisten</div>
+        <div id="acta-profesionales-lista"></div>
+        <button class="btn-secondary btn-sm" style="margin-top:8px" onclick="anadirFilaActaProfesional()">+ Añadir profesional</button>
+        <div style="margin-top:18px">
+          <label class="form-lbl">Objeto de la reunión</label>
+          <textarea class="form-input" id="acta-objeto" rows="3" placeholder="Ej. Inicio de curso"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="generarActaReunionPersonal()">📄 Generar Acta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== R. COMITÉ DE USUARIOS ===== -->
+    <div id="view-comite-usuarios" class="page hidden">
+      <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
+      <div class="page-header">
+        <div><div class="page-title">R. Comité de Usuarios</div><div class="page-subtitle">Elige la fecha, quiénes forman el comité y el objeto de la reunión</div></div>
+      </div>
+      <div class="info-banner">ℹ️ Por ahora aparecen todos los usuarios y profesionales; en cuanto Ana confirme quiénes forman el comité de verdad, se puede dejar fijo.</div>
+      <div class="card">
+        <div class="form-grid">
+          <div><label class="form-lbl">Fecha</label><input type="date" class="form-input" id="comite-fecha"/></div>
+        </div>
+        <div class="fl-lbl" style="margin:16px 0 8px">Personas que forman el comité (usuarios y profesionales)</div>
+        <div class="chk-group" id="comite-personas-lista" style="max-height:260px;overflow-y:auto;flex-direction:column;gap:4px"></div>
+        <div style="margin-top:18px">
+          <label class="form-lbl">Objeto de la reunión</label>
+          <textarea class="form-input" id="comite-objeto" rows="3" placeholder="Ej. Revisión de actividades del trimestre"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="generarActaComiteUsuarios()">📄 Generar Acta</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== TRANSPORTE ===== -->
     <div id="view-transporte" class="page hidden">
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
@@ -715,7 +776,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div id="toggle-empleados-ocultos" style="margin-bottom:10px"></div>
       <div class="table-card">
         <table class="tabla-config-sticky">
-          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Configuración</th><th>Protocolos</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th>Circulares<br>(Transporte)</th><th>Aviso Diario<br>Mensual Seguimiento</th><th>Aviso Evaluación<br>Mensual Ocio</th><th></th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Usuarios<br>(+ Expedientes)</th><th>Registros</th><th></th><th>Ocio</th><th>PAAP</th><th></th><th>Horarios</th><th>Personal</th><th>Configuración</th><th>Protocolos</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th><th>Circulares<br>(Transporte)</th><th>Aviso Diario<br>Mensual Seguimiento</th><th>Aviso Evaluación<br>Mensual Ocio</th><th></th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
       </div>
@@ -1115,10 +1176,11 @@ function irA(modulo){
   if(modulo==='ocio'){ abrirAsistenciaOcio(); }
   if(modulo==='horarios'){ abrirVistaHorarios(); }
   if(modulo==='paap'){ renderPaapGrid(); navTo('paap'); }
+  if(modulo==='personal'){ renderPersonalGrid(); navTo('personal'); }
 }
 
 function aplicarPermisosVisuales(){
-  ['usuarios','registros','paap','transporte','ocio','horarios'].forEach(function(mod){
+  ['usuarios','registros','paap','transporte','ocio','horarios','personal'].forEach(function(mod){
     var btn = document.getElementById('home-'+mod);
     if(!btn) return;
     var visible;
@@ -1826,7 +1888,7 @@ var REGISTRO_COLOR = {
   temperaturas_nevera:'1D4ED8', transporte:'1E40AF', visitas_centro:'4F46E5', registro_personal:'6D28D9',
   mantenimiento:'9A3412'
 };
-var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','mantenimiento','temperaturas_nevera','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','hidratacion'];
+var REGISTROS_NO_LIGADOS_A_USUARIO = ['menus','limpieza','mantenimiento','temperaturas_nevera','visitas_centro','desaparicion_usuarios','entradas_salidas','quejas_sugerencias','transporte','plan_seguridad_alimentaria','registro_personal','hidratacion','comite_usuarios'];
 
 // Lee del formulario ya rellenado (el mismo que ve la persona en pantalla) los valores a guardar.
 // Si el registro tiene un campo de selección de usuario(s), genera UNA FILA POR PERSONA (misma
@@ -2385,6 +2447,166 @@ function listarHijosDeCarpeta(folderId, callback){
 // navegan dentro del propio programa; los archivos se abren en una pestaña nueva de Drive.
 /* ---- Vista previa en el propio programa de un archivo real de Drive ---- */
 /* ---- Subir un archivo NUEVO a una carpeta real ya conectada (no reemplaza archivos existentes) ---- */
+// Crea un Google Doc DE VERDAD (no un archivo cualquiera) a partir de una tabla en HTML — se
+// sube como HTML y se le pide a Drive que lo convierta directamente en Documento de Google, así
+// sale con una tabla real y editable, en vez de tener que construirla a mano con la API de Docs.
+function crearDocumentoDesdeHtml(carpetaId, nombre, html, callback){
+  autorizarGoogleDrive(function(){
+    var metadata = {name: nombre, parents: [carpetaId], mimeType: 'application/vnd.google-apps.document'};
+    var boundary = '-------314159265358979323846';
+    var delimiter = "\r\n--" + boundary + "\r\n";
+    var closeDelim = "\r\n--" + boundary + "--";
+    var cuerpo =
+      delimiter +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: text/html; charset=UTF-8\r\n\r\n' +
+      html +
+      closeDelim;
+    fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + _tokenActual,
+        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+      },
+      body: cuerpo
+    }).then(function(resp){ return resp.json(); })
+      .then(function(data){ (data && data.error) ? callback(data.error) : callback(null, data); })
+      .catch(function(err){ callback(err); });
+  });
+}
+// Genera el HTML de una tabla de "acta de reunión" (Fecha / Profesional o Persona / Firma /
+// Objeto de la reunión), con la fecha y el objeto ocupando todas las filas de golpe (rowspan),
+// igual que en el modelo que pasó Ana.
+function htmlTablaActaReunion(titulo, fechaBonita, filasPersonas, objeto){
+  var n = Math.max(filasPersonas.length, 1);
+  var h = '<h2>'+esc(titulo)+'</h2>';
+  h += '<table border="1" cellspacing="0" cellpadding="8" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif">';
+  h += '<tr style="background:#e5e7eb;font-weight:bold"><td>FECHA</td><td>PROFESIONAL</td><td>FIRMA</td><td>OBJETO DE LA REUNIÓN</td></tr>';
+  if(filasPersonas.length===0) filasPersonas = [''];
+  filasPersonas.forEach(function(persona, i){
+    h += '<tr>';
+    if(i===0){
+      h += '<td rowspan="'+n+'" style="vertical-align:top">'+esc(fechaBonita)+'</td>';
+    }
+    h += '<td>'+esc(persona)+'</td><td>&nbsp;</td>';
+    if(i===0){
+      h += '<td rowspan="'+n+'" style="vertical-align:top">'+esc(objeto)+'</td>';
+    }
+    h += '</tr>';
+  });
+  h += '</table>';
+  return h;
+}
+// ===== PERSONAL =====
+var CARPETA_PERSONAL_ID = ''; // Datos/Formación (documentos generales) — pendiente del enlace real
+var CARPETA_ACTAS_REUNIONES_ID = ''; // dónde se guardan las actas generadas — pendiente del enlace real
+function renderPersonalGrid(){
+  var h = '';
+  h += '<div class="home-btn c-blue" onclick="abrirDocumentoPersonal(\'datos\',\'Datos\')"><div class="home-ic">🗂️</div><div><div class="home-txt-title">DATOS</div></div></div>';
+  h += '<div class="home-btn c-pistacho" onclick="abrirDocumentoPersonal(\'formacion\',\'Formación\')"><div class="home-ic">🎓</div><div><div class="home-txt-title">FORMACIÓN</div></div></div>';
+  h += '<div class="home-btn c-indigo" onclick="navTo(\'actas-reuniones\')"><div class="home-ic">📝</div><div><div class="home-txt-title">ACTAS REUNIONES</div></div></div>';
+  document.getElementById('personal-grid').innerHTML = h;
+}
+function abrirDocumentoPersonal(id, titulo){
+  document.getElementById('doc-titulo').textContent = titulo;
+  document.getElementById('doc-info').textContent = 'Personal';
+  document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
+  var btnSubir = document.getElementById('doc-btn-subir');
+  btnSubir.classList.remove('hidden');
+  btnSubir.onclick = function(){
+    if(!CARPETA_PERSONAL_ID){
+      mostrarAviso('Todavía no está conectada la carpeta de Drive de Personal — en cuanto Ana me pase el enlace, aquí ya podrás subir el archivo de verdad.', 'ℹ️');
+      return;
+    }
+    abrirSelectorArchivoParaSubir(CARPETA_PERSONAL_ID, function(){
+      mostrarAviso('"'+titulo+'" subido correctamente.', '✅');
+    });
+  };
+  document.getElementById('doc-btn-descargar').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
+  document.getElementById('doc-btn-imprimir').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
+  document.getElementById('btn-volver-documento').onclick = function(){ navTo('personal'); };
+  navTo('documento');
+}
+// --- Actas de Reuniones ---
+var _actaFilasProfesionales = [];
+function renderFilasActaProfesionales(){
+  var cont = document.getElementById('acta-profesionales-lista');
+  if(_actaFilasProfesionales.length===0) _actaFilasProfesionales = [''];
+  var h = '';
+  _actaFilasProfesionales.forEach(function(valor, i){
+    h += '<div style="display:flex;gap:8px;margin-bottom:6px">';
+    h += '<input type="text" class="form-input" placeholder="Ej. Psicóloga - Nombre Apellidos" value="'+esc(valor)+'" oninput="_actaFilasProfesionales['+i+']=this.value"/>';
+    if(_actaFilasProfesionales.length>1) h += '<button class="btn-secondary btn-sm" onclick="quitarFilaActaProfesional('+i+')">✕</button>';
+    h += '</div>';
+  });
+  cont.innerHTML = h;
+}
+function anadirFilaActaProfesional(){
+  _actaFilasProfesionales.push('');
+  renderFilasActaProfesionales();
+}
+function quitarFilaActaProfesional(i){
+  _actaFilasProfesionales.splice(i,1);
+  renderFilasActaProfesionales();
+}
+function generarActaReunionPersonal(){
+  var fechaIso = document.getElementById('acta-fecha').value;
+  if(!fechaIso){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
+  var partes = fechaIso.split('-');
+  var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+  var profesionales = _actaFilasProfesionales.filter(function(p){ return p.trim(); });
+  if(profesionales.length===0){ mostrarAviso('Añade al menos un profesional.'); return; }
+  var objeto = document.getElementById('acta-objeto').value.trim();
+  if(!CARPETA_ACTAS_REUNIONES_ID){
+    mostrarAviso('Todavía no está conectada la carpeta de Drive de Actas de Reuniones — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
+    return;
+  }
+  var html = htmlTablaActaReunion('Acta de Reunión — '+fechaBonita, fechaBonita, profesionales, objeto);
+  mostrarAviso('Generando el acta…', '⏳');
+  crearDocumentoDesdeHtml(CARPETA_ACTAS_REUNIONES_ID, 'Acta de Reunión '+fechaBonita.replace(/\//g,'-'), html, function(err){
+    if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
+    mostrarAviso('Acta generada correctamente en Drive.', '✅');
+  });
+}
+
+// --- R. Comité de Usuarios ---
+var CARPETA_COMITE_USUARIOS_ID = ''; // de momento reutiliza la de Registros Digitales una vez conectada
+function renderComiteUsuariosPersonas(){
+  var nombresUsuarios = USUARIOS.map(function(u){ return u.nombre+' '+u.apellidos; });
+  var nombresEmpleados = EMPLEADOS.filter(function(e){ return !e.oculto; }).map(function(e){ return e.nombre; });
+  var todas = ordenarAlfabetico(nombresUsuarios.concat(nombresEmpleados), function(n){ return n; });
+  var h = '';
+  todas.forEach(function(nombre, i){
+    h += '<label class="chk-item"><input type="checkbox" value="'+esc(nombre)+'"/> '+esc(nombre)+'</label>';
+  });
+  document.getElementById('comite-personas-lista').innerHTML = h;
+  document.getElementById('comite-fecha').value = '';
+  document.getElementById('comite-objeto').value = '';
+}
+function generarActaComiteUsuarios(){
+  var fechaIso = document.getElementById('comite-fecha').value;
+  if(!fechaIso){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
+  var partes = fechaIso.split('-');
+  var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+  var personas = [];
+  document.querySelectorAll('#comite-personas-lista input[type=checkbox]:checked').forEach(function(chk){ personas.push(chk.value); });
+  if(personas.length===0){ mostrarAviso('Marca al menos a una persona del comité.'); return; }
+  var objeto = document.getElementById('comite-objeto').value.trim();
+  var carpeta = CARPETA_COMITE_USUARIOS_ID || CARPETA_REGISTROS_DIGITALES_ID;
+  if(!carpeta){
+    mostrarAviso('Todavía no está conectada ninguna carpeta de Drive para esto — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
+    return;
+  }
+  var html = htmlTablaActaReunion('Acta Comité de Usuarios — '+fechaBonita, fechaBonita, personas, objeto);
+  mostrarAviso('Generando el acta…', '⏳');
+  crearDocumentoDesdeHtml(carpeta, 'Acta Comité de Usuarios '+fechaBonita.replace(/\//g,'-'), html, function(err){
+    if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
+    mostrarAviso('Acta generada correctamente en Drive.', '✅');
+  });
+}
+
 function subirArchivoRealADrive(folderId, file, callback){
   autorizarGoogleDrive(function(){
     var metadata = {name: file.name, parents: [folderId]};
@@ -3182,6 +3404,7 @@ function completarPermisosFaltantes(lista){
     completar('usuarios', esAdmin ? 'todo' : 'ver');
     completar('registros', esAdmin ? 'todo' : 'editar');
     completar('paap', esAdmin ? 'todo' : 'nada');
+    completar('personal', esAdmin ? 'todo' : 'nada');
     completar('horarios', esAdmin ? 'todo' : 'ver');
     completar('configuracion', esAdmin ? 'todo' : 'nada');
     completar('puedeVerConexionDrive', esAdmin);
@@ -4799,6 +5022,8 @@ var REGISTRO_TIPOS = [
     {k:'temp_maxima',label:'Temperatura Máxima',type:'text',req:true},
     {k:'temp_minima',label:'Temperatura Mínima',type:'text',req:true}
    ]},
+  {id:'comite_usuarios',titulo:'R. Comité de Usuarios',icon:'🗳️',color:'#ecfeff',iconColor:'#155e75',desc:'Reuniones del comité de usuarios',
+   fields:[]},
   {id:'transporte',titulo:'R. Transporte',icon:'🚌',color:'#f0f9ff',iconColor:'#1e3a8a',desc:'Incidencias y control de rutas',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
@@ -5062,7 +5287,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','pp-carpeta','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
@@ -6001,7 +6226,7 @@ function volverDeDrive(){ navTo(_driveVistaAnterior); }
 
 /* ===================== REGISTROS ===================== */
 var GRUPOS_REGISTROS = [
-  { id:'usuarios', titulo: 'Registros de Usuarios', icono:'🗂️', ids: ['abvd','actividades','caidas','cambios_posturales','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','sanitario','transporte'] },
+  { id:'usuarios', titulo: 'Registros de Usuarios', icono:'🗂️', ids: ['abvd','actividades','caidas','cambios_posturales','comite_usuarios','comunicacion_familias','crisis_epilepticas','desaparicion_usuarios','entradas_salidas','hidratacion','higiene','incidencias','incontinencias','medicacion','quejas_sugerencias','sanitario','transporte'] },
   { id:'alimentacion', titulo: 'Registros Alimentación', icono:'🍽️', ids: ['plan_seguridad_alimentaria','menus','temperaturas_nevera'] },
   { id:'centro', titulo: 'Registros del Centro', icono:'🏢', ids: ['limpieza','mantenimiento'] }
 ];
@@ -6067,6 +6292,7 @@ function volverDeFormRegistro(){
 function tarjetaRegistroHtml(r, volverA){
   var prep = volverA ? 'prepararVueltaRegistro(\''+volverA+'\');' : '';
   if(r.id==='menus') return '<div class="reg-btn" onclick="'+prep+'abrirRegistroMenus()"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
+  if(r.id==='comite_usuarios') return '<div class="reg-btn" onclick="'+prep+'navTo(\'comite-usuarios\');renderComiteUsuariosPersonas()"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
   return '<div class="reg-btn" onclick="'+prep+'abrirFormRegistro(\''+r.id+'\',\''+r.titulo+'\')"><div class="reg-ic" style="background:'+r.color+';color:'+r.iconColor+'">'+r.icon+'</div><div><div class="reg-title">'+r.titulo+'</div><div class="reg-sub">'+r.desc+'</div></div></div>';
 }
 // Aspectos trabajados según el área de actividad elegida (antes iban todos mezclados en una sola lista)
@@ -6341,6 +6567,7 @@ function renderConfig(){
     h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetallePaap('+emp.id+')">⚙ Detalle</button></td>';
     // Horarios
     h += permSelectCelda(emp, 'horarios');
+    h += permSelectCelda(emp, 'personal');
     // Configuración (por si en el futuro alguien más además de Carlos/Tere/Coordinador necesita acceso)
     h += permSelectCelda(emp, 'configuracion');
     // Documentación CAM (apartado todavía sin construir; el permiso ya se deja preparado)
