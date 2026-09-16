@@ -756,11 +756,13 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-secondary btn-sm" onclick="descargarMesOcioExcel()">⬇ Descargar</button>
           <button class="btn-secondary btn-sm" onclick="imprimirMesOcio()">🖨 Imprimir</button>
           <button class="btn-primary" id="btn-ocio-guardar-drive" onclick="guardarMesOcioEnDrive()">☁️ Guardar en Drive</button>
-          <button class="btn-secondary" onclick="abrirEvaluacionMensualOcio()">📊 Evaluación Mensual</button>
-          <button class="btn-secondary" onclick="abrirMediasParticipacionOcio()">📈 Medias de Participación</button>
         </div>
       </div>
       <div class="info-banner">ℹ️ Clic en un nombre para corregirlo. Clic derecho en cualquier celda para añadir/quitar filas o actividades. Clic derecho en el nombre o la fecha de una actividad para modificarla.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;margin-bottom:14px">
+        <button class="btn-secondary" onclick="abrirEvaluacionMensualOcio()">📊 Evaluación Mensual</button>
+        <button class="btn-secondary" onclick="abrirMediasParticipacionOcio()">📈 Medias de Participación</button>
+      </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
         <div class="tabs-bar" id="ocio-meses-tabs" style="margin-bottom:0"></div>
         <button class="btn-secondary btn-sm" onclick="abrirModalNuevaPestanaOcio()">+ Añadir pestaña</button>
