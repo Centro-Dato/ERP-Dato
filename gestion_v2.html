@@ -661,6 +661,16 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 
     <!-- ===== R. COMITÉ DE USUARIOS ===== -->
     <!-- ===== EVALUACIÓN MENSUAL DE ACTIVIDADES DE OCIO ===== -->
+    <!-- ===== MEDIAS DE PARTICIPACIÓN EN OCIO ===== -->
+    <div id="view-medias-ocio" class="page hidden">
+      <button class="btn-back" onclick="navTo('ocio')">← Volver a Ocio</button>
+      <div class="page-header">
+        <div><div class="page-title">Medias de Participación</div><div class="page-subtitle">Por categoría de actividad, curso completo y mes a mes</div></div>
+        <button class="btn-secondary" onclick="imprimirMediasParticipacionOcio()">🖨 Imprimir</button>
+      </div>
+      <div id="medias-ocio-contenido"></div>
+    </div>
+
     <div id="view-evaluacion-ocio" class="page hidden">
       <button class="btn-back" onclick="navTo('ocio')">← Volver a Ocio</button>
       <div class="page-header">
@@ -744,6 +754,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-secondary btn-sm" onclick="imprimirMesOcio()">🖨 Imprimir</button>
           <button class="btn-primary" id="btn-ocio-guardar-drive" onclick="guardarMesOcioEnDrive()">☁️ Guardar en Drive</button>
           <button class="btn-secondary" onclick="abrirEvaluacionMensualOcio()">📊 Evaluación Mensual</button>
+          <button class="btn-secondary" onclick="abrirMediasParticipacionOcio()">📈 Medias de Participación</button>
         </div>
       </div>
       <div class="info-banner">ℹ️ Clic en un nombre para corregirlo. Clic derecho en cualquier celda para añadir/quitar filas o actividades. Clic derecho en el nombre o la fecha de una actividad para modificarla.</div>
@@ -911,6 +922,14 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     </div>
     <label class="form-lbl">Precio</label>
     <input type="text" class="form-input" id="act-ocio-precio" style="margin-bottom:16px" placeholder="22 €" onfocus="this.select()"/>
+    <label class="form-lbl">Categoría (uso interno, no se ve en la tabla)</label>
+    <select class="form-input" id="act-ocio-categoria" style="margin-bottom:16px">
+      <option value="CULTURALES">Actividades Culturales</option>
+      <option value="RESTAURACIÓN">Restauración</option>
+      <option value="CINE">Cine</option>
+      <option value="FIESTAS TEMÁTICAS">Fiestas Temáticas</option>
+      <option value="OTROS">Otros</option>
+    </select>
     <input type="hidden" id="act-ocio-fecha"/>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cerrarModalActividadOcio()">Cancelar</button>
@@ -3946,6 +3965,97 @@ function guardarEvaluacionMensualOcio(){
     });
   });
 }
+// ===== Medias de Participación en Ocio (por categoría) =====
+var CATEGORIAS_OCIO = [
+  {id:'CULTURALES', titulo:'Actividades Culturales'},
+  {id:'RESTAURACIÓN', titulo:'Restauración'},
+  {id:'CINE', titulo:'Cine'},
+  {id:'FIESTAS TEMÁTICAS', titulo:'Fiestas Temáticas'},
+  {id:'OTROS', titulo:'Otros'}
+];
+function abrirMediasParticipacionOcio(){
+  cargarOpcionesPersonalizadas(function(){
+    cargarDatosOcioDesdeOpciones();
+    document.getElementById('medias-ocio-contenido').innerHTML = construirHtmlMediasParticipacionOcio();
+    navTo('medias-ocio');
+  });
+}
+// Para una actividad concreta de un mes, calcula cuántos asistieron ("sí") y qué porcentaje
+// supone sobre el total de usuarios reales del centro (no solo los de la tabla de ese mes).
+function participacionDeActividad(mes, actividadIdx){
+  var filasUsuarios = filasUsuariosDelMes(mes);
+  var asistenciaDelMes = OCIO_ASISTENCIA[mes] || {};
+  var asistentes = 0;
+  filasUsuarios.forEach(function(f){
+    var d = (asistenciaDelMes[f.id]||[])[actividadIdx] || {};
+    if(d.si) asistentes++;
+  });
+  var totalUsuarios = USUARIOS.length || 1;
+  return {asistentes: asistentes, porcentaje: (asistentes/totalUsuarios)*100};
+}
+function construirHtmlMediasParticipacionOcio(){
+  // Recorremos los 12 meses del curso y agrupamos cada actividad según su categoría.
+  var porCategoria = {}; // id categoria -> lista de {asistentes, porcentaje}
+  var porMesYCategoria = {}; // mes -> {idCategoria -> lista de {asistentes, porcentaje}}
+  CATEGORIAS_OCIO.forEach(function(c){ porCategoria[c.id] = []; });
+  OCIO_MESES.forEach(function(mes){
+    porMesYCategoria[mes] = {};
+    CATEGORIAS_OCIO.forEach(function(c){ porMesYCategoria[mes][c.id] = []; });
+    // Si ese mes todavía no se ha tocado nunca, no existe de verdad en OCIO_ACTIVIDADES — no lo
+    // contamos, para no meter en las medias las "Actividad 1/2/3/4" de relleno que se generan
+    // solas la primera vez que alguien entra a ver ese mes.
+    if(!OCIO_ACTIVIDADES[mes]) return;
+    obtenerActividadesDelMes(mes).forEach(function(a, ai){
+      if(!a.nombre || !a.nombre.trim()) return;
+      // Si nunca se le cambió el nombre por defecto ("Actividad 1", "Actividad 2"...), tampoco
+      // es una actividad real todavía.
+      if(/^Actividad \d+$/.test(a.nombre.trim())) return;
+      var cat = a.categoria || 'OTROS';
+      if(!porCategoria[cat]) cat = 'OTROS';
+      var p = participacionDeActividad(mes, ai);
+      porCategoria[cat].push(p);
+      porMesYCategoria[mes][cat].push(p);
+    });
+  });
+  function media(lista, campo){
+    if(lista.length===0) return null;
+    var suma = lista.reduce(function(acc, x){ return acc + x[campo]; }, 0);
+    return suma / lista.length;
+  }
+  var h = '<div class="card"><div class="card-title" style="margin-bottom:14px">Resumen del curso completo ('+CURSO_REGISTROS_ACTUAL()+')</div>';
+  h += '<div class="table-card"><table class="tabla-config-sticky"><thead><tr><th>Categoría</th><th>Nº de actividades</th><th>Media de asistentes</th><th>Media de participación</th></tr></thead><tbody>';
+  CATEGORIAS_OCIO.forEach(function(c){
+    var lista = porCategoria[c.id];
+    var mediaAsist = media(lista, 'asistentes');
+    var mediaPorc = media(lista, 'porcentaje');
+    h += '<tr><td>'+esc(c.titulo)+'</td><td style="text-align:center">'+lista.length+'</td>'+
+      '<td style="text-align:center">'+(mediaAsist===null?'—':mediaAsist.toFixed(1))+'</td>'+
+      '<td style="text-align:center">'+(mediaPorc===null?'—':mediaPorc.toFixed(0)+'%')+'</td></tr>';
+  });
+  h += '</tbody></table></div></div>';
+
+  h += '<div class="card" style="margin-top:20px"><div class="card-title" style="margin-bottom:14px">Desglose mes a mes</div>';
+  h += '<div class="table-card" style="overflow-x:auto"><table class="tabla-config-sticky"><thead><tr><th>Mes</th>';
+  CATEGORIAS_OCIO.forEach(function(c){ h += '<th>'+esc(c.titulo)+'</th>'; });
+  h += '</tr></thead><tbody>';
+  OCIO_MESES.forEach(function(mes){
+    h += '<tr><td>'+esc(nombrePestanaMesOcio(mes))+'</td>';
+    CATEGORIAS_OCIO.forEach(function(c){
+      var lista = porMesYCategoria[mes][c.id];
+      if(lista.length===0){ h += '<td style="text-align:center;color:#cbd5e1">—</td>'; return; }
+      var mediaAsist = media(lista, 'asistentes');
+      var mediaPorc = media(lista, 'porcentaje');
+      h += '<td style="text-align:center">'+mediaAsist.toFixed(1)+' ('+mediaPorc.toFixed(0)+'%)</td>';
+    });
+    h += '</tr>';
+  });
+  h += '</tbody></table></div></div>';
+  return h;
+}
+function imprimirMediasParticipacionOcio(){
+  imprimirHtml('<h2>Medias de Participación en Ocio — '+esc(CURSO_REGISTROS_ACTUAL())+'</h2>'+construirHtmlMediasParticipacionOcio(), true);
+}
+
 function abrirAsistenciaOcio(){
   navTo('ocio');
   mostrarAviso('Cargando la asistencia de todo el equipo…', '⏳');
@@ -4187,6 +4297,7 @@ function abrirModalActividadOcio(idx){
   document.getElementById('act-ocio-fecha-fin').value = '';
   document.getElementById('act-ocio-fecha').value = a ? a.fecha : '';
   document.getElementById('act-ocio-precio').value = a ? (a.precio||'') : '';
+  document.getElementById('act-ocio-categoria').value = (a && a.categoria) ? a.categoria : 'OTROS';
   document.getElementById('modal-actividad-ocio').classList.remove('hidden');
 }
 var DIAS_SEMANA_ABREV_OCIO = ['dom','lun','mar','mié','jue','vie','sáb'];
@@ -4216,7 +4327,7 @@ function guardarActividadOcio(){
   var nombre = document.getElementById('act-ocio-nombre').value.trim();
   var fecha = document.getElementById('act-ocio-fecha').value.trim();
   if(!nombre || !fecha){ mostrarAviso('El nombre y la fecha son obligatorios.'); return; }
-  var datos = { nombre: nombre, fecha: fecha, precio: document.getElementById('act-ocio-precio').value.trim() };
+  var datos = { nombre: nombre, fecha: fecha, precio: document.getElementById('act-ocio-precio').value.trim(), categoria: document.getElementById('act-ocio-categoria').value };
   var actividades = obtenerActividadesDelMes(_ocioMesActual);
   if(_actividadOcioEditandoIdx !== null){
     actividades[_actividadOcioEditandoIdx] = datos;
@@ -5519,7 +5630,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','evaluacion-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','evaluacion-ocio','medias-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
