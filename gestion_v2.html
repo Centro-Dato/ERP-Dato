@@ -447,8 +447,17 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     </div>
 
     <!-- ===== USUARIOS - LISTADO ===== -->
-    <div id="view-usuarios" class="page hidden">
+    <!-- ===== USUARIOS Y FAMILIAS (pantalla intermedia) ===== -->
+    <div id="view-usuarios-familias" class="page hidden">
       <button class="btn-back" onclick="navTo('inicio')">← Volver a Inicio</button>
+      <div class="page-header">
+        <div><div class="page-title">Usuarios y Familias</div><div class="page-subtitle">Elige el apartado que quieres abrir</div></div>
+      </div>
+      <div class="home-grid" id="usuarios-familias-grid"></div>
+    </div>
+
+    <div id="view-usuarios" class="page hidden">
+      <button class="btn-back" onclick="navTo('usuarios-familias')">← Volver a Usuarios y Familias</button>
       <div class="page-header">
         <div><div class="page-title">Usuarios</div><div class="page-subtitle">Listado de usuarios y sus expedientes</div></div>
         <div style="display:flex;gap:8px">
@@ -1192,7 +1201,8 @@ function irA(modulo){
     mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso desde Configuración.');
     return;
   }
-  if(modulo==='usuarios' || modulo==='expedientes') navTo('usuarios');
+  if(modulo==='usuarios'){ renderUsuariosFamiliasGrid(); navTo('usuarios-familias'); }
+  if(modulo==='expedientes') navTo('usuarios');
   if(modulo==='registros') navTo('registros');
   if(modulo==='transporte'){ renderAccesoRegistroEnArea('transporte-acceso-registro','transporte'); navTo('transporte'); }
   if(modulo==='ocio'){ abrirAsistenciaOcio(); }
@@ -2021,6 +2031,15 @@ function recogerValoresFormulario(tipo){
         }
       });
       valorPorCampo[campo.k] = lineasMC.join('\n');
+    } else if(campo.type==='select-otro'){
+      var elSelOtro = document.getElementById(id);
+      var valorSelOtro = elSelOtro ? elSelOtro.value : '';
+      if(valorSelOtro.toUpperCase()==='OTROS'){
+        var elCajaOtro = document.getElementById(id+'_otro');
+        var textoOtro = elCajaOtro ? elCajaOtro.value.trim() : '';
+        valorSelOtro = textoOtro ? ('OTROS: '+textoOtro) : 'OTROS';
+      }
+      valorPorCampo[campo.k] = valorSelOtro;
     } else {
       var el = document.getElementById(id);
       var valor = el ? el.value : '';
@@ -2525,6 +2544,17 @@ function htmlTablaActaReunion(titulo, fechaBonita, filasPersonas, objeto){
 // ===== PERSONAL =====
 var CARPETA_PERSONAL_ID = ''; // Datos/Formación (documentos generales) — pendiente del enlace real
 var CARPETA_ACTAS_REUNIONES_ID = ''; // dónde se guardan las actas generadas — pendiente del enlace real
+function renderUsuariosFamiliasGrid(){
+  var h = '';
+  if(nivelApartadoModulo('usuarios','usuarios_documentacion')!=='nada'){
+    h += '<div class="home-btn c-blue" onclick="navTo(\'usuarios\');renderUsuarios()"><div class="home-ic">🗂️</div><div><div class="home-txt-title">USUARIOS DOCUMENTACIÓN</div><div class="home-txt-sub">Listado, expedientes y registros</div></div></div>';
+  }
+  if(nivelApartadoModulo('usuarios','familias')!=='nada'){
+    h += '<div class="home-btn c-pink" onclick="prepararVueltaRegistro(\'usuarios-familias\');abrirFormRegistro(\'comunicacion_familias\',\'R. Atención a las Familias\')"><div class="home-ic">👪</div><div><div class="home-txt-title">FAMILIAS</div><div class="home-txt-sub">Registro de atención a las familias</div></div></div>';
+  }
+  if(!h) h = '<div class="empty-state">No tienes acceso a ningún apartado. Pídele a un Coordinador que te dé permiso.</div>';
+  document.getElementById('usuarios-familias-grid').innerHTML = h;
+}
 function renderPersonalGrid(){
   var h = '';
   if(nivelApartadoModulo('personal','datos')!=='nada') h += '<div class="home-btn c-blue" onclick="abrirDocumentoPersonal(\'datos\',\'Datos\')"><div class="home-ic">🗂️</div><div><div class="home-txt-title">DATOS</div></div></div>';
@@ -3535,7 +3565,7 @@ var PP_ESTRUCTURA = {
 // Definición de qué módulos tienen un "Detalle" con sub-apartados (y, en algunos, un aviso
 // mensual propio), para poder reutilizar el mismo modal y la misma lógica en todos ellos.
 var MODULOS_DETALLE = {
-  usuarios: { titulo:'Usuarios y Familias', apartados:[], permisoGeneral:'usuarios', detalleKey:'usuariosDetalle', aviso:null },
+  usuarios: { titulo:'Usuarios y Familias', apartados:[{id:'usuarios_documentacion',titulo:'Usuarios Documentación',colorClase:'',icon:''},{id:'familias',titulo:'Familias',colorClase:'',icon:''}], permisoGeneral:'usuarios', detalleKey:'usuariosDetalle', aviso:null },
   paap: { titulo:'Programa Personal', apartados: PAAP_APARTADOS, permisoGeneral:'paap', detalleKey:'paapDetalle', aviso:{campo:'avisoSeguimientoMensual', etiqueta:'Aviso Diario Mensual Seguimiento'} },
   ocio: { titulo:'Actividades de Ocio', apartados: [], permisoGeneral:'ocio', detalleKey:'ocioDetalle', aviso:{campo:'avisoEvaluacionOcio', etiqueta:'Aviso Evaluación Mensual Ocio'} },
   transporte: { titulo:'Transporte', apartados:[{id:'direcciones_rutas',titulo:'Direcciones Rutas',colorClase:'',icon:''},{id:'circulares',titulo:'Circulares',colorClase:'',icon:''}], permisoGeneral:'registros', detalleKey:'transporteDetalle', aviso:null },
@@ -4904,12 +4934,12 @@ var REGISTRO_TIPOS = [
     {k:'momento',label:'Momento del día',type:'checkboxes',opts:['DESPUÉS DE COMER','EN LA COMIDA','MEDIA MAÑANA']},
     {k:'motivo',label:'Motivo',type:'checkboxes',opts:['ARTICULAR','CIRCULATORIO','HIGIENE CORPORAL','UPP']}
    ]},
-  {id:'comunicacion_familias',titulo:'R. Comunicación Familias',icon:'📞',color:'#dbeafe',iconColor:'#1d4ed8',desc:'Log de llamadas y avisos a familias',
+  {id:'comunicacion_familias',titulo:'R. Atención a las Familias',icon:'📞',color:'#dbeafe',iconColor:'#1d4ed8',desc:'Log de llamadas y avisos a familias',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
     {k:'medio',label:'Medio de comunicación',type:'select',opts:['CORREO ELECTRÓNICO','PRESENCIAL','TELÉFONO','WHATSAPP EMPRESA']},
-    {k:'motivo',label:'Motivo',type:'textarea',req:true}
+    {k:'motivo',label:'Motivo',type:'select-otro',req:true,opts:['ENTREVISTAS E INFORMACIÓN','SEGUIMIENTO PAAP','INFORMACIÓN ACTIVIDADES REALIZADAS','AYUDA GESTIÓN ADMINISTRATIVA','INFORMACIÓN RECURSOS EXISTENTES','OTROS']}
    ]},
   {id:'sanitario',titulo:'R. Sanitario',icon:'🩺',color:'#fce7f3',iconColor:'#9d174d',desc:'Incidencias y seguimiento sanitario',
    fields:[
@@ -5324,7 +5354,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
@@ -6402,13 +6432,20 @@ function opcionesDeCampo(campo, tipoId){
   }
   return campo.opts||[];
 }
+// Muestra la caja de texto libre solo cuando se elige "OTROS" en un campo tipo select-otro.
+function mostrarCajaOtroSiAplica(id){
+  var sel = document.getElementById(id);
+  var caja = document.getElementById(id+'_otro');
+  if(!sel || !caja) return;
+  caja.classList.toggle('hidden', sel.value.toUpperCase()!=='OTROS');
+}
 function renderCampoFormulario(tipoId, campo){
   var id = 'f_'+tipoId+'_'+campo.k;
   if(campo.type==='seccion'){
     return '<div class="span2 form-seccion-titulo">'+campo.label+'</div>';
   }
   var req = campo.req ? ' <span class="req">*</span>' : '';
-  var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='lista-numero' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio' || campo.type==='matriz-checkbox') ? 'span2' : '';
+  var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='lista-numero' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio' || campo.type==='matriz-checkbox' || campo.type==='select-otro') ? 'span2' : '';
   var h = '<div class="'+wrapClass+'"><label class="form-lbl" for="'+id+'">'+campo.label+req+'</label>';
   if(campo.type==='textarea'){
     h += '<textarea class="form-input" id="'+id+'" rows="3"></textarea>';
@@ -6417,6 +6454,11 @@ function renderCampoFormulario(tipoId, campo){
     h += '<select class="form-input" id="'+id+'"'+onchangeAttr+'><option value="">— Selecciona —</option>';
     opcionesDeCampo(campo, tipoId).forEach(function(op){ h += '<option value="'+op+'">'+op+'</option>'; });
     h += '</select>';
+  } else if(campo.type==='select-otro'){
+    h += '<select class="form-input" id="'+id+'" onchange="mostrarCajaOtroSiAplica(\''+id+'\')"><option value="">— Selecciona —</option>';
+    opcionesDeCampo(campo, tipoId).forEach(function(op){ h += '<option value="'+op+'">'+op+'</option>'; });
+    h += '</select>';
+    h += '<input type="text" class="form-input hidden" id="'+id+'_otro" placeholder="Especifica..." style="margin-top:8px"/>';
   } else if(campo.type==='aspectos-actividad'){
     h += '<div id="wrap-aspectos-actividad"><div class="empty-state" style="padding:16px">Elige primero una actividad/área arriba</div></div>';
   } else if(campo.type==='matriz-radio'){
