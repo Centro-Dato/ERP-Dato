@@ -789,7 +789,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
       <div class="table-card" style="max-height:65vh;overflow-y:auto">
         <table class="tabla-config-sticky">
-          <thead><tr><th>Empleado</th><th>Usuarios y Familias<br>(+ Expedientes)</th><th></th><th>Registros</th><th></th><th>Programa Personal</th><th></th><th>Actividades de Ocio</th><th></th><th>Protocolos</th><th>Transporte</th><th>Horarios</th><th>Personal</th><th></th><th>Incidencias</th><th>Configuración</th><th>Interruptor<br>de Drive</th><th>Carpeta<br>Medias Transporte</th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Usuarios y Familias<br>(+ Expedientes)</th><th></th><th>Registros</th><th></th><th>Programa Personal</th><th></th><th>Actividades de Ocio</th><th></th><th>Protocolos</th><th>Transporte</th><th>Horarios</th><th>Personal</th><th></th><th>Incidencias</th><th>Configuración</th><th>Interruptor<br>de Drive</th></tr></thead>
           <tbody id="tbl-config"></tbody>
         </table>
       </div>
@@ -3568,7 +3568,7 @@ var MODULOS_DETALLE = {
   usuarios: { titulo:'Usuarios y Familias', apartados:[{id:'usuarios_documentacion',titulo:'Usuarios Documentación',colorClase:'',icon:''},{id:'familias',titulo:'Familias',colorClase:'',icon:''}], permisoGeneral:'usuarios', detalleKey:'usuariosDetalle', aviso:null },
   paap: { titulo:'Programa Personal', apartados: PAAP_APARTADOS, permisoGeneral:'paap', detalleKey:'paapDetalle', aviso:{campo:'avisoSeguimientoMensual', etiqueta:'Aviso Diario Mensual Seguimiento'} },
   ocio: { titulo:'Actividades de Ocio', apartados: [], permisoGeneral:'ocio', detalleKey:'ocioDetalle', aviso:{campo:'avisoEvaluacionOcio', etiqueta:'Aviso Evaluación Mensual Ocio'} },
-  transporte: { titulo:'Transporte', apartados:[{id:'direcciones_rutas',titulo:'Direcciones Rutas',colorClase:'',icon:''},{id:'circulares',titulo:'Circulares',colorClase:'',icon:''}], permisoGeneral:'registros', detalleKey:'transporteDetalle', aviso:null },
+  transporte: { titulo:'Transporte', apartados:[{id:'direcciones_rutas',titulo:'Direcciones Rutas',colorClase:'',icon:''},{id:'circulares',titulo:'Circulares',colorClase:'',icon:''}], permisoGeneral:'registros', detalleKey:'transporteDetalle', aviso:{campo:'puedeVerMediasTransporte', etiqueta:'Carpeta Medias Transporte'} },
   personal: { titulo:'Personal', apartados:[{id:'datos',titulo:'Datos',colorClase:'',icon:''},{id:'formacion',titulo:'Formación',colorClase:'',icon:''},{id:'actas_reuniones',titulo:'Actas Reuniones',colorClase:'',icon:''}], permisoGeneral:'personal', detalleKey:'personalDetalle', aviso:null }
 };
 function nivelApartadoModulo(modKey, apartadoId){
@@ -4908,7 +4908,7 @@ var REGISTRO_TIPOS = [
   {id:'actividades',titulo:'R. Actividades',icon:'🎨',color:'#fdf4ff',iconColor:'#7e22ce',desc:'Actividades realizadas con los usuarios',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'actividad',label:'Actividad / Área',type:'select',req:true,opts:['ATENCIÓN PSICOLÓGICA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA Y ESTIMULACIÓN COGNITIVA','OCIO','OCIO Y VIDA COMUNITARIA','TECNOLOGÍA','TERAPIA OCUPACIONAL']},
+    {k:'actividad',label:'Actividad / Área',type:'select',req:true,opts:['ATENCIÓN PSICOLÓGICA','FISIOTERAPIA','LOGOPEDIA','NEUROPSICOLOGÍA Y ESTIMULACIÓN COGNITIVA','OCIO','TECNOLOGÍA','TERAPIA OCUPACIONAL','VIDA COMUNITARIA']},
     {k:'alumnos',label:'Alumnos',type:'checkboxes',opts:'BD',req:true},
     {k:'tratamientos',label:'Aspectos trabajados',type:'aspectos-actividad',req:true},
     {k:'observaciones',label:'Observaciones',type:'textarea'}
@@ -6369,9 +6369,9 @@ var ASPECTOS_POR_AREA = {
   'LOGOPEDIA':['DISFAGIA','LENGUAJE ORAL','LENGUAJE ESCRITO','PRAXIAS','SAAC'],
   'NEUROPSICOLOGÍA Y ESTIMULACIÓN COGNITIVA':['ATENCIÓN','MEMORIA','PLANIFICACIÓN Y FUNCIONES EJECUTIVAS','ORIENTACIÓN ESPACIO-TEMPORAL'],
   'OCIO':['CINE','ACTIVIDADES CULTURALES','FIESTAS TEMÁTICAS','RESTAURACIÓN','OTROS'],
-  'TECNOLOGÍA':['MICROSOFT','WEB','GOOGLE SHEETS','OFIMÁTICA','DISEÑO','OTROS'],
+  'TECNOLOGÍA':['MICROSOFT','WEB','GOOGLE SHEETS','GOOGLE DRIVE'],
   'TERAPIA OCUPACIONAL':['RANGO MMSS','MUSCULATURA MMSS','POSTURA','DESTREZA MANIPULATIVA','ESQUEMA CORPORAL Y COORDINACIÓN MOTORA','FUNCIONES EJECUTIVAS','ABVD','AIVD','AAVD'],
-  'OCIO Y VIDA COMUNITARIA':['PINTURA','LECTURA','MÚSICA','JUEGOS','OTROS']
+  'VIDA COMUNITARIA':['PINTURA','LECTURA','MÚSICA','JUEGOS','OTROS']
 };
 // Solo en Fisioterapia, la tabla de aspectos se ve muy apretada con el texto completo en cada
 // columna — se abrevia a una inicial, con una leyenda debajo de la tabla que explica cada una.
@@ -6662,10 +6662,6 @@ function renderConfig(){
     h += '<td><select class="perm-select v-'+(emp.permisos.puedeVerConexionDrive?'todo':'nada')+'" onchange="cambiarPuedeVerConexionDrive('+emp.id+',this)">'+
       '<option value="no" '+(!emp.permisos.puedeVerConexionDrive?'selected':'')+'>No</option>'+
       '<option value="si" '+(emp.permisos.puedeVerConexionDrive?'selected':'')+'>Sí</option>'+
-      '</select></td>';
-    h += '<td><select class="perm-select v-'+(emp.permisos.puedeVerMediasTransporte?'todo':'nada')+'" onchange="cambiarPuedeVerMediasTransporte('+emp.id+',this)">'+
-      '<option value="no" '+(!emp.permisos.puedeVerMediasTransporte?'selected':'')+'>No</option>'+
-      '<option value="si" '+(emp.permisos.puedeVerMediasTransporte?'selected':'')+'>Sí</option>'+
       '</select></td>';
     h += '</tr>';
   });
