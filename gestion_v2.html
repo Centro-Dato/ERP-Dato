@@ -3890,11 +3890,19 @@ function guardarEvaluacionMensualOcio(){
   if(puntuaciones.length===0){ mostrarAviso('Ese mes no tiene actividades que puntuar.'); return; }
   var propuesta = document.getElementById('evalocio-propuesta').value.trim();
   var headers = ['Fecha','Alumno','Puntuaciones','Propuesta de Actividades'];
-  var fila = [fechaBonita, abreviarNombreCompleto(alumno), puntuaciones.join('\n'), propuesta];
+  var nombreArchivo = 'R. Evaluación Mensual Ocio '+CURSO_REGISTROS_ACTUAL();
+  var filaGeneral = [fechaBonita, abreviarNombreCompleto(alumno), puntuaciones.join('\n'), propuesta];
   mostrarAviso('Guardando la evaluación…', '⏳');
-  guardarFilaViaAppsScript(CARPETA_OCIO_ARCHIVOS_ID, 'R. Evaluación Mensual Ocio '+CURSO_REGISTROS_ACTUAL(), 'General', headers, fila, '#EA580C', function(err){
+  guardarFilaViaAppsScript(CARPETA_OCIO_ARCHIVOS_ID, nombreArchivo, 'General', headers, filaGeneral, '#EA580C', function(err){
     if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
-    mostrarAviso('Evaluación guardada correctamente.', '✅');
+    // Igual que en el resto de registros, también se guarda en la pestaña individual del alumno
+    // (esta sin la columna "Alumno", ya que en su propia pestaña no hace falta repetir quién es).
+    var headersIndividual = ['Fecha','Puntuaciones','Propuesta de Actividades'];
+    var filaIndividual = [fechaBonita, puntuaciones.join('\n'), propuesta];
+    guardarFilaViaAppsScript(CARPETA_OCIO_ARCHIVOS_ID, nombreArchivo, alumno, headersIndividual, filaIndividual, '#EA580C', function(err2){
+      if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
+      mostrarAviso('Evaluación guardada correctamente.', '✅');
+    });
   });
 }
 function abrirAsistenciaOcio(){
@@ -3905,6 +3913,7 @@ function abrirAsistenciaOcio(){
     inicializarAsistenciaOcio();
     renderMesesTabsOcio();
     renderTablaAsistenciaOcio();
+    cerrarAviso();
   });
 }
 function renderMesesTabsOcio(){
@@ -4450,6 +4459,7 @@ function abrirVistaHorarios(){
   cargarOpcionesPersonalizadas(function(){
     cargarDatosHorariosDesdeOpciones();
     renderHorarios();
+    cerrarAviso();
   });
 }
 function renderHorarios(){
