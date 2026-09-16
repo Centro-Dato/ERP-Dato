@@ -636,6 +636,31 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     </div>
 
     <!-- ===== PERSONAL - ACTAS DE REUNIONES ===== -->
+    <!-- ===== PAAP - SEGUIMIENTO - DIARIO MENSUAL ===== -->
+    <div id="view-diario-mensual" class="page hidden">
+      <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
+      <div class="page-header">
+        <div><div class="page-title">Diario Mensual</div><div class="page-subtitle">Elige el alumno; cada profesional rellena su propia observación</div></div>
+      </div>
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label class="form-lbl">Fecha</label>
+            <input type="date" class="form-input" id="diario-fecha"/>
+          </div>
+          <div>
+            <label class="form-lbl">Alumno</label>
+            <select class="form-input" id="diario-alumno"></select>
+          </div>
+        </div>
+        <div class="fl-lbl" style="margin:16px 0 8px">Observación de cada profesional</div>
+        <div id="diario-profesionales-lista"></div>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="guardarDiarioMensual()">✓ Guardar</button>
+        </div>
+      </div>
+    </div>
+
     <div id="view-actas-reuniones" class="page hidden">
       <button class="btn-back" onclick="navTo('personal')">← Volver a Personal</button>
       <div class="page-header">
@@ -3727,9 +3752,60 @@ function subirDocumentoPP(id, titulo){
     mostrarAviso('Archivo de "'+titulo+'" subido correctamente.', '✅');
   });
 }
-// El registro "Diario Mensual" (dentro de Seguimiento) todavía está por construir del todo.
+// Carpeta real de Drive donde irán las respuestas del Diario Mensual, junto con todo lo de PAAP.
+// Pendiente del enlace real que Ana dará más adelante.
+var CARPETA_PAAP_ID = '';
 function abrirRegistroDiarioMensual(){
-  mostrarAviso('El Diario Mensual todavía se está terminando de montar — en cuanto esté listo, se abrirá aquí mismo.', 'ℹ️');
+  prepararVueltaRegistro('carpeta:seguimiento');
+  var selAlumno = document.getElementById('diario-alumno');
+  selAlumno.innerHTML = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){
+    var nombre = u.nombre+' '+u.apellidos;
+    return '<option value="'+esc(nombre)+'">'+esc(abreviarNombreCompleto(nombre))+'</option>';
+  }).join('');
+  document.getElementById('diario-fecha').value = '';
+  renderProfesionalesDiarioMensual();
+  navTo('diario-mensual');
+}
+function renderProfesionalesDiarioMensual(){
+  var profesionales = ordenarAlfabetico(EMPLEADOS.filter(function(e){ return !e.oculto; }), function(e){return e.nombre;});
+  var h = '';
+  profesionales.forEach(function(p, i){
+    h += '<div style="margin-bottom:12px">';
+    h += '<label class="form-lbl" for="diario-obs-'+i+'">'+esc(p.nombre)+'</label>';
+    h += '<textarea class="form-input" id="diario-obs-'+i+'" data-profesional="'+esc(p.nombre)+'" rows="2" placeholder="Observación de este mes..."></textarea>';
+    h += '</div>';
+  });
+  document.getElementById('diario-profesionales-lista').innerHTML = h;
+}
+function guardarDiarioMensual(){
+  var fechaIso = document.getElementById('diario-fecha').value;
+  if(!fechaIso){ mostrarAviso('Elige primero la fecha.'); return; }
+  var partes = fechaIso.split('-');
+  var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+  var alumno = document.getElementById('diario-alumno').value;
+  if(!alumno){ mostrarAviso('Elige un alumno.'); return; }
+  var observaciones = [];
+  document.querySelectorAll('#diario-profesionales-lista textarea').forEach(function(txt){
+    var val = txt.value.trim();
+    if(val) observaciones.push(txt.getAttribute('data-profesional')+': '+val);
+  });
+  if(observaciones.length===0){ mostrarAviso('Rellena la observación de al menos un profesional.'); return; }
+  if(!CARPETA_PAAP_ID){
+    mostrarAviso('Todavía no está conectada la carpeta de Drive de PAAP — en cuanto Ana me pase el enlace, aquí ya se podrá guardar de verdad.', 'ℹ️');
+    return;
+  }
+  var nombreArchivo = 'R. Diario Mensual '+CURSO_REGISTROS_ACTUAL();
+  var headersGeneral = ['Fecha','Alumno','Observaciones'];
+  var headersIndividual = ['Fecha','Observaciones'];
+  var textoObservaciones = observaciones.join('\n');
+  mostrarAviso('Guardando el diario…', '⏳');
+  guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, 'General', headersGeneral, [fechaBonita, abreviarNombreCompleto(alumno), textoObservaciones], '#f2994a', function(err){
+    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, alumno, headersIndividual, [fechaBonita, textoObservaciones], '#f2994a', function(err2){
+      if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
+      mostrarAviso('Diario Mensual guardado correctamente.', '✅');
+    });
+  });
 }
 
 var TABS = [
@@ -5701,7 +5777,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','evaluacion-ocio','medias-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','evaluacion-ocio','medias-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','diario-mensual','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
