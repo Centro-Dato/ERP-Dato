@@ -1313,7 +1313,11 @@ function aplicarPermisosVisuales(){
 /* ===================== CONEXIÓN REAL CON GOOGLE DRIVE (piloto: Horarios y Transporte) ===================== */
 var GOOGLE_CLIENT_ID = '496228924695-amquf0pghvq40ra9k81uv84t9v297n3d.apps.googleusercontent.com';
 var GOOGLE_API_KEY = 'AIzaSyDhLQKovtDLS_z8eLMVFgOb_uBEfW4BLwE';
-var GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+// "drive.file" solo deja tocar archivos que haya creado el propio programa — no sirve para
+// escribir dentro de carpetas que Ana ya tenía creadas a mano de antes (como la de Ocio).
+// Con "drive" a secas, se puede acceder a cualquier carpeta a la que la cuenta ya tenga acceso
+// normal en Google Drive, que es justo lo que necesitamos aquí.
+var GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
 
 // Carpetas piloto: solo se guarda el nombre/ID esperado a modo de referencia para avisar si alguien
 // elige por error otra carpeta. El acceso real se concede siempre al elegir la carpeta con el selector
