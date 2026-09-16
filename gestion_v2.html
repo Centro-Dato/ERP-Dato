@@ -666,7 +666,10 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('ocio')">← Volver a Ocio</button>
       <div class="page-header">
         <div><div class="page-title">Medias de Participación</div><div class="page-subtitle">Por categoría de actividad, curso completo y mes a mes</div></div>
-        <button class="btn-secondary" onclick="imprimirMediasParticipacionOcio()">🖨 Imprimir</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" onclick="imprimirMediasParticipacionOcio()">🖨 Imprimir</button>
+          <button class="btn-primary" onclick="guardarMediasParticipacionOcioEnDrive()">☁️ Guardar en Drive</button>
+        </div>
       </div>
       <div id="medias-ocio-contenido"></div>
     </div>
@@ -3993,7 +3996,7 @@ function participacionDeActividad(mes, actividadIdx){
   var totalUsuarios = USUARIOS.length || 1;
   return {asistentes: asistentes, porcentaje: (asistentes/totalUsuarios)*100};
 }
-function construirHtmlMediasParticipacionOcio(){
+function calcularMediasParticipacionOcio(){
   // Recorremos los 12 meses del curso y agrupamos cada actividad según su categoría.
   var porCategoria = {}; // id categoria -> lista de {asistentes, porcentaje}
   var porMesYCategoria = {}; // mes -> {idCategoria -> lista de {asistentes, porcentaje}}
@@ -4017,17 +4020,22 @@ function construirHtmlMediasParticipacionOcio(){
       porMesYCategoria[mes][cat].push(p);
     });
   });
-  function media(lista, campo){
-    if(lista.length===0) return null;
-    var suma = lista.reduce(function(acc, x){ return acc + x[campo]; }, 0);
-    return suma / lista.length;
-  }
+  return {porCategoria: porCategoria, porMesYCategoria: porMesYCategoria};
+}
+function mediaDeLista(lista, campo){
+  if(lista.length===0) return null;
+  var suma = lista.reduce(function(acc, x){ return acc + x[campo]; }, 0);
+  return suma / lista.length;
+}
+function construirHtmlMediasParticipacionOcio(){
+  var datos = calcularMediasParticipacionOcio();
+  var porCategoria = datos.porCategoria, porMesYCategoria = datos.porMesYCategoria;
   var h = '<div class="card"><div class="card-title" style="margin-bottom:14px">Resumen del curso completo ('+CURSO_REGISTROS_ACTUAL()+')</div>';
   h += '<div class="table-card"><table class="tabla-config-sticky"><thead><tr><th>Categoría</th><th>Nº de actividades</th><th>Media de asistentes</th><th>Media de participación</th></tr></thead><tbody>';
   CATEGORIAS_OCIO.forEach(function(c){
     var lista = porCategoria[c.id];
-    var mediaAsist = media(lista, 'asistentes');
-    var mediaPorc = media(lista, 'porcentaje');
+    var mediaAsist = mediaDeLista(lista, 'asistentes');
+    var mediaPorc = mediaDeLista(lista, 'porcentaje');
     h += '<tr><td>'+esc(c.titulo)+'</td><td style="text-align:center">'+lista.length+'</td>'+
       '<td style="text-align:center">'+(mediaAsist===null?'—':mediaAsist.toFixed(1))+'</td>'+
       '<td style="text-align:center">'+(mediaPorc===null?'—':mediaPorc.toFixed(0)+'%')+'</td></tr>';
@@ -4043,8 +4051,8 @@ function construirHtmlMediasParticipacionOcio(){
     CATEGORIAS_OCIO.forEach(function(c){
       var lista = porMesYCategoria[mes][c.id];
       if(lista.length===0){ h += '<td style="text-align:center;color:#cbd5e1">—</td>'; return; }
-      var mediaAsist = media(lista, 'asistentes');
-      var mediaPorc = media(lista, 'porcentaje');
+      var mediaAsist = mediaDeLista(lista, 'asistentes');
+      var mediaPorc = mediaDeLista(lista, 'porcentaje');
       h += '<td style="text-align:center">'+mediaAsist.toFixed(1)+' ('+mediaPorc.toFixed(0)+'%)</td>';
     });
     h += '</tr>';
@@ -4054,6 +4062,66 @@ function construirHtmlMediasParticipacionOcio(){
 }
 function imprimirMediasParticipacionOcio(){
   imprimirHtml('<h2>Medias de Participación en Ocio — '+esc(CURSO_REGISTROS_ACTUAL())+'</h2>'+construirHtmlMediasParticipacionOcio(), true);
+}
+// Guarda las medias en Drive: la primera pestaña ("2026-2027") con el resumen del curso
+// completo, y una pestaña por cada mes que tenga datos de verdad, con su propio desglose.
+function guardarMediasParticipacionOcioEnDrive(){
+  var datos = calcularMediasParticipacionOcio();
+  var porCategoria = datos.porCategoria, porMesYCategoria = datos.porMesYCategoria;
+  var curso = CURSO_REGISTROS_ACTUAL();
+  var nombreArchivo = 'Medias de Participación Ocio '+curso;
+  var tareas = [];
+
+  var cabeceraGeneral = ['Categoría','Nº de actividades','Media de asistentes','Media de participación'];
+  var filasGeneral = CATEGORIAS_OCIO.map(function(c){
+    var lista = porCategoria[c.id];
+    var mediaAsist = mediaDeLista(lista, 'asistentes');
+    var mediaPorc = mediaDeLista(lista, 'porcentaje');
+    return [c.titulo, lista.length, mediaAsist===null?'':mediaAsist.toFixed(1), mediaPorc===null?'':mediaPorc.toFixed(0)+'%'];
+  });
+  tareas.push({pestana: curso, cabecera: cabeceraGeneral, filas: filasGeneral});
+
+  var cabeceraMes = ['Categoría','Media de asistentes','Media de participación'];
+  OCIO_MESES.forEach(function(mes){
+    if(!OCIO_ACTIVIDADES[mes]) return; // mes nunca tocado: no se crea su pestaña
+    var hayDatos = CATEGORIAS_OCIO.some(function(c){ return porMesYCategoria[mes][c.id].length>0; });
+    if(!hayDatos) return;
+    var filasMes = CATEGORIAS_OCIO.map(function(c){
+      var lista = porMesYCategoria[mes][c.id];
+      var mediaAsist = mediaDeLista(lista, 'asistentes');
+      var mediaPorc = mediaDeLista(lista, 'porcentaje');
+      return [c.titulo, mediaAsist===null?'':mediaAsist.toFixed(1), mediaPorc===null?'':mediaPorc.toFixed(0)+'%'];
+    });
+    tareas.push({pestana: nombrePestanaMesOcio(mes), cabecera: cabeceraMes, filas: filasMes});
+  });
+
+  mostrarAviso('Guardando las medias en Drive…', '⏳');
+  var pendientes = tareas.length;
+  var huboError = null;
+  tareas.forEach(function(t){
+    fetch(APPS_SCRIPT_URL, {method:'POST', body: JSON.stringify({
+      accion: 'guardarTablaCompletaPestana',
+      carpetaId: CARPETA_OCIO_ARCHIVOS_ID,
+      nombreArchivo: nombreArchivo,
+      pestana: t.pestana,
+      cabecera: t.cabecera,
+      filas: t.filas
+    })})
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(!data || !data.ok) huboError = 'fallo en '+t.pestana;
+        pendientes--;
+        if(pendientes<=0){
+          if(huboError) mostrarAviso('Guardado con algún aviso ('+huboError+').', '⚠️');
+          else mostrarAviso('Medias de Participación guardadas en Drive: "'+nombreArchivo+'".', '✅');
+        }
+      })
+      .catch(function(){
+        huboError = 'sin conexión en '+t.pestana;
+        pendientes--;
+        if(pendientes<=0) mostrarAviso('Guardado con algún aviso ('+huboError+').', '⚠️');
+      });
+  });
 }
 
 function abrirAsistenciaOcio(){
