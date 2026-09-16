@@ -660,6 +660,39 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     </div>
 
     <!-- ===== R. COMITÉ DE USUARIOS ===== -->
+    <!-- ===== EVALUACIÓN MENSUAL DE ACTIVIDADES DE OCIO ===== -->
+    <div id="view-evaluacion-ocio" class="page hidden">
+      <button class="btn-back" onclick="navTo('ocio')">← Volver a Ocio</button>
+      <div class="page-header">
+        <div><div class="page-title">Evaluación Mensual de Actividades de Ocio</div><div class="page-subtitle">Elige el mes, el alumno, y puntúa cada actividad del 1 al 5</div></div>
+      </div>
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label class="form-lbl">Fecha</label>
+            <input type="date" class="form-input" id="evalocio-fecha"/>
+          </div>
+          <div>
+            <label class="form-lbl">Mes a evaluar</label>
+            <select class="form-input" id="evalocio-mes" onchange="renderActividadesEvaluacionOcio()"></select>
+          </div>
+          <div>
+            <label class="form-lbl">Alumno</label>
+            <select class="form-input" id="evalocio-alumno"></select>
+          </div>
+        </div>
+        <div class="fl-lbl" style="margin:16px 0 8px">Puntuación de cada actividad (1 = menos satisfecho, 5 = más satisfecho)</div>
+        <div id="evalocio-actividades-lista"></div>
+        <div style="margin-top:18px">
+          <label class="form-lbl">Propuesta de actividades</label>
+          <textarea class="form-input" id="evalocio-propuesta" rows="3" placeholder="Ideas para el próximo mes"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="guardarEvaluacionMensualOcio()">✓ Guardar evaluación</button>
+        </div>
+      </div>
+    </div>
+
     <div id="view-comite-usuarios" class="page hidden">
       <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="page-header">
@@ -714,6 +747,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-secondary btn-sm" onclick="descargarMesOcioExcel()">⬇ Descargar</button>
           <button class="btn-secondary btn-sm" onclick="imprimirMesOcio()">🖨 Imprimir</button>
           <button class="btn-primary" id="btn-ocio-guardar-drive" onclick="guardarMesOcioEnDrive()">☁️ Guardar en Drive</button>
+          <button class="btn-secondary" onclick="abrirEvaluacionMensualOcio()">📊 Evaluación Mensual</button>
         </div>
       </div>
       <div class="info-banner">ℹ️ Clic en un nombre para corregirlo. Clic derecho en cualquier celda para añadir/quitar filas o actividades. Clic derecho en el nombre o la fecha de una actividad para modificarla.</div>
@@ -3783,6 +3817,70 @@ function guardarDatosOcioAhora(){
     }
   });
 }
+// ===== Evaluación Mensual de Actividades de Ocio =====
+function abrirEvaluacionMensualOcio(){
+  cargarOpcionesPersonalizadas(function(){
+    cargarDatosOcioDesdeOpciones();
+    var selMes = document.getElementById('evalocio-mes');
+    var hoy = new Date();
+    var mesAnterior = OCIO_MESES[(OCIO_MESES.indexOf(mesDeIndiceCalendario(hoy.getMonth()))+OCIO_MESES.length-1)%OCIO_MESES.length];
+    selMes.innerHTML = OCIO_MESES.map(function(m){ return '<option value="'+m+'">'+m+'</option>'; }).join('');
+    selMes.value = mesAnterior || _ocioMesActual;
+    var selAlumno = document.getElementById('evalocio-alumno');
+    selAlumno.innerHTML = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){
+      var nombre = u.nombre+' '+u.apellidos;
+      return '<option value="'+esc(nombre)+'">'+esc(abreviarNombreCompleto(nombre))+'</option>';
+    }).join('');
+    document.getElementById('evalocio-fecha').value = '';
+    document.getElementById('evalocio-propuesta').value = '';
+    renderActividadesEvaluacionOcio();
+    navTo('evaluacion-ocio');
+  });
+}
+// Los meses del calendario (0=enero) traducidos al nombre usado en Ocio, para calcular "el mes
+// anterior" como valor por defecto (se evalúa un mes ya terminado).
+function mesDeIndiceCalendario(indice){
+  var nombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return nombres[indice];
+}
+function renderActividadesEvaluacionOcio(){
+  var mes = document.getElementById('evalocio-mes').value;
+  var actividades = obtenerActividadesDelMes(mes).filter(function(a){ return a.nombre && a.nombre.trim(); });
+  var h = '';
+  if(actividades.length===0){
+    h = '<div class="empty-state">Ese mes todavía no tiene ninguna actividad guardada en Ocio.</div>';
+  } else {
+    actividades.forEach(function(a, i){
+      h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+      h += '<span style="flex:1;font-size:13.5px">'+esc(a.nombre)+'</span>';
+      h += '<select class="form-input" style="max-width:90px" id="evalocio-punt-'+i+'" data-nombre="'+esc(a.nombre)+'">';
+      [1,2,3,4,5].forEach(function(n){ h += '<option value="'+n+'">'+n+'</option>'; });
+      h += '</select></div>';
+    });
+  }
+  document.getElementById('evalocio-actividades-lista').innerHTML = h;
+}
+function guardarEvaluacionMensualOcio(){
+  var fechaIso = document.getElementById('evalocio-fecha').value;
+  if(!fechaIso){ mostrarAviso('Elige primero la fecha.'); return; }
+  var partes = fechaIso.split('-');
+  var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+  var alumno = document.getElementById('evalocio-alumno').value;
+  if(!alumno){ mostrarAviso('Elige un alumno.'); return; }
+  var puntuaciones = [];
+  document.querySelectorAll('#evalocio-actividades-lista select').forEach(function(sel){
+    puntuaciones.push(sel.getAttribute('data-nombre')+': '+sel.value);
+  });
+  if(puntuaciones.length===0){ mostrarAviso('Ese mes no tiene actividades que puntuar.'); return; }
+  var propuesta = document.getElementById('evalocio-propuesta').value.trim();
+  var headers = ['Fecha','Alumno','Puntuaciones','Propuesta de Actividades'];
+  var fila = [fechaBonita, abreviarNombreCompleto(alumno), puntuaciones.join('\n'), propuesta];
+  mostrarAviso('Guardando la evaluación…', '⏳');
+  guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, 'R. Evaluación Mensual Ocio '+CURSO_REGISTROS_ACTUAL(), 'General', headers, fila, '#EA580C', function(err){
+    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    mostrarAviso('Evaluación guardada correctamente.', '✅');
+  });
+}
 function abrirAsistenciaOcio(){
   navTo('ocio');
   mostrarAviso('Cargando la asistencia de todo el equipo…', '⏳');
@@ -5354,7 +5452,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','evaluacion-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
