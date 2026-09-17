@@ -678,6 +678,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('personal')">← Volver a Personal</button>
       <div class="page-header">
         <div><div class="page-title">Actas de Reuniones</div><div class="page-subtitle">Elige la fecha, añade a los profesionales que asisten y el objeto de la reunión</div></div>
+        <button class="btn-secondary" onclick="verCarpetaActasReuniones()">📁 Ver carpeta en Drive</button>
       </div>
       <div class="info-banner">ℹ️ Los nombres y etiquetas de los profesionales son de momento un campo libre — en cuanto Ana confirme la lista exacta, se puede convertir en un desplegable fijo.</div>
       <div class="card">
@@ -2713,6 +2714,13 @@ function anadirFilaActaProfesional(){
 function quitarFilaActaProfesional(i){
   _actaFilasProfesionales.splice(i,1);
   renderFilasActaProfesionales();
+}
+function verCarpetaActasReuniones(){
+  if(!CARPETA_ACTAS_REUNIONES_ID){
+    mostrarAviso('Todavía no está conectada la carpeta de Drive de Actas de Reuniones.', 'ℹ️');
+    return;
+  }
+  window.open('https://drive.google.com/drive/folders/'+CARPETA_ACTAS_REUNIONES_ID, '_blank');
 }
 function generarActaReunionPersonal(){
   var fechaIso = document.getElementById('acta-fecha').value;
