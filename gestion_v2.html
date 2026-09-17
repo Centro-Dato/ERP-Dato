@@ -2392,7 +2392,11 @@ function renderOpcionesFormulario(){
   document.getElementById('editar-registros-contenido').innerHTML = '';
   if(!tipo){ cont.innerHTML=''; return; }
   var camposConOpciones = tipo.fields.filter(function(c){ return (c.type==='select'||c.type==='checkboxes'||c.type==='lista-numero') && Array.isArray(c.opts); });
-  if(camposConOpciones.length===0){
+  var campoAspectos = tipo.fields.filter(function(c){ return c.type==='aspectos-actividad'; })[0];
+  // El campo de "aspectos trabajados" depende de una área/actividad elegida en otro campo select
+  // de ese mismo registro — se busca ese campo hermano para saber qué áreas existen.
+  var campoAreaAspectos = campoAspectos ? tipo.fields.filter(function(c){ return c.type==='select'; })[0] : null;
+  if(camposConOpciones.length===0 && !campoAspectos){
     cont.innerHTML = '<div class="empty-state">Este tipo de registro no tiene listas de opciones que se puedan editar aquí.</div>';
     return;
   }
@@ -2409,7 +2413,47 @@ function renderOpcionesFormulario(){
     h += '<button class="btn-primary btn-sm" onclick="guardarOpcionesCampo(\''+tipoId+'\',\''+campo.k+'\')">💾 Guardar lista</button>';
     h += '</div></div>';
   });
+  if(campoAspectos && campoAreaAspectos){
+    h += '<div style="font-weight:800;font-size:16px;margin:20px 0 10px">Aspectos trabajados, por área</div>';
+    var areas = opcionesDeCampo(campoAreaAspectos, tipoId);
+    areas.forEach(function(area){
+      var claveArea = 'aspectos__'+area;
+      var lista = obtenerListaAspectosEnEdicion(area);
+      h += '<div class="card" style="margin-bottom:12px">';
+      h += '<div style="font-weight:700;margin-bottom:8px">'+esc(area)+'</div>';
+      lista.forEach(function(op, i){
+        h += '<div style="display:flex;gap:8px;margin-bottom:6px"><input class="form-input" value="'+esc(op)+'" onchange="cambiarOpcionAspectoArea(\''+area.replace(/'/g,"\\'")+'\','+i+',this.value)"/><button class="btn-secondary btn-sm" onclick="quitarOpcionAspectoArea(\''+area.replace(/'/g,"\\'")+'\','+i+')">🗑</button></div>';
+      });
+      h += '<div style="display:flex;gap:8px;margin-top:8px">';
+      h += '<button class="btn-secondary btn-sm" onclick="anadirOpcionAspectoArea(\''+area.replace(/'/g,"\\'")+'\')">+ Añadir aspecto</button>';
+      h += '<button class="btn-primary btn-sm" onclick="guardarOpcionesAspectoArea(\''+area.replace(/'/g,"\\'")+'\')">💾 Guardar lista</button>';
+      h += '</div></div>';
+    });
+  }
   cont.innerHTML = h;
+}
+var _aspectosEnEdicion = {};
+function obtenerListaAspectosEnEdicion(area){
+  if(!_aspectosEnEdicion[area]) _aspectosEnEdicion[area] = aspectosDeArea(area).slice();
+  return _aspectosEnEdicion[area];
+}
+function cambiarOpcionAspectoArea(area, i, valor){ obtenerListaAspectosEnEdicion(area)[i] = valor; }
+function quitarOpcionAspectoArea(area, i){
+  obtenerListaAspectosEnEdicion(area).splice(i,1);
+  renderOpcionesFormulario();
+}
+function anadirOpcionAspectoArea(area){
+  obtenerListaAspectosEnEdicion(area).push('');
+  renderOpcionesFormulario();
+}
+function guardarOpcionesAspectoArea(area){
+  var lista = obtenerListaAspectosEnEdicion(area).filter(function(v){ return v && v.trim(); });
+  guardarOpcionesPersonalizadas('actividades', 'aspectos__'+area, lista, function(err){
+    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    mostrarAviso('Aspectos de "'+area+'" guardados — ya están disponibles para todo el equipo.', '✅');
+    delete _aspectosEnEdicion[area];
+    renderOpcionesFormulario();
+  });
 }
 function cambiarOpcionCampo(tipoId, campoK, i, valor){ obtenerListaEnEdicion(tipoId, campoK)[i] = valor; }
 function quitarOpcionCampo(tipoId, campoK, i){
@@ -6905,6 +6949,13 @@ var ASPECTOS_ABREVIADOS_POR_AREA = {
   'FISIOTERAPIA': {'MOVILIDAD':'M', 'FUERZA':'F', 'COORDINACIÓN Y EQUILIBRIO':'CE', 'TONO':'T', 'MARCHA':'MC', 'PRODUCTOS DE APOYO':'PA', 'SILLA ELÉCTRICA':'SE'},
   'TERAPIA OCUPACIONAL': {'RANGO MMSS':'RM', 'MUSCULATURA MMSS':'MM', 'POSTURA':'P', 'DESTREZA MANIPULATIVA':'DM', 'ESQUEMA CORPORAL Y COORDINACIÓN MOTORA':'EC', 'FUNCIONES EJECUTIVAS':'FE', 'ABVD':'ABVD', 'AIVD':'AIVD', 'AAVD':'AAVD'}
 };
+// Igual que con las demás listas de opciones, los aspectos de cada área se pueden sobreescribir
+// desde "Editar registros guardados" — si no se ha tocado nunca, se usa la lista de fábrica.
+function aspectosDeArea(area){
+  var clave = 'actividades__aspectos__'+area;
+  if(OPCIONES_PERSONALIZADAS[clave]) return OPCIONES_PERSONALIZADAS[clave];
+  return ASPECTOS_POR_AREA[area] || [];
+}
 function actualizarMatrizAspectos(){
   var cont = document.getElementById('wrap-aspectos-actividad');
   if(!cont) return;
@@ -6920,7 +6971,7 @@ function actualizarMatrizAspectos(){
   if(alumnos.length===0){
     alumnos = ordenarAlfabetico(USUARIOS, function(u){ return u.nombre+' '+u.apellidos; }).map(function(u){ return u.nombre+' '+u.apellidos; });
   }
-  var aspectos = ASPECTOS_POR_AREA[area] || [];
+  var aspectos = aspectosDeArea(area);
   var mapaAbreviado = ASPECTOS_ABREVIADOS_POR_AREA[area] || null;
   var h = '<div class="aspectos-matriz-card">';
   h += '<div class="aspectos-matriz-header">ELIGE LOS ASPECTOS TRABAJADOS</div>';
