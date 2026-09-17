@@ -693,6 +693,9 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <textarea class="form-input" id="acta-objeto" rows="3" placeholder="Ej. Inicio de curso"></textarea>
         </div>
         <div class="modal-actions">
+          <button class="btn-secondary" onclick="verPreviaActaReunion()">👁 Vista previa</button>
+          <button class="btn-secondary" onclick="descargarActaReunion()">⬇ Descargar</button>
+          <button class="btn-secondary" onclick="imprimirActaReunion()">🖨 Imprimir</button>
           <button class="btn-primary" onclick="generarActaReunionPersonal()">📄 Generar Acta</button>
         </div>
       </div>
@@ -2721,6 +2724,44 @@ function verCarpetaActasReuniones(){
     return;
   }
   window.open('https://drive.google.com/drive/folders/'+CARPETA_ACTAS_REUNIONES_ID, '_blank');
+}
+// Recoge lo que hay escrito ahora mismo en el formulario, sin necesidad de haberlo guardado —
+// lo usan tanto la Vista previa/Descargar/Imprimir como el propio Generar Acta.
+function datosActaActual(){
+  var fechaIso = document.getElementById('acta-fecha').value;
+  var fechaBonita = '';
+  if(fechaIso){
+    var partes = fechaIso.split('-');
+    fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+  }
+  var profesionales = _actaFilasProfesionales.filter(function(p){ return p.trim(); });
+  var objeto = document.getElementById('acta-objeto').value.trim();
+  return {fechaBonita: fechaBonita, profesionales: profesionales, objeto: objeto};
+}
+function verPreviaActaReunion(){
+  var d = datosActaActual();
+  if(!d.fechaBonita){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
+  var html = htmlTablaActaReunion('Acta de Reunión — '+d.fechaBonita, d.fechaBonita, d.profesionales, d.objeto);
+  document.getElementById('doc-titulo').textContent = 'Acta de Reunión';
+  document.getElementById('doc-info').textContent = d.fechaBonita;
+  document.getElementById('doc-preview-box').innerHTML = html;
+  document.getElementById('doc-btn-subir').classList.add('hidden');
+  document.getElementById('doc-btn-descargar').onclick = function(){ descargarComoDocx(html, 'Acta de Reunion '+d.fechaBonita.replace(/\//g,'-'), {apaisado:false}); };
+  document.getElementById('doc-btn-imprimir').onclick = function(){ imprimirHtml(html, false); };
+  document.getElementById('btn-volver-documento').onclick = function(){ navTo('actas-reuniones'); };
+  navTo('documento');
+}
+function descargarActaReunion(){
+  var d = datosActaActual();
+  if(!d.fechaBonita){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
+  var html = htmlTablaActaReunion('Acta de Reunión — '+d.fechaBonita, d.fechaBonita, d.profesionales, d.objeto);
+  descargarComoDocx(html, 'Acta de Reunion '+d.fechaBonita.replace(/\//g,'-'), {apaisado:false});
+}
+function imprimirActaReunion(){
+  var d = datosActaActual();
+  if(!d.fechaBonita){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
+  var html = htmlTablaActaReunion('Acta de Reunión — '+d.fechaBonita, d.fechaBonita, d.profesionales, d.objeto);
+  imprimirHtml(html, false);
 }
 function generarActaReunionPersonal(){
   var fechaIso = document.getElementById('acta-fecha').value;
