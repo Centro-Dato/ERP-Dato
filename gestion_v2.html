@@ -770,17 +770,9 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
       <div class="reg-grid" style="margin-bottom:22px" id="transporte-acceso-registro"></div>
       <div class="reg-grid" style="margin-bottom:22px">
-        <div class="reg-btn" onclick="abrirDocumentoTransporte('direcciones_rutas','Direcciones Rutas')"><div class="reg-ic" style="background:#e0f2fe;color:#0369a1">📍</div><div><div class="reg-title">Direcciones Rutas</div></div></div>
+        <div class="reg-btn" onclick="abrirDireccionesRutas()"><div class="reg-ic" style="background:#e0f2fe;color:#0369a1">📍</div><div><div class="reg-title">Direcciones Rutas</div></div></div>
         <div class="reg-btn" id="tarjeta-circulares" onclick="abrirDocumentoTransporte('circulares','Circulares (Teléfonos y Comunicación)')"><div class="reg-ic" style="background:#fef9c3;color:#713f12">📋</div><div><div class="reg-title">Circulares (Teléfonos y Comunicación)</div></div></div>
-      </div>
-      <div class="card" id="tarjeta-medias-transporte">
-        <div class="card-header">
-          <div class="card-title">📁 Medias Transporte <span style="font-weight:400;font-size:12px;color:#94a3b8">(nombre provisional)</span></div>
-          <button class="btn-secondary btn-sm" onclick="verCarpetaMediasTransporte()">📁 Ver carpeta</button>
-        </div>
-        <p style="color:#64748b;font-size:13.5px;line-height:1.6">
-          Esta carpeta está pendiente de definir del todo — de momento la llamamos "Medias Transporte" porque probablemente cambiará de nombre. Aquí irán las estadísticas o medias relacionadas con el transporte, en cuanto me confirmes exactamente qué debe contener.
-        </p>
+        <div class="reg-btn" id="tarjeta-medias-transporte" onclick="verCarpetaMediasTransporte()"><div class="reg-ic" style="background:#fef3c7;color:#92400e">📈</div><div><div class="reg-title">Medias Transporte</div></div></div>
       </div>
     </div>
 
@@ -1338,6 +1330,10 @@ function aplicarPermisosVisuales(){
   if(tarjetaCirculares){
     tarjetaCirculares.style.display = (nivelApartadoModulo('transporte','circulares')!=='nada') ? '' : 'none';
   }
+  var tarjetaMediasTransporte = document.getElementById('tarjeta-medias-transporte');
+  if(tarjetaMediasTransporte){
+    tarjetaMediasTransporte.style.display = (nivelApartadoModulo('transporte','medias_transporte')!=='nada') ? '' : 'none';
+  }
   // Botón "+ Nuevo usuario": solo si puede editar
   var btnNuevo = document.getElementById('btn-nuevo-usuario');
   if(btnNuevo){
@@ -1349,11 +1345,6 @@ function aplicarPermisosVisuales(){
   if(tarjetaDrive){
     tarjetaDrive.style.display = PERMISOS_ACTUAL.puedeVerConexionDrive ? '' : 'none';
     actualizarBadgeConexionDrive();
-  }
-  // Carpeta "Medias Transporte": solo visible con permiso específico
-  var tarjetaMedias = document.getElementById('tarjeta-medias-transporte');
-  if(tarjetaMedias){
-    tarjetaMedias.style.display = PERMISOS_ACTUAL.puedeVerMediasTransporte ? '' : 'none';
   }
   // Botones/avisos de "Ver carpeta en Drive" / "Guardar en hoja de cálculo real": solo para quien
   // administra las conexiones de Drive (Coordinadores). Los empleados solo rellenan formularios.
@@ -3508,7 +3499,24 @@ var _empleadosCargadosDeVerdad = false;
 // Los empleados se guardan de verdad (compartido para todo el equipo) en una hoja de cálculo,
 // a través de Apps Script. localStorage se usa solo como caché rápida mientras carga.
 // Carpeta real de Drive para Direcciones Rutas / Circulares. Vacía hasta que Ana me pase el enlace.
-var CARPETA_TRANSPORTE_DOCS_ID = '';
+// Enlaces reales de Transporte, ya conectados.
+var ENLACE_DIRECCIONES_FURGONETAS = 'https://drive.google.com/file/d/1OwsRcSIupnmhsKwjYmnZ2t_8gqMW1Xhq/view?usp=drive_link';
+var CARPETA_CIRCULARES_ID = '1sD--QMG97-c7x-YJwZABgc70-xvY6egx';
+var CARPETA_MEDIAS_TRANSPORTE_ID = '12VkCCEoxkgEbTF_6qqokTYxjVtMa7Uhz';
+function verCarpetaMediasTransporte(){
+  if(nivelApartadoModulo('transporte', 'medias_transporte')==='nada'){
+    mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
+    return;
+  }
+  window.open('https://drive.google.com/drive/folders/'+CARPETA_MEDIAS_TRANSPORTE_ID, '_blank');
+}
+function abrirDireccionesRutas(){
+  if(nivelApartadoModulo('transporte', 'direcciones_rutas')==='nada'){
+    mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
+    return;
+  }
+  window.open(ENLACE_DIRECCIONES_FURGONETAS, '_blank');
+}
 function abrirDocumentoTransporte(id, titulo){
   if(nivelApartadoModulo('transporte', id)==='nada'){
     mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
@@ -3520,11 +3528,11 @@ function abrirDocumentoTransporte(id, titulo){
   var btnSubir = document.getElementById('doc-btn-subir');
   btnSubir.classList.remove('hidden');
   btnSubir.onclick = function(){
-    if(!CARPETA_TRANSPORTE_DOCS_ID){
-      mostrarAviso('Todavía no está conectada la carpeta de Drive de Transporte — en cuanto Ana me pase el enlace, aquí ya podrás subir el archivo de verdad.', 'ℹ️');
+    if(!CARPETA_CIRCULARES_ID){
+      mostrarAviso('Todavía no está conectada la carpeta de Drive de Circulares — en cuanto Ana me pase el enlace, aquí ya podrás subir el archivo de verdad.', 'ℹ️');
       return;
     }
-    abrirSelectorArchivoParaSubir(CARPETA_TRANSPORTE_DOCS_ID, function(){
+    abrirSelectorArchivoParaSubir(CARPETA_CIRCULARES_ID, function(){
       mostrarAviso('"'+titulo+'" subido correctamente.', '✅');
     });
   };
@@ -3686,7 +3694,7 @@ var MODULOS_DETALLE = {
   usuarios: { titulo:'Usuarios y Familias', apartados:[{id:'usuarios_documentacion',titulo:'Usuarios Documentación',colorClase:'',icon:''},{id:'familias',titulo:'Familias',colorClase:'',icon:''}], permisoGeneral:'usuarios', detalleKey:'usuariosDetalle', aviso:null },
   paap: { titulo:'Programa Personal', apartados: PAAP_APARTADOS, permisoGeneral:'paap', detalleKey:'paapDetalle', aviso:{campo:'avisoSeguimientoMensual', etiqueta:'Aviso Diario Mensual Seguimiento'} },
   ocio: { titulo:'Actividades de Ocio', apartados: [], permisoGeneral:'ocio', detalleKey:'ocioDetalle', aviso:{campo:'avisoEvaluacionOcio', etiqueta:'Aviso Evaluación Mensual Ocio'} },
-  transporte: { titulo:'Transporte', apartados:[{id:'direcciones_rutas',titulo:'Direcciones Rutas',colorClase:'',icon:''},{id:'circulares',titulo:'Circulares',colorClase:'',icon:''}], permisoGeneral:'registros', detalleKey:'transporteDetalle', aviso:{campo:'puedeVerMediasTransporte', etiqueta:'Carpeta Medias Transporte'} },
+  transporte: { titulo:'Transporte', apartados:[{id:'direcciones_rutas',titulo:'Direcciones Rutas',colorClase:'',icon:''},{id:'circulares',titulo:'Circulares',colorClase:'',icon:''},{id:'medias_transporte',titulo:'Medias Transporte',colorClase:'',icon:''}], permisoGeneral:'registros', detalleKey:'transporteDetalle', aviso:{campo:'puedeVerMediasTransporte', etiqueta:'Carpeta Medias Transporte'} },
   personal: { titulo:'Personal', apartados:[{id:'datos',titulo:'Datos',colorClase:'',icon:''},{id:'formacion',titulo:'Formación',colorClase:'',icon:''},{id:'actas_reuniones',titulo:'Actas Reuniones',colorClase:'',icon:''}], permisoGeneral:'personal', detalleKey:'personalDetalle', aviso:null }
 };
 function nivelApartadoModulo(modKey, apartadoId){
