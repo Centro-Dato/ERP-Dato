@@ -718,6 +718,19 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div id="medias-ocio-contenido"></div>
     </div>
 
+    <!-- ===== MEDIAS DE TRANSPORTE ===== -->
+    <div id="view-medias-transporte" class="page hidden">
+      <button class="btn-back" onclick="navTo('transporte')">← Volver a Transporte</button>
+      <div class="page-header">
+        <div><div class="page-title">Medias de Transporte</div><div class="page-subtitle">Ocupación media, incidencias y duración de ruta — general, por furgoneta y por usuario</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" onclick="verCarpetaMediasTransporte()">📁 Ver carpeta</button>
+          <button class="btn-primary" onclick="guardarMediasTransporteEnDrive()">☁️ Guardar en Drive</button>
+        </div>
+      </div>
+      <div id="medias-transporte-contenido"></div>
+    </div>
+
     <div id="view-evaluacion-ocio" class="page hidden">
       <button class="btn-back" onclick="navTo('ocio')">← Volver a Ocio</button>
       <div class="page-header">
@@ -778,7 +791,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="reg-grid" style="margin-bottom:22px">
         <div class="reg-btn" onclick="abrirVistaDireccionesRutas()"><div class="reg-ic" style="background:#e0f2fe;color:#0369a1">📍</div><div><div class="reg-title">Direcciones Rutas</div></div></div>
         <div class="reg-btn" id="tarjeta-circulares" onclick="abrirDocumentoTransporte('circulares','Circulares (Teléfonos y Comunicación)')"><div class="reg-ic" style="background:#fef9c3;color:#713f12">📋</div><div><div class="reg-title">Circulares (Teléfonos y Comunicación)</div></div></div>
-        <div class="reg-btn" id="tarjeta-medias-transporte" onclick="verCarpetaMediasTransporte()"><div class="reg-ic" style="background:#fef3c7;color:#92400e">📈</div><div><div class="reg-title">Medias Transporte</div></div></div>
+        <div class="reg-btn" id="tarjeta-medias-transporte" onclick="abrirMediasTransporte()"><div class="reg-ic" style="background:#fef3c7;color:#92400e">📈</div><div><div class="reg-title">Medias Transporte</div></div></div>
       </div>
     </div>
 
@@ -3603,6 +3616,164 @@ var _empleadosCargadosDeVerdad = false;
 var ENLACE_DIRECCIONES_FURGONETAS = 'https://drive.google.com/file/d/1OwsRcSIupnmhsKwjYmnZ2t_8gqMW1Xhq/view?usp=drive_link';
 var CARPETA_CIRCULARES_ID = '1sD--QMG97-c7x-YJwZABgc70-xvY6egx';
 var CARPETA_MEDIAS_TRANSPORTE_ID = '12VkCCEoxkgEbTF_6qqokTYxjVtMa7Uhz';
+// ===== Medias de Transporte =====
+function abrirMediasTransporte(){
+  if(nivelApartadoModulo('transporte', 'medias_transporte')==='nada'){
+    mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
+    return;
+  }
+  navTo('medias-transporte');
+  document.getElementById('medias-transporte-contenido').innerHTML = '<div class="empty-state">⏳ Cargando…</div>';
+  leerFilasViaAppsScript('R. Transporte '+CURSO_REGISTROS_ACTUAL(), 'General', function(err, headers, filas){
+    if(err){
+      document.getElementById('medias-transporte-contenido').innerHTML = '<div class="empty-state">⚠️ No se pudo cargar ('+err+'). Puede que todavía no haya ningún R. Transporte guardado este curso.</div>';
+      return;
+    }
+    _mediasTransporteDatos = calcularMediasTransporte(headers, filas);
+    document.getElementById('medias-transporte-contenido').innerHTML = construirHtmlMediasTransporte(_mediasTransporteDatos);
+  });
+}
+// Convierte "HH:MM" a minutos desde medianoche; si no es una hora válida, devuelve null.
+function horaAMinutos_(txt){
+  if(!txt) return null;
+  var m = /^(\d{1,2}):(\d{2})/.exec(txt.trim());
+  if(!m) return null;
+  return parseInt(m[1],10)*60 + parseInt(m[2],10);
+}
+function calcularMediasTransporte(headers, filas){
+  var idx = {};
+  headers.forEach(function(h,i){ idx[h]=i; });
+  function grupoVacio(){ return {ocupaciones:[], duraciones:[], incidencias:{}, totalFilas:0}; }
+  var general = grupoVacio();
+  var porFurgoneta = {};
+  var porUsuario = {};
+  filas.forEach(function(fila){
+    var furgoneta = fila[idx['Furgoneta']] || '(sin furgoneta)';
+    var usuariosTexto = fila[idx['Usuarios en ruta']] || '';
+    var usuarios = usuariosTexto.split(/,|\n/).map(function(u){ return u.trim(); }).filter(function(u){ return u; });
+    var incidencia = fila[idx['Incidencia']] || 'NINGUNA';
+    var ini = horaAMinutos_(fila[idx['Hora inicio']]);
+    var fin = horaAMinutos_(fila[idx['Hora fin']]);
+    var duracion = (ini!==null && fin!==null && fin>=ini) ? (fin-ini) : null;
+
+    function acumular(grupo){
+      grupo.totalFilas++;
+      grupo.ocupaciones.push(usuarios.length);
+      if(duracion!==null) grupo.duraciones.push(duracion);
+      grupo.incidencias[incidencia] = (grupo.incidencias[incidencia]||0)+1;
+    }
+    acumular(general);
+    if(!porFurgoneta[furgoneta]) porFurgoneta[furgoneta] = grupoVacio();
+    acumular(porFurgoneta[furgoneta]);
+    usuarios.forEach(function(u){
+      if(!porUsuario[u]) porUsuario[u] = grupoVacio();
+      acumular(porUsuario[u]);
+    });
+  });
+  return {general: general, porFurgoneta: porFurgoneta, porUsuario: porUsuario};
+}
+function mediaSimple_(lista){
+  if(lista.length===0) return null;
+  return lista.reduce(function(a,b){return a+b;},0)/lista.length;
+}
+function resumenGrupoTransporte(grupo){
+  var ocupacionMedia = mediaSimple_(grupo.ocupaciones);
+  var duracionMedia = mediaSimple_(grupo.duraciones);
+  var incidenciasTexto = Object.keys(grupo.incidencias).sort().map(function(inc){
+    var pct = (grupo.incidencias[inc]/grupo.totalFilas)*100;
+    return inc+': '+pct.toFixed(0)+'%';
+  }).join(' · ');
+  return {
+    totalFilas: grupo.totalFilas,
+    ocupacionMedia: ocupacionMedia,
+    duracionMedia: duracionMedia,
+    incidenciasTexto: incidenciasTexto
+  };
+}
+function construirHtmlMediasTransporte(datos){
+  var r = resumenGrupoTransporte(datos.general);
+  var h = '<div class="card"><div class="card-title" style="margin-bottom:14px">Resumen general ('+CURSO_REGISTROS_ACTUAL()+')</div>';
+  h += '<div class="table-card"><table class="tabla-config-sticky"><thead><tr><th>Nº de rutas</th><th>Ocupación media</th><th>Duración media</th><th>Incidencias</th></tr></thead><tbody>';
+  h += '<tr><td style="text-align:center">'+r.totalFilas+'</td><td style="text-align:center">'+(r.ocupacionMedia===null?'—':r.ocupacionMedia.toFixed(1))+'</td><td style="text-align:center">'+(r.duracionMedia===null?'—':r.duracionMedia.toFixed(0)+' min')+'</td><td>'+esc(r.incidenciasTexto)+'</td></tr>';
+  h += '</tbody></table></div></div>';
+
+  h += '<div class="card" style="margin-top:20px"><div class="card-title" style="margin-bottom:14px">Por furgoneta</div>';
+  h += '<div class="table-card" style="overflow-x:auto"><table class="tabla-config-sticky"><thead><tr><th>Furgoneta</th><th>Nº de rutas</th><th>Ocupación media</th><th>Duración media</th><th>Incidencias</th></tr></thead><tbody>';
+  ordenarAlfabetico(Object.keys(datos.porFurgoneta), function(f){return f;}).forEach(function(furg){
+    var rf = resumenGrupoTransporte(datos.porFurgoneta[furg]);
+    h += '<tr><td>'+esc(furg)+'</td><td style="text-align:center">'+rf.totalFilas+'</td><td style="text-align:center">'+(rf.ocupacionMedia===null?'—':rf.ocupacionMedia.toFixed(1))+'</td><td style="text-align:center">'+(rf.duracionMedia===null?'—':rf.duracionMedia.toFixed(0)+' min')+'</td><td>'+esc(rf.incidenciasTexto)+'</td></tr>';
+  });
+  h += '</tbody></table></div></div>';
+
+  h += '<div class="card" style="margin-top:20px"><div class="card-title" style="margin-bottom:14px">Por usuario</div>';
+  h += '<div class="table-card" style="overflow-x:auto;max-height:50vh"><table class="tabla-config-sticky"><thead><tr><th>Usuario</th><th>Nº de veces en ruta</th><th>Incidencias durante sus rutas</th></tr></thead><tbody>';
+  ordenarAlfabetico(Object.keys(datos.porUsuario), function(u){return u;}).forEach(function(u){
+    var ru = resumenGrupoTransporte(datos.porUsuario[u]);
+    h += '<tr><td>'+esc(u)+'</td><td style="text-align:center">'+ru.totalFilas+'</td><td>'+esc(ru.incidenciasTexto)+'</td></tr>';
+  });
+  h += '</tbody></table></div></div>';
+  return h;
+}
+function guardarMediasTransporteEnDrive(){
+  if(!_mediasTransporteDatos){ mostrarAviso('Todavía no se han cargado las medias.'); return; }
+  var curso = CURSO_REGISTROS_ACTUAL();
+  var nombreArchivo = 'Medias de Transporte '+curso;
+  var tareas = [];
+
+  var rg = resumenGrupoTransporte(_mediasTransporteDatos.general);
+  tareas.push({
+    pestana: curso,
+    cabecera: ['Nº de rutas','Ocupación media','Duración media (min)','Incidencias'],
+    filas: [[rg.totalFilas, rg.ocupacionMedia===null?'':Number(rg.ocupacionMedia.toFixed(1)), rg.duracionMedia===null?'':Number(rg.duracionMedia.toFixed(0)), rg.incidenciasTexto]],
+    conGrafico: false
+  });
+  ordenarAlfabetico(Object.keys(_mediasTransporteDatos.porFurgoneta), function(f){return f;}).forEach(function(furg){
+    var rf = resumenGrupoTransporte(_mediasTransporteDatos.porFurgoneta[furg]);
+    tareas.push({
+      pestana: furg,
+      cabecera: ['Nº de rutas','Ocupación media','Duración media (min)','Incidencias'],
+      filas: [[rf.totalFilas, rf.ocupacionMedia===null?'':Number(rf.ocupacionMedia.toFixed(1)), rf.duracionMedia===null?'':Number(rf.duracionMedia.toFixed(0)), rf.incidenciasTexto]],
+      conGrafico: false
+    });
+  });
+  ordenarAlfabetico(Object.keys(_mediasTransporteDatos.porUsuario), function(u){return u;}).forEach(function(u){
+    var ru = resumenGrupoTransporte(_mediasTransporteDatos.porUsuario[u]);
+    tareas.push({
+      pestana: u,
+      cabecera: ['Nº de veces en ruta','Incidencias durante sus rutas'],
+      filas: [[ru.totalFilas, ru.incidenciasTexto]],
+      conGrafico: false
+    });
+  });
+
+  mostrarAviso('Guardando las medias de transporte en Drive…', '⏳');
+  var huboError = null;
+  function guardarSiguiente(indice){
+    if(indice>=tareas.length){
+      if(huboError) mostrarAviso('Guardado con algún aviso ('+huboError+').', '⚠️');
+      else mostrarAviso('Medias de Transporte guardadas en Drive: "'+nombreArchivo+'".', '✅');
+      return;
+    }
+    var t = tareas[indice];
+    fetch(APPS_SCRIPT_URL, {method:'POST', body: JSON.stringify({
+      accion: 'guardarTablaCompletaPestana',
+      carpetaId: CARPETA_MEDIAS_TRANSPORTE_ID,
+      nombreArchivo: nombreArchivo,
+      pestana: t.pestana,
+      cabecera: t.cabecera,
+      filas: t.filas,
+      conGrafico: t.conGrafico
+    })})
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(!data || !data.ok) huboError = 'fallo en '+t.pestana;
+        guardarSiguiente(indice+1);
+      })
+      .catch(function(){ huboError = 'sin conexión en '+t.pestana; guardarSiguiente(indice+1); });
+  }
+  guardarSiguiente(0);
+}
+var _mediasTransporteDatos = null;
 function verCarpetaMediasTransporte(){
   if(nivelApartadoModulo('transporte', 'medias_transporte')==='nada'){
     mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
@@ -5940,7 +6111,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','ocio','evaluacion-ocio','medias-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','diario-mensual','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','medias-transporte','ocio','evaluacion-ocio','medias-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','diario-mensual','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
