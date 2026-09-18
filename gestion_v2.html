@@ -521,10 +521,12 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div id="doc-preview-box" style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:14px;padding:60px 20px;color:#94a3b8;margin-bottom:26px">
           Vista previa del documento (se cargará desde Google Drive)
         </div>
+        <div id="doc-listado-real" class="docs-grid hidden" style="text-align:left;margin-bottom:26px"></div>
         <div style="display:flex;gap:12px;justify-content:center">
           <button class="btn-secondary hidden" id="doc-btn-subir" onclick="mostrarAviso('Subiendo...')">⬆ Subir</button>
           <button class="btn-secondary" id="doc-btn-descargar" onclick="mostrarAviso('Descargando...')">⬇ Descargar</button>
           <button class="btn-secondary" id="doc-btn-imprimir" onclick="mostrarAviso('Enviando a impresión...')">🖨 Imprimir</button>
+          <button class="btn-secondary hidden" id="doc-btn-ver-carpeta" onclick="mostrarAviso('...')">📁 Ver carpeta en Drive</button>
         </div>
       </div>
     </div>
@@ -774,7 +776,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
       <div class="reg-grid" style="margin-bottom:22px" id="transporte-acceso-registro"></div>
       <div class="reg-grid" style="margin-bottom:22px">
-        <div class="reg-btn" onclick="abrirDireccionesRutas()"><div class="reg-ic" style="background:#e0f2fe;color:#0369a1">📍</div><div><div class="reg-title">Direcciones Rutas</div></div></div>
+        <div class="reg-btn" onclick="abrirVistaDireccionesRutas()"><div class="reg-ic" style="background:#e0f2fe;color:#0369a1">📍</div><div><div class="reg-title">Direcciones Rutas</div></div></div>
         <div class="reg-btn" id="tarjeta-circulares" onclick="abrirDocumentoTransporte('circulares','Circulares (Teléfonos y Comunicación)')"><div class="reg-ic" style="background:#fef9c3;color:#713f12">📋</div><div><div class="reg-title">Circulares (Teléfonos y Comunicación)</div></div></div>
         <div class="reg-btn" id="tarjeta-medias-transporte" onclick="verCarpetaMediasTransporte()"><div class="reg-ic" style="background:#fef3c7;color:#92400e">📈</div><div><div class="reg-title">Medias Transporte</div></div></div>
       </div>
@@ -2723,7 +2725,12 @@ function renderPersonalGrid(){
 function abrirDocumentoPersonal(id, titulo){
   document.getElementById('doc-titulo').textContent = titulo;
   document.getElementById('doc-info').textContent = 'Personal';
+  document.getElementById('doc-preview-box').classList.remove('hidden');
   document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
+  document.getElementById('doc-btn-descargar').classList.remove('hidden');
+  document.getElementById('doc-btn-imprimir').classList.remove('hidden');
+  document.getElementById('doc-listado-real').classList.add('hidden');
+  document.getElementById('doc-btn-ver-carpeta').classList.add('hidden');
   var btnSubir = document.getElementById('doc-btn-subir');
   btnSubir.classList.remove('hidden');
   btnSubir.onclick = function(){
@@ -3617,20 +3624,56 @@ function abrirDocumentoTransporte(id, titulo){
   }
   document.getElementById('doc-titulo').textContent = titulo;
   document.getElementById('doc-info').textContent = 'Transporte';
-  document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
+  document.getElementById('doc-preview-box').classList.add('hidden');
+  document.getElementById('doc-btn-descargar').classList.add('hidden');
+  document.getElementById('doc-btn-imprimir').classList.add('hidden');
+  var listado = document.getElementById('doc-listado-real');
+  listado.classList.remove('hidden');
+  var btnVerCarpeta = document.getElementById('doc-btn-ver-carpeta');
   var btnSubir = document.getElementById('doc-btn-subir');
-  btnSubir.classList.remove('hidden');
-  btnSubir.onclick = function(){
-    if(!CARPETA_CIRCULARES_ID){
-      mostrarAviso('Todavía no está conectada la carpeta de Drive de Circulares — en cuanto Ana me pase el enlace, aquí ya podrás subir el archivo de verdad.', 'ℹ️');
-      return;
-    }
-    abrirSelectorArchivoParaSubir(CARPETA_CIRCULARES_ID, function(){
-      mostrarAviso('"'+titulo+'" subido correctamente.', '✅');
+  if(!CARPETA_CIRCULARES_ID){
+    listado.innerHTML = '<div class="empty-state">Todavía no está conectada la carpeta de Drive de Circulares.</div>';
+    btnSubir.classList.add('hidden');
+    btnVerCarpeta.classList.add('hidden');
+  } else {
+    listado.innerHTML = '<div class="empty-state">⏳ Cargando desde Drive…</div>';
+    btnSubir.classList.remove('hidden');
+    btnVerCarpeta.classList.remove('hidden');
+    btnVerCarpeta.onclick = function(){ window.open('https://drive.google.com/drive/folders/'+CARPETA_CIRCULARES_ID, '_blank'); };
+    btnSubir.onclick = function(){
+      abrirSelectorArchivoParaSubir(CARPETA_CIRCULARES_ID, function(){
+        renderContenidoCarpetaExpediente(CARPETA_CIRCULARES_ID, titulo, 'doc-listado-real', null);
+      });
+    };
+    autorizarGoogleDrive(function(){
+      renderContenidoCarpetaExpediente(CARPETA_CIRCULARES_ID, titulo, 'doc-listado-real', null);
     });
-  };
-  document.getElementById('doc-btn-descargar').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
-  document.getElementById('doc-btn-imprimir').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
+  }
+  document.getElementById('btn-volver-documento').onclick = function(){ navTo('transporte'); };
+  navTo('documento');
+}
+// Direcciones Rutas es un único archivo fijo (no una carpeta con varios), así que se muestra
+// igual de sencillo, con sus botones de vista previa/descargar/ver en Drive.
+function abrirVistaDireccionesRutas(){
+  if(nivelApartadoModulo('transporte', 'direcciones_rutas')==='nada'){
+    mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
+    return;
+  }
+  document.getElementById('doc-titulo').textContent = 'Direcciones Rutas';
+  document.getElementById('doc-info').textContent = 'Transporte';
+  document.getElementById('doc-preview-box').classList.add('hidden');
+  document.getElementById('doc-btn-subir').classList.add('hidden');
+  document.getElementById('doc-btn-descargar').classList.remove('hidden');
+  document.getElementById('doc-btn-imprimir').classList.add('hidden');
+  document.getElementById('doc-btn-descargar').textContent = '⬇ Descargar';
+  document.getElementById('doc-btn-descargar').onclick = function(){ window.open(ENLACE_DIRECCIONES_FURGONETAS, '_blank'); };
+  var listado = document.getElementById('doc-listado-real');
+  listado.classList.remove('hidden');
+  listado.innerHTML = '<div class="doc-item"><div class="doc-ic">📍</div><div><div class="doc-name">Direcciones Furgonetas</div><div class="doc-sub">Archivo de Drive</div></div>'+
+    '<div class="doc-actions">'+
+    '<button class="doc-btn" title="Vista previa" onclick="window.open(\''+ENLACE_DIRECCIONES_FURGONETAS+'\',\'_blank\')">👁</button>'+
+    '<button class="doc-btn" title="Ver en Drive" onclick="window.open(\''+ENLACE_DIRECCIONES_FURGONETAS+'\',\'_blank\')">🔗</button>'+
+    '</div></div>';
   document.getElementById('btn-volver-documento').onclick = function(){ navTo('transporte'); };
   navTo('documento');
 }
@@ -3848,7 +3891,12 @@ function abrirDocumentoPP(id, titulo, volverA){
   _ppDocVolverA = volverA;
   document.getElementById('doc-titulo').textContent = titulo;
   document.getElementById('doc-info').textContent = 'Proyecto Personal';
+  document.getElementById('doc-preview-box').classList.remove('hidden');
   document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
+  document.getElementById('doc-btn-descargar').classList.remove('hidden');
+  document.getElementById('doc-btn-imprimir').classList.remove('hidden');
+  document.getElementById('doc-listado-real').classList.add('hidden');
+  document.getElementById('doc-btn-ver-carpeta').classList.add('hidden');
   var btnSubir = document.getElementById('doc-btn-subir');
   btnSubir.classList.remove('hidden');
   btnSubir.onclick = function(){ subirDocumentoPP(id, titulo); };
@@ -6315,7 +6363,12 @@ var CARPETA_FICHAS_URGENCIAS_ID = '';
 function abrirFichaUrgencias(usuarioId, nombreCompleto){
   document.getElementById('doc-titulo').textContent = 'Ficha de Urgencias';
   document.getElementById('doc-info').textContent = nombreCompleto;
+  document.getElementById('doc-preview-box').classList.remove('hidden');
   document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
+  document.getElementById('doc-btn-descargar').classList.remove('hidden');
+  document.getElementById('doc-btn-imprimir').classList.remove('hidden');
+  document.getElementById('doc-listado-real').classList.add('hidden');
+  document.getElementById('doc-btn-ver-carpeta').classList.add('hidden');
   var btnSubir = document.getElementById('doc-btn-subir');
   btnSubir.classList.remove('hidden');
   btnSubir.onclick = function(){
