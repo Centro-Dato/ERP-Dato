@@ -2792,16 +2792,9 @@ function abrirActasReuniones(){
 var CONDUCTORES_ACOMPANANTES = ['Angel González','Eduardo García','Jesús Acuña','Silvia','Belén'];
 function renderFilasActaProfesionales(){
   var cont = document.getElementById('acta-profesionales-lista');
+  var todosNombres = EMPLEADOS.filter(function(e){ return !e.oculto; }).map(function(e){ return e.nombre; }).concat(CONDUCTORES_ACOMPANANTES);
   var h = '<div style="background:#fdf4ff;border:1.5px solid #e9d5ff;border-radius:14px;padding:14px 16px;margin-bottom:10px">';
-  h += '<div style="font-weight:800;color:#7e22ce;margin-bottom:10px;font-size:13.5px;letter-spacing:.03em">🧑‍💼 PROFESIONALES</div>';
-  ordenarAlfabetico(EMPLEADOS.filter(function(e){ return !e.oculto; }), function(e){return e.nombre;}).forEach(function(emp){
-    var marcado = _actaFilasProfesionales.indexOf(emp.nombre)>-1;
-    h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleProfesionalActa(\''+emp.nombre.replace(/'/g,"\\'")+'\',this.checked)"/> '+esc(emp.nombre)+'</label>';
-  });
-  h += '</div>';
-  h += '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:14px;padding:14px 16px;margin-bottom:10px">';
-  h += '<div style="font-weight:800;color:#9a3412;margin-bottom:10px;font-size:13.5px;letter-spacing:.03em">🚌 CONDUCTORES Y ACOMPAÑANTES</div>';
-  ordenarAlfabetico(CONDUCTORES_ACOMPANANTES, function(n){return n;}).forEach(function(nombre){
+  ordenarAlfabetico(todosNombres, function(n){return n;}).forEach(function(nombre){
     var marcado = _actaFilasProfesionales.indexOf(nombre)>-1;
     h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleProfesionalActa(\''+nombre.replace(/'/g,"\\'")+'\',this.checked)"/> '+esc(nombre)+'</label>';
   });
