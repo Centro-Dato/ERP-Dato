@@ -3982,7 +3982,8 @@ var PP_ESTRUCTURA = {
   paap: { titulo:'PAAP', items:[
     {tipo:'doc', id:'hoja_aceptacion', titulo:'Hoja Aceptación PAAP', icon:'📄'},
     {tipo:'doc', id:'opinion_paap', titulo:'Opinión para la Realización del PAAP', icon:'📄'},
-    {tipo:'carpeta', id:'seguimiento', titulo:'Seguimiento', icon:'📅', colorClase:'c-orange'}
+    {tipo:'carpeta', id:'seguimiento', titulo:'Seguimiento', icon:'📅', colorClase:'c-orange'},
+    {tipo:'carpeta', id:'registros_paap', titulo:'Registros PAAP', icon:'📝', colorClase:'c-teal'}
   ]},
   escalas_test: { titulo:'Escalas y Test', items:[
     {tipo:'doc', id:'test', titulo:'Test', icon:'📄'},
@@ -3993,8 +3994,19 @@ var PP_ESTRUCTURA = {
     {tipo:'especial', id:'diario_mensual', titulo:'Diario Mensual', icon:'📔', accion:'abrirRegistroDiarioMensual'},
     {tipo:'doc', id:'valoracion_trimestral', titulo:'Valoración Trimestral', icon:'📄'},
     {tipo:'doc', id:'valoracion_semestral', titulo:'Valoración Semestral', icon:'📄'}
+  ]},
+  registros_paap: { titulo:'Registros PAAP', items:[
+    {tipo:'especial', id:'entrega_sept', titulo:'Entrega PAAP Sept', icon:'📥', sub:'Septiembre', accion:'abrirRegistroPaapPendiente'},
+    {tipo:'especial', id:'revision_dic', titulo:'Revisión PAAP Dic', icon:'📝', sub:'Diciembre', accion:'abrirRegistroPaapPendiente'},
+    {tipo:'especial', id:'revision_marzo', titulo:'Revisión PAAP Marzo', icon:'📝', sub:'Marzo', accion:'abrirRegistroPaapPendiente'},
+    {tipo:'especial', id:'revision_junio', titulo:'Revisión PAAP Junio', icon:'📝', sub:'Junio', accion:'abrirRegistroPaapPendiente'}
   ]}
 };
+// Los 4 apartados de "Registros PAAP" todavía no tienen campos definidos — Ana los completará
+// más adelante. De momento solo existe el hueco de navegación para poder ir preparándolo.
+function abrirRegistroPaapPendiente(){
+  mostrarAviso('Este apartado de Registros PAAP todavía se está terminando de montar — en cuanto Ana me diga cómo tiene que ser, se abrirá aquí mismo.', 'ℹ️');
+}
 // Definición de qué módulos tienen un "Detalle" con sub-apartados (y, en algunos, un aviso
 // mensual propio), para poder reutilizar el mismo modal y la misma lógica en todos ellos.
 var MODULOS_DETALLE = {
@@ -4045,7 +4057,7 @@ function abrirCarpetaPP(id, volverA){
     if(it.tipo==='carpeta'){
       h += '<div class="home-btn '+(it.colorClase||'c-blue')+'" onclick="abrirCarpetaPP(\''+it.id+'\',\''+id+'\')"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div></div></div>';
     } else if(it.tipo==='especial'){
-      h += '<div class="home-btn c-orange" onclick="'+it.accion+'()"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div><div class="home-txt-sub">Cada mes</div></div></div>';
+      h += '<div class="home-btn c-orange" onclick="'+it.accion+'()"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div><div class="home-txt-sub">'+(it.sub||'Cada mes')+'</div></div></div>';
     } else {
       h += '<div class="home-btn c-blue" onclick="abrirDocumentoPP(\''+it.id+'\',\''+it.titulo+'\',\''+id+'\')"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div></div></div>';
     }
