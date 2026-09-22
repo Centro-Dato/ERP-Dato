@@ -2852,14 +2852,19 @@ var CARPETA_COMITE_USUARIOS_ID = ''; // de momento reutiliza la de Registros Dig
 function renderComiteUsuariosPersonas(){
   var nombresUsuarios = ordenarAlfabetico(USUARIOS.map(function(u){ return u.nombre+' '+u.apellidos; }), function(n){return n;});
   var nombresEmpleados = ordenarAlfabetico(EMPLEADOS.filter(function(e){ return !e.oculto; }).map(function(e){ return e.nombre; }), function(n){return n;});
-  var h = '<div class="fl-lbl" style="margin-bottom:4px">Usuarios</div>';
+  var h = '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+  h += '<div style="flex:1;min-width:220px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:14px;padding:14px 16px">';
+  h += '<div style="font-weight:800;color:#1d4ed8;margin-bottom:10px;font-size:13.5px;letter-spacing:.03em">👤 USUARIOS</div>';
   nombresUsuarios.forEach(function(nombre){
     h += '<label class="chk-item"><input type="checkbox" value="'+esc(nombre)+'"/> '+esc(nombre)+'</label>';
   });
-  h += '<div class="fl-lbl" style="margin:12px 0 4px">Profesionales</div>';
+  h += '</div>';
+  h += '<div style="flex:1;min-width:220px;background:#fdf4ff;border:1.5px solid #e9d5ff;border-radius:14px;padding:14px 16px">';
+  h += '<div style="font-weight:800;color:#7e22ce;margin-bottom:10px;font-size:13.5px;letter-spacing:.03em">🧑‍💼 PROFESIONALES</div>';
   nombresEmpleados.forEach(function(nombre){
     h += '<label class="chk-item"><input type="checkbox" value="'+esc(nombre)+'"/> '+esc(nombre)+'</label>';
   });
+  h += '</div></div>';
   document.getElementById('comite-personas-lista').innerHTML = h;
   document.getElementById('comite-fecha').value = '';
   document.getElementById('comite-objeto').value = '';
