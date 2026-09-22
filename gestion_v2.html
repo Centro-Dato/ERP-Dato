@@ -689,7 +689,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         </div>
         <div class="fl-lbl" style="margin:16px 0 8px">Profesionales que asisten</div>
         <div id="acta-profesionales-lista"></div>
-        <button class="btn-secondary btn-sm" style="margin-top:8px" onclick="anadirFilaActaProfesional()">+ Añadir profesional</button>
         <div style="margin-top:18px">
           <label class="form-lbl">Objeto de la reunión</label>
           <textarea class="form-input" id="acta-objeto" rows="3" placeholder="Ej. Inicio de curso"></textarea>
@@ -2747,7 +2746,7 @@ function renderPersonalGrid(){
   var h = '';
   if(nivelApartadoModulo('personal','datos')!=='nada') h += '<div class="home-btn c-blue" onclick="abrirDocumentoPersonal(\'datos\',\'Datos\')"><div class="home-ic">🗂️</div><div><div class="home-txt-title">DATOS</div></div></div>';
   if(nivelApartadoModulo('personal','formacion')!=='nada') h += '<div class="home-btn c-pistacho" onclick="abrirDocumentoPersonal(\'formacion\',\'Formación\')"><div class="home-ic">🎓</div><div><div class="home-txt-title">FORMACIÓN</div></div></div>';
-  if(nivelApartadoModulo('personal','actas_reuniones')!=='nada') h += '<div class="home-btn c-indigo" onclick="navTo(\'actas-reuniones\')"><div class="home-ic">📝</div><div><div class="home-txt-title">ACTAS REUNIONES</div></div></div>';
+  if(nivelApartadoModulo('personal','actas_reuniones')!=='nada') h += '<div class="home-btn c-indigo" onclick="abrirActasReuniones()"><div class="home-ic">📝</div><div><div class="home-txt-title">ACTAS REUNIONES</div></div></div>';
   if(!h) h = '<div class="empty-state">No tienes acceso a ningún apartado de Personal. Pídele a un Coordinador que te dé permiso.</div>';
   document.getElementById('personal-grid').innerHTML = h;
 }
@@ -2778,25 +2777,31 @@ function abrirDocumentoPersonal(id, titulo){
 }
 // --- Actas de Reuniones ---
 var _actaFilasProfesionales = [];
+var _actaProfesionalesOtros = '';
+function abrirActasReuniones(){
+  _actaFilasProfesionales = [];
+  _actaProfesionalesOtros = '';
+  document.getElementById('acta-fecha').value = '';
+  document.getElementById('acta-objeto').value = '';
+  renderFilasActaProfesionales();
+  navTo('actas-reuniones');
+}
 function renderFilasActaProfesionales(){
   var cont = document.getElementById('acta-profesionales-lista');
-  if(_actaFilasProfesionales.length===0) _actaFilasProfesionales = [''];
-  var h = '';
-  _actaFilasProfesionales.forEach(function(valor, i){
-    h += '<div style="display:flex;gap:8px;margin-bottom:6px">';
-    h += '<input type="text" class="form-input" placeholder="Ej. Psicóloga - Nombre Apellidos" value="'+esc(valor)+'" oninput="_actaFilasProfesionales['+i+']=this.value"/>';
-    if(_actaFilasProfesionales.length>1) h += '<button class="btn-secondary btn-sm" onclick="quitarFilaActaProfesional('+i+')">✕</button>';
-    h += '</div>';
+  var h = '<div style="background:#fdf4ff;border:1.5px solid #e9d5ff;border-radius:14px;padding:14px 16px;margin-bottom:10px">';
+  ordenarAlfabetico(EMPLEADOS.filter(function(e){ return !e.oculto; }), function(e){return e.nombre;}).forEach(function(emp){
+    var marcado = _actaFilasProfesionales.indexOf(emp.nombre)>-1;
+    h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleProfesionalActa(\''+emp.nombre.replace(/'/g,"\\'")+'\',this.checked)"/> '+esc(emp.nombre)+'</label>';
   });
+  h += '</div>';
+  h += '<label class="form-lbl">Otros (no están en la lista)</label>';
+  h += '<input type="text" class="form-input" id="acta-profesionales-otros" placeholder="Ej. Invitado externo" value="'+esc(_actaProfesionalesOtros)+'" oninput="_actaProfesionalesOtros=this.value"/>';
   cont.innerHTML = h;
 }
-function anadirFilaActaProfesional(){
-  _actaFilasProfesionales.push('');
-  renderFilasActaProfesionales();
-}
-function quitarFilaActaProfesional(i){
-  _actaFilasProfesionales.splice(i,1);
-  renderFilasActaProfesionales();
+function toggleProfesionalActa(nombre, marcado){
+  var idx = _actaFilasProfesionales.indexOf(nombre);
+  if(marcado && idx===-1) _actaFilasProfesionales.push(nombre);
+  else if(!marcado && idx>-1) _actaFilasProfesionales.splice(idx,1);
 }
 function verCarpetaActasReuniones(){
   if(!CARPETA_ACTAS_REUNIONES_ID){
@@ -2814,7 +2819,8 @@ function datosActaActual(){
     var partes = fechaIso.split('-');
     fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
   }
-  var profesionales = _actaFilasProfesionales.filter(function(p){ return p.trim(); });
+  var profesionales = _actaFilasProfesionales.slice();
+  if(_actaProfesionalesOtros && _actaProfesionalesOtros.trim()) profesionales.push(_actaProfesionalesOtros.trim());
   var objeto = document.getElementById('acta-objeto').value.trim();
   return {fechaBonita: fechaBonita, profesionales: profesionales, objeto: objeto};
 }
@@ -2844,13 +2850,12 @@ function imprimirActaReunion(){
   imprimirHtml(html, false);
 }
 function generarActaReunionPersonal(){
-  var fechaIso = document.getElementById('acta-fecha').value;
-  if(!fechaIso){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
-  var partes = fechaIso.split('-');
-  var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
-  var profesionales = _actaFilasProfesionales.filter(function(p){ return p.trim(); });
+  var d = datosActaActual();
+  if(!d.fechaBonita){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
+  var profesionales = d.profesionales;
   if(profesionales.length===0){ mostrarAviso('Añade al menos un profesional.'); return; }
-  var objeto = document.getElementById('acta-objeto').value.trim();
+  var objeto = d.objeto;
+  var fechaBonita = d.fechaBonita;
   if(!CARPETA_ACTAS_REUNIONES_ID){
     mostrarAviso('Todavía no está conectada la carpeta de Drive de Actas de Reuniones — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
     return;
