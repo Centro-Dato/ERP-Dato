@@ -762,6 +762,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="page-header">
         <div><div class="page-title">R. Comité y Asambleas</div><div class="page-subtitle">Elige si es comité o asamblea, la fecha, quiénes asisten y el objeto de la reunión</div></div>
+        <button class="btn-secondary" onclick="verCarpetaComiteUsuarios()">📁 Ver carpeta en Drive</button>
       </div>
       <div class="info-banner">ℹ️ Por ahora aparecen todos los usuarios y profesionales; en cuanto Ana confirme quiénes forman el comité de verdad, se puede dejar fijo.</div>
       <div class="card">
@@ -2895,6 +2896,11 @@ function renderComiteUsuariosPersonas(){
   document.getElementById('comite-tipo').value = 'Comité';
   document.getElementById('comite-fecha').value = '';
   document.getElementById('comite-objeto').value = '';
+}
+function verCarpetaComiteUsuarios(){
+  var carpeta = CARPETA_COMITE_USUARIOS_ID || CARPETA_REGISTROS_DIGITALES_ID;
+  if(!carpeta){ mostrarAviso('Todavía no hay ninguna carpeta de Drive conectada.'); return; }
+  window.open('https://drive.google.com/drive/folders/'+carpeta, '_blank');
 }
 function generarActaComiteUsuarios(){
   var fechaIso = document.getElementById('comite-fecha').value;
