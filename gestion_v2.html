@@ -2795,8 +2795,8 @@ function renderFilasActaProfesionales(){
     h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleProfesionalActa(\''+emp.nombre.replace(/'/g,"\\'")+'\',this.checked)"/> '+esc(emp.nombre)+'</label>';
   });
   h += '</div>';
-  h += '<label class="form-lbl">Otros (no están en la lista)</label>';
-  h += '<input type="text" class="form-input" id="acta-profesionales-otros" placeholder="Ej. Invitado externo" value="'+esc(_actaProfesionalesOtros)+'" oninput="_actaProfesionalesOtros=this.value"/>';
+  h += '<label class="form-lbl">Añadir</label>';
+  h += '<input type="text" class="form-input" id="acta-profesionales-otros" placeholder="" value="'+esc(_actaProfesionalesOtros)+'" oninput="_actaProfesionalesOtros=this.value"/>';
   cont.innerHTML = h;
 }
 function toggleProfesionalActa(nombre, marcado){
