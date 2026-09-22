@@ -7388,7 +7388,8 @@ function abrirFormRegistro(id, titulo){
   btnGuardar.style.display = puedeGuardar ? '' : 'none';
   var driveId = 'd'+(_driveIdSeq++);
   _driveStore[driveId] = {titulo: titulo, docs: [{nombre: titulo+'.xlsx', icono: tipo.icon}]};
-  document.getElementById('btn-drive-registro').setAttribute('onclick','verCarpetaDrive(\''+driveId+'\')');
+  var carpetaRealRegistro = tipo.carpetaVar ? (window[tipo.carpetaVar] || CARPETA_REGISTROS_DIGITALES_ID) : CARPETA_REGISTROS_DIGITALES_ID;
+  document.getElementById('btn-drive-registro').setAttribute('onclick', carpetaRealRegistro ? "window.open('https://drive.google.com/drive/folders/"+carpetaRealRegistro+"','_blank')" : 'verCarpetaDrive(\''+driveId+'\')');
   navTo('form-registro');
 }
 var _regActualId = null, _regActualTitulo = '';
