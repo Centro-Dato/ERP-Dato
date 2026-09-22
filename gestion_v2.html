@@ -880,7 +880,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button class="btn-primary" onclick="guardarCambiosConfig()">💾 Confirmar guardado</button>
         </div>
       </div>
-      <div class="info-banner">ℹ️ Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
+      <div class="info-banner">ℹ️ Clic en el nombre de un empleado para corregirlo. Solo quien tenga permiso de Configuración: Todo puede modificar estos permisos. Niveles disponibles: <strong>Todo</strong> (acceso completo), <strong>Ver</strong> (solo lectura), <strong>Editar</strong> (puede añadir/modificar), <strong>Nada</strong> (sin acceso). El permiso de <strong>Usuarios</strong> incluye el acceso a los Expedientes de esa misma lista.</div>
       <div class="table-card" style="max-height:65vh;overflow-y:auto">
         <table class="tabla-config-sticky">
           <thead><tr><th>Empleado</th><th>Usuarios y Familias<br>(+ Expedientes)</th><th></th><th>Registros</th><th></th><th>Programa Personal</th><th></th><th>Actividades de Ocio</th><th></th><th>Protocolos</th><th>Transporte</th><th>Horarios</th><th>Personal</th><th></th><th>Incidencias</th><th>Configuración</th><th>Interruptor<br>de Drive</th></tr></thead>
@@ -3625,12 +3625,12 @@ var USUARIOS = [
 ];
 
 var EMPLEADOS_OFICIAL = [
-  {id:1,nombre:'Ana',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:2,nombre:'Tere',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:3,nombre:'Carlos',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
-  {id:4,nombre:'Mª Jose',usuario:'mj.bermejo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:5,nombre:'Marcial',usuario:'marcial@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
-  {id:6,nombre:'Patri',usuario:'patricia.mateo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:1,nombre:'Ana Carrizosa',usuario:'a.carrizosa@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:2,nombre:'Teresa Millán',usuario:'t.millan@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:3,nombre:'Carlos Sanz Pacho',usuario:'c.sanzpacho@centrodato.org',rol:'admin',permisos:{usuarios:'todo',registros:'todo',ocio:'todo',documentacionCam:'nada',paap:'todo',horarios:'todo',configuracion:'todo',puedeVerConexionDrive:true,puedeVerMediasTransporte:true,registrosDetalle:{},paapDetalle:{}}},
+  {id:4,nombre:'Mª José Bermejo',usuario:'mj.bermejo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:5,nombre:'Marcial Martín',usuario:'marcial@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
+  {id:6,nombre:'Patricia Mateo',usuario:'patricia.mateo@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}},
   {id:7,nombre:'Ana de Frutos',usuario:'t.ocupacional@centrodato.org',rol:'empleado',permisos:{usuarios:'ver',registros:'editar',ocio:'editar',documentacionCam:'nada',paap:'nada',horarios:'ver',configuracion:'nada',puedeVerConexionDrive:false,puedeVerMediasTransporte:false,registrosDetalle:{},paapDetalle:{}}}
 ];
 var EMPLEADOS = JSON.parse(JSON.stringify(EMPLEADOS_OFICIAL));
@@ -7476,12 +7476,32 @@ function puedeVerEmpleadosOcultos(){
   var email = (USUARIO_ACTUAL && USUARIO_ACTUAL.email || '').toLowerCase();
   return CORREOS_VEN_EMPLEADOS_OCULTOS.indexOf(email) > -1;
 }
+function editarNombreEmpleadoConfig(span, empId){
+  var emp = EMPLEADOS.filter(function(e){ return e.id===empId; })[0];
+  if(!emp) return;
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.value = emp.nombre;
+  input.className = 'form-input ocio-input-inline';
+  input.onclick = function(e){ e.stopPropagation(); };
+  function guardar(){
+    var nuevo = input.value.trim();
+    if(nuevo) emp.nombre = nuevo;
+    renderConfig();
+    if(nuevo) guardarEmpleadosLocalStorage();
+  }
+  input.addEventListener('blur', guardar);
+  input.addEventListener('keydown', function(e){ if(e.key==='Enter') input.blur(); });
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+}
 function renderConfig(){
   var h = '';
   var lista = ordenarAlfabetico(EMPLEADOS, function(e){ return e.nombre; });
   var visibles = lista.filter(function(e){ return !e.oculto; });
   visibles.forEach(function(emp){
-    h += '<tr><td><div class="name-cell"><div class="avatar">'+emp.nombre[0]+'</div><div><div class="name-text">'+emp.nombre+'</div><div style="font-size:12px;color:#94a3b8">'+emp.usuario+'</div></div></div></td>';
+    h += '<tr><td><div class="name-cell"><div class="avatar">'+emp.nombre[0]+'</div><div><div class="name-text"><span class="ocio-nombre-editable" onclick="editarNombreEmpleadoConfig(this,'+emp.id+')">'+esc(emp.nombre)+'</span></div><div style="font-size:12px;color:#94a3b8">'+emp.usuario+'</div></div></div></td>';
     // Usuarios y Familias (incluye Expedientes) + Detalle
     h += '<td>'+permSelectHtml(emp,'usuarios')+'</td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="abrirDetalleModulo(\'usuarios\','+emp.id+')">⚙ Detalle</button></td>';
