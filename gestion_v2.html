@@ -7466,6 +7466,7 @@ function abrirFormRegistro(id, titulo){
   var puedeGuardar = (nivel==='editar' || nivel==='todo');
   var btnGuardar = document.getElementById('btn-guardar-registro');
   btnGuardar.style.display = puedeGuardar ? '' : 'none';
+  btnGuardar.disabled = false;
   var driveId = 'd'+(_driveIdSeq++);
   _driveStore[driveId] = {titulo: titulo, docs: [{nombre: titulo+'.xlsx', icono: tipo.icon}]};
   var carpetaRealRegistro = tipo.carpetaVar ? (window[tipo.carpetaVar] || CARPETA_REGISTROS_DIGITALES_ID) : CARPETA_REGISTROS_DIGITALES_ID;
@@ -7518,13 +7519,21 @@ function guardarRegistroDemo(){
     mostrarAviso('Faltan campos obligatorios por rellenar:\n\n• '+faltantes.join('\n• '));
     return;
   }
+  // Se bloquea el botón nada más pulsar, para que un doble clic (o un clic muy rápido) no
+  // llegue a mandar el mismo registro dos veces por accidente.
+  var btnGuardarAhora = document.getElementById('btn-guardar-registro');
+  if(btnGuardarAhora.disabled) return;
+  btnGuardarAhora.disabled = true;
   if(tipo){
     var datos = recogerValoresFormulario(tipo);
     guardarRegistroEnDriveReal(tipo, datos, function(err){
       if(err){
         mostrarAviso('El registro se ha validado, pero no se pudo guardar de verdad en la hoja de cálculo. No se ha perdido nada, puedes volver a intentarlo. Detalle: '+err, '⚠️');
       }
+      btnGuardarAhora.disabled = false;
     });
+  } else {
+    btnGuardarAhora.disabled = false;
   }
   document.getElementById('modal-confirmacion-titulo').textContent = '✓ '+_regActualTitulo+' guardado';
   document.getElementById('modal-confirmacion-registro').classList.remove('hidden');
