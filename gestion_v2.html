@@ -4001,10 +4001,10 @@ var PAAP_APARTADOS = [
 // "Seguimiento" dentro de PAAP). "fichas_actividades" no tiene items: es un documento directo.
 var PP_ESTRUCTURA = {
   paap: { titulo:'PAAP', items:[
-    {tipo:'doc', id:'hoja_aceptacion', titulo:'Hoja Aceptación PAAP', icon:'📄'},
-    {tipo:'doc', id:'opinion_paap', titulo:'Opinión para la Realización del PAAP', icon:'📄'},
+    {tipo:'doc', id:'hoja_aceptacion', titulo:'Hoja Aceptación PAAP', icon:'📄', colorClase:'c-blue'},
+    {tipo:'doc', id:'opinion_paap', titulo:'Opinión para la Realización del PAAP', icon:'📄', colorClase:'c-pink'},
     {tipo:'carpeta', id:'seguimiento', titulo:'Seguimiento', icon:'📅', colorClase:'c-orange'},
-    {tipo:'especial', id:'registros_paap', titulo:'Registros PAAP', icon:'📋', sub:'Entregas y revisiones', accion:'abrirRegistroPaapDesdeProgramaPersonal'}
+    {tipo:'registro-real', id:'registros_paap'}
   ]},
   escalas_test: { titulo:'Escalas y Test', items:[
     {tipo:'doc', id:'test', titulo:'Test', icon:'📄'},
@@ -4074,9 +4074,12 @@ function abrirCarpetaPP(id, volverA){
     if(it.tipo==='carpeta'){
       h += '<div class="home-btn '+(it.colorClase||'c-blue')+'" onclick="abrirCarpetaPP(\''+it.id+'\',\''+id+'\')"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div></div></div>';
     } else if(it.tipo==='especial'){
-      h += '<div class="home-btn c-orange" onclick="'+it.accion+'()"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div><div class="home-txt-sub">'+(it.sub||'Cada mes')+'</div></div></div>';
+      h += '<div class="home-btn '+(it.colorClase||'c-orange')+'" onclick="'+it.accion+'()"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div><div class="home-txt-sub">'+(it.sub||'Cada mes')+'</div></div></div>';
+    } else if(it.tipo==='registro-real'){
+      var r = REGISTRO_TIPOS.filter(function(t){ return t.id===it.id; })[0];
+      if(r) h += tarjetaRegistroHtml(r, 'pp:'+id);
     } else {
-      h += '<div class="home-btn c-blue" onclick="abrirDocumentoPP(\''+it.id+'\',\''+it.titulo+'\',\''+id+'\')"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div></div></div>';
+      h += '<div class="home-btn '+(it.colorClase||'c-blue')+'" onclick="abrirDocumentoPP(\''+it.id+'\',\''+it.titulo+'\',\''+id+'\')"><div class="home-ic">'+it.icon+'</div><div><div class="home-txt-title">'+it.titulo.toUpperCase()+'</div></div></div>';
     }
   });
   document.getElementById('pp-carpeta-grid').innerHTML = h;
