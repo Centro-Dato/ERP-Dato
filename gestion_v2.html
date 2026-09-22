@@ -761,14 +761,15 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="view-comite-usuarios" class="page hidden">
       <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="page-header">
-        <div><div class="page-title">R. Comité de Usuarios</div><div class="page-subtitle">Elige la fecha, quiénes forman el comité y el objeto de la reunión</div></div>
+        <div><div class="page-title">R. Comité y Asambleas</div><div class="page-subtitle">Elige si es comité o asamblea, la fecha, quiénes asisten y el objeto de la reunión</div></div>
       </div>
       <div class="info-banner">ℹ️ Por ahora aparecen todos los usuarios y profesionales; en cuanto Ana confirme quiénes forman el comité de verdad, se puede dejar fijo.</div>
       <div class="card">
         <div class="form-grid">
+          <div><label class="form-lbl">Tipo de reunión</label><select class="form-input" id="comite-tipo"><option value="Comité">Comité</option><option value="Asamblea">Asamblea</option></select></div>
           <div><label class="form-lbl">Fecha</label><input type="date" class="form-input" id="comite-fecha"/></div>
         </div>
-        <div class="fl-lbl" style="margin:16px 0 8px">Personas que forman el comité (usuarios y profesionales)</div>
+        <div class="fl-lbl" style="margin:16px 0 8px">Personas que asisten (usuarios y profesionales)</div>
         <div class="chk-group" id="comite-personas-lista" style="max-height:260px;overflow-y:auto;flex-direction:column;gap:4px"></div>
         <div style="margin-top:18px">
           <label class="form-lbl">Objeto de la reunión</label>
@@ -2887,6 +2888,7 @@ function renderComiteUsuariosPersonas(){
   });
   h += '</div></div>';
   document.getElementById('comite-personas-lista').innerHTML = h;
+  document.getElementById('comite-tipo').value = 'Comité';
   document.getElementById('comite-fecha').value = '';
   document.getElementById('comite-objeto').value = '';
 }
@@ -2895,18 +2897,19 @@ function generarActaComiteUsuarios(){
   if(!fechaIso){ mostrarAviso('Elige primero la fecha de la reunión.'); return; }
   var partes = fechaIso.split('-');
   var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+  var tipo = document.getElementById('comite-tipo').value;
   var personas = [];
   document.querySelectorAll('#comite-personas-lista input[type=checkbox]:checked').forEach(function(chk){ personas.push(chk.value); });
-  if(personas.length===0){ mostrarAviso('Marca al menos a una persona del comité.'); return; }
+  if(personas.length===0){ mostrarAviso('Marca al menos a una persona.'); return; }
   var objeto = document.getElementById('comite-objeto').value.trim();
   var carpeta = CARPETA_COMITE_USUARIOS_ID || CARPETA_REGISTROS_DIGITALES_ID;
   if(!carpeta){
     mostrarAviso('Todavía no está conectada ninguna carpeta de Drive para esto — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
     return;
   }
-  var html = htmlTablaActaReunion('Acta Comité de Usuarios — '+fechaBonita, fechaBonita, personas, objeto);
+  var html = htmlTablaActaReunion('Acta '+tipo+' — '+fechaBonita, fechaBonita, personas, objeto);
   mostrarAviso('Generando el acta…', '⏳');
-  crearDocumentoDesdeHtml(carpeta, 'Acta Comité de Usuarios '+fechaBonita.replace(/\//g,'-'), html, function(err){
+  crearDocumentoDesdeHtml(carpeta, 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
     if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
     mostrarAviso('Acta generada correctamente en Drive.', '✅');
   });
@@ -5887,7 +5890,7 @@ var REGISTRO_TIPOS = [
     {k:'temp_maxima',label:'Temperatura Máxima',type:'text',req:true},
     {k:'temp_minima',label:'Temperatura Mínima',type:'text',req:true}
    ]},
-  {id:'comite_usuarios',titulo:'R. Comité de Usuarios',icon:'🗳️',color:'#ecfeff',iconColor:'#155e75',desc:'Reuniones del comité de usuarios',
+  {id:'comite_usuarios',titulo:'R. Comité y Asambleas',icon:'🗳️',color:'#ecfeff',iconColor:'#155e75',desc:'Reuniones de comité y asambleas de usuarios',
    fields:[]},
   {id:'registros_paap',titulo:'Registros PAAP',icon:'📋',color:'#ecfdf5',iconColor:'#065f46',desc:'Entregas y revisiones del PAAP',carpetaVar:'CARPETA_PAAP_ID',
    fields:[
