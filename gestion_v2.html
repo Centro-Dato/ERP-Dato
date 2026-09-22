@@ -2504,7 +2504,7 @@ function cargarRegistrosParaEditar(){
   var tipoId = document.getElementById('sel-tipo-editar-registro').value;
   var tipo = REGISTRO_TIPOS.filter(function(t){return t.id===tipoId;})[0];
   if(!tipo) return;
-  var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
+  var nombreArchivo = (tipo.archivoNombre||tipo.titulo)+' '+CURSO_REGISTROS_ACTUAL();
   var carpetaOrigen = tipo.carpetaVar ? (window[tipo.carpetaVar] || CARPETA_REGISTROS_DIGITALES_ID) : CARPETA_REGISTROS_DIGITALES_ID;
   var cont = document.getElementById('editar-registros-contenido');
   cont.innerHTML = '<div class="empty-state">⏳ Cargando…</div>';
@@ -2554,7 +2554,7 @@ function guardarCambiosEditarRegistros(){
   }, d.carpetaOrigen);
 }
 function guardarRegistroEnDriveReal(tipo, datos, callback){
-  var nombreArchivo = tipo.titulo+' '+CURSO_REGISTROS_ACTUAL();
+  var nombreArchivo = (tipo.archivoNombre||tipo.titulo)+' '+CURSO_REGISTROS_ACTUAL();
   var color = '#'+(REGISTRO_COLOR[tipo.id] || '2563EB');
   // Algunos registros (como Registros PAAP) no van a la carpeta general de Registros Digitales,
   // sino a su propia carpeta — se indica con el NOMBRE de la variable global que la contiene,
@@ -2710,6 +2710,60 @@ function crearDocumentoDesdeHtml(carpetaId, nombre, html, callback){
 // Genera el HTML de una tabla de "acta de reunión" (Fecha / Profesional o Persona / Firma /
 // Objeto de la reunión), con la fecha y el objeto ocupando todas las filas de golpe (rowspan),
 // igual que en el modelo que pasó Ana.
+// Igual que htmlTablaActaReunion, pero separando claramente quiénes son Usuarios y quiénes son
+// Profesionales/Conductores dentro de la propia acta (no solo en la pantalla de selección).
+function htmlTablaActaComite(titulo, fechaBonita, usuariosNombres, profesionalesNombres, objeto){
+  var totalFilas = Math.max(usuariosNombres.length + profesionalesNombres.length + (usuariosNombres.length?1:0) + (profesionalesNombres.length?1:0), 1);
+  var h = '<h2>'+esc(titulo)+'</h2>';
+  h += '<table border="1" cellspacing="0" cellpadding="8" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif">';
+  h += '<tr style="background:#e5e7eb;font-weight:bold"><td>FECHA</td><td>ASISTENTE</td><td>FIRMA</td><td>OBJETO DE LA REUNIÓN</td></tr>';
+  var primeraFila = true;
+  function abrirFila(){
+    var h2 = '<tr>';
+    if(primeraFila){
+      h2 += '<td rowspan="'+totalFilas+'" style="vertical-align:top">'+esc(fechaBonita)+'</td>';
+    }
+    return h2;
+  }
+  function cerrarFila(h2){
+    h2 += '</tr>';
+    if(primeraFila){
+      // el objeto se añade en la última celda de la primera fila que se pinta, así el rowspan cuadra
+    }
+    primeraFila = false;
+    return h2;
+  }
+  var filasHtml = '';
+  if(usuariosNombres.length>0){
+    var fh = abrirFila();
+    fh += '<td colspan="2" style="background:#eff6ff;font-weight:bold;color:#1d4ed8">👤 USUARIOS</td>';
+    if(primeraFila) fh += '<td rowspan="'+totalFilas+'" style="vertical-align:top">'+esc(objeto)+'</td>';
+    filasHtml += cerrarFila(fh);
+    usuariosNombres.forEach(function(nombre){
+      var f2 = abrirFila();
+      f2 += '<td>'+esc(nombre)+'</td><td>&nbsp;</td>';
+      if(primeraFila) f2 += '<td rowspan="'+totalFilas+'" style="vertical-align:top">'+esc(objeto)+'</td>';
+      filasHtml += cerrarFila(f2);
+    });
+  }
+  if(profesionalesNombres.length>0){
+    var fh2 = abrirFila();
+    fh2 += '<td colspan="2" style="background:#fdf4ff;font-weight:bold;color:#7e22ce">🧑‍💼 PROFESIONALES</td>';
+    if(primeraFila) fh2 += '<td rowspan="'+totalFilas+'" style="vertical-align:top">'+esc(objeto)+'</td>';
+    filasHtml += cerrarFila(fh2);
+    profesionalesNombres.forEach(function(nombre){
+      var f3 = abrirFila();
+      f3 += '<td>'+esc(nombre)+'</td><td>&nbsp;</td>';
+      if(primeraFila) f3 += '<td rowspan="'+totalFilas+'" style="vertical-align:top">'+esc(objeto)+'</td>';
+      filasHtml += cerrarFila(f3);
+    });
+  }
+  if(usuariosNombres.length===0 && profesionalesNombres.length===0){
+    filasHtml += '<tr><td rowspan="1" style="vertical-align:top">'+esc(fechaBonita)+'</td><td>&nbsp;</td><td>&nbsp;</td><td>'+esc(objeto)+'</td></tr>';
+  }
+  h += filasHtml + '</table>';
+  return h;
+}
 function htmlTablaActaReunion(titulo, fechaBonita, filasPersonas, objeto){
   var n = Math.max(filasPersonas.length, 1);
   var h = '<h2>'+esc(titulo)+'</h2>';
@@ -2917,7 +2971,12 @@ function generarActaComiteUsuarios(){
     mostrarAviso('Todavía no está conectada ninguna carpeta de Drive para esto — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
     return;
   }
-  var html = htmlTablaActaReunion('Acta '+tipo+' — '+fechaBonita, fechaBonita, personas, objeto);
+  // El acta separa Usuarios y Profesionales en secciones distintas, aunque en la pantalla se
+  // marquen desde sus dos cajas — nunca se mezclan en el documento final.
+  var nombresUsuarios = USUARIOS.map(function(u){ return u.nombre+' '+u.apellidos; });
+  var usuariosSeleccionados = personas.filter(function(p){ return nombresUsuarios.indexOf(p)>-1; });
+  var profesionalesSeleccionados = personas.filter(function(p){ return nombresUsuarios.indexOf(p)===-1; });
+  var html = htmlTablaActaComite('Acta '+tipo+' — '+fechaBonita, fechaBonita, usuariosSeleccionados, profesionalesSeleccionados, objeto);
   mostrarAviso('Generando el acta…', '⏳');
   crearDocumentoDesdeHtml(carpeta, 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
     if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
@@ -5902,7 +5961,7 @@ var REGISTRO_TIPOS = [
    ]},
   {id:'comite_usuarios',titulo:'R. Comité y Asambleas',icon:'🗳️',color:'#ecfeff',iconColor:'#155e75',desc:'Reuniones de comité y asambleas de usuarios',
    fields:[]},
-  {id:'registros_paap',titulo:'Registros PAAP',icon:'📋',color:'#ecfdf5',iconColor:'#065f46',desc:'Entregas y revisiones del PAAP',carpetaVar:'CARPETA_PAAP_ID',
+  {id:'registros_paap',titulo:'Registros PAAP',archivoNombre:'R. PAAP',icon:'📋',color:'#ecfdf5',iconColor:'#065f46',desc:'Entregas y revisiones del PAAP',carpetaVar:'CARPETA_PAAP_ID',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
