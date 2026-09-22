@@ -2681,6 +2681,37 @@ function listarHijosDeCarpeta(folderId, callback){
 // Crea un Google Doc DE VERDAD (no un archivo cualquiera) a partir de una tabla en HTML — se
 // sube como HTML y se le pide a Drive que lo convierta directamente en Documento de Google, así
 // sale con una tabla real y editable, en vez de tener que construirla a mano con la API de Docs.
+// Busca (o crea si no existe) una subcarpeta con nombre propio dentro de la carpeta general de
+// Registros Digitales, y devuelve su id. Se usa para las Actas (Comité y Asambleas, Reuniones),
+// que ahora tienen su propia carpeta en vez de mezclarse sueltas en la carpeta general.
+var _subcarpetasRegistrosCache = {};
+function obtenerOCrearSubcarpetaRegistros(nombreCarpeta, callback){
+  if(_subcarpetasRegistrosCache[nombreCarpeta]){ callback(null, _subcarpetasRegistrosCache[nombreCarpeta]); return; }
+  autorizarGoogleDrive(function(){
+    var q = "mimeType='application/vnd.google-apps.folder' and name='"+nombreCarpeta.replace(/'/g,"\\'")+"' and '"+CARPETA_REGISTROS_DIGITALES_ID+"' in parents and trashed=false";
+    fetch('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name)', {
+      headers: {'Authorization': 'Bearer '+_tokenActual}
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.error){ callback(data.error); return; }
+        if(data.files && data.files.length>0){
+          _subcarpetasRegistrosCache[nombreCarpeta] = data.files[0].id;
+          callback(null, data.files[0].id);
+          return;
+        }
+        fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: {'Authorization': 'Bearer '+_tokenActual, 'Content-Type': 'application/json'},
+          body: JSON.stringify({name: nombreCarpeta, mimeType: 'application/vnd.google-apps.folder', parents: [CARPETA_REGISTROS_DIGITALES_ID]})
+        }).then(function(r){ return r.json(); })
+          .then(function(data2){
+            if(data2.error){ callback(data2.error); return; }
+            _subcarpetasRegistrosCache[nombreCarpeta] = data2.id;
+            callback(null, data2.id);
+          }).catch(function(err){ callback(err); });
+      }).catch(function(err){ callback(err); });
+  });
+}
 function crearDocumentoDesdeHtml(carpetaId, nombre, html, callback){
   autorizarGoogleDrive(function(){
     var metadata = {name: nombre, parents: [carpetaId], mimeType: 'application/vnd.google-apps.document'};
@@ -2727,16 +2758,13 @@ function htmlTablaActaComite(titulo, fechaBonita, usuariosNombres, profesionales
   }
   function cerrarFila(h2){
     h2 += '</tr>';
-    if(primeraFila){
-      // el objeto se añade en la última celda de la primera fila que se pinta, así el rowspan cuadra
-    }
     primeraFila = false;
     return h2;
   }
   var filasHtml = '';
   if(usuariosNombres.length>0){
     var fh = abrirFila();
-    fh += '<td colspan="2" style="background:#eff6ff;font-weight:bold;color:#1d4ed8">👤 USUARIOS</td>';
+    fh += '<td colspan="2" style="font-weight:bold">USUARIOS</td>';
     if(primeraFila) fh += '<td rowspan="'+totalFilas+'" style="vertical-align:top">'+esc(objeto)+'</td>';
     filasHtml += cerrarFila(fh);
     usuariosNombres.forEach(function(nombre){
@@ -2748,7 +2776,7 @@ function htmlTablaActaComite(titulo, fechaBonita, usuariosNombres, profesionales
   }
   if(profesionalesNombres.length>0){
     var fh2 = abrirFila();
-    fh2 += '<td colspan="2" style="background:#fdf4ff;font-weight:bold;color:#7e22ce">🧑‍💼 PROFESIONALES</td>';
+    fh2 += '<td colspan="2" style="font-weight:bold">PROFESIONALES</td>';
     if(primeraFila) fh2 += '<td rowspan="'+totalFilas+'" style="vertical-align:top">'+esc(objeto)+'</td>';
     filasHtml += cerrarFila(fh2);
     profesionalesNombres.forEach(function(nombre){
@@ -2864,11 +2892,10 @@ function toggleProfesionalActa(nombre, marcado){
   else if(!marcado && idx>-1) _actaFilasProfesionales.splice(idx,1);
 }
 function verCarpetaActasReuniones(){
-  if(!CARPETA_ACTAS_REUNIONES_ID){
-    mostrarAviso('Todavía no está conectada la carpeta de Drive de Actas de Reuniones.', 'ℹ️');
-    return;
-  }
-  window.open('https://drive.google.com/drive/folders/'+CARPETA_ACTAS_REUNIONES_ID, '_blank');
+  obtenerOCrearSubcarpetaRegistros('Actas de Reuniones', function(err, carpetaId){
+    if(err){ mostrarAviso('No se pudo abrir la carpeta: '+(err.message||err), '⚠️'); return; }
+    window.open('https://drive.google.com/drive/folders/'+carpetaId, '_blank');
+  });
 }
 // Recoge lo que hay escrito ahora mismo en el formulario, sin necesidad de haberlo guardado —
 // lo usan tanto la Vista previa/Descargar/Imprimir como el propio Generar Acta.
@@ -2916,15 +2943,14 @@ function generarActaReunionPersonal(){
   if(profesionales.length===0){ mostrarAviso('Añade al menos un profesional.'); return; }
   var objeto = d.objeto;
   var fechaBonita = d.fechaBonita;
-  if(!CARPETA_ACTAS_REUNIONES_ID){
-    mostrarAviso('Todavía no está conectada la carpeta de Drive de Actas de Reuniones — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
-    return;
-  }
   var html = htmlTablaActaReunion('Acta de Reunión — '+fechaBonita, fechaBonita, profesionales, objeto);
   mostrarAviso('Generando el acta…', '⏳');
-  crearDocumentoDesdeHtml(CARPETA_ACTAS_REUNIONES_ID, 'Acta de Reunión '+fechaBonita.replace(/\//g,'-'), html, function(err){
-    if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
-    mostrarAviso('Acta generada correctamente en Drive.', '✅');
+  obtenerOCrearSubcarpetaRegistros('Actas de Reuniones', function(errCarpeta, carpetaId){
+    if(errCarpeta){ mostrarAviso('No se pudo generar el acta: '+(errCarpeta.message||errCarpeta), '⚠️'); return; }
+    crearDocumentoDesdeHtml(carpetaId, 'Acta de Reunión '+fechaBonita.replace(/\//g,'-'), html, function(err){
+      if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
+      mostrarAviso('Acta generada correctamente en Drive.', '✅');
+    });
   });
 }
 
@@ -2952,9 +2978,10 @@ function renderComiteUsuariosPersonas(){
   document.getElementById('comite-objeto').value = '';
 }
 function verCarpetaComiteUsuarios(){
-  var carpeta = CARPETA_COMITE_USUARIOS_ID || CARPETA_REGISTROS_DIGITALES_ID;
-  if(!carpeta){ mostrarAviso('Todavía no hay ninguna carpeta de Drive conectada.'); return; }
-  window.open('https://drive.google.com/drive/folders/'+carpeta, '_blank');
+  obtenerOCrearSubcarpetaRegistros('R. Comité y Asambleas', function(err, carpetaId){
+    if(err){ mostrarAviso('No se pudo abrir la carpeta: '+(err.message||err), '⚠️'); return; }
+    window.open('https://drive.google.com/drive/folders/'+carpetaId, '_blank');
+  });
 }
 function generarActaComiteUsuarios(){
   var fechaIso = document.getElementById('comite-fecha').value;
@@ -2966,11 +2993,6 @@ function generarActaComiteUsuarios(){
   document.querySelectorAll('#comite-personas-lista input[type=checkbox]:checked').forEach(function(chk){ personas.push(chk.value); });
   if(personas.length===0){ mostrarAviso('Marca al menos a una persona.'); return; }
   var objeto = document.getElementById('comite-objeto').value.trim();
-  var carpeta = CARPETA_COMITE_USUARIOS_ID || CARPETA_REGISTROS_DIGITALES_ID;
-  if(!carpeta){
-    mostrarAviso('Todavía no está conectada ninguna carpeta de Drive para esto — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
-    return;
-  }
   // El acta separa Usuarios y Profesionales en secciones distintas, aunque en la pantalla se
   // marquen desde sus dos cajas — nunca se mezclan en el documento final.
   var nombresUsuarios = USUARIOS.map(function(u){ return u.nombre+' '+u.apellidos; });
@@ -2978,9 +3000,12 @@ function generarActaComiteUsuarios(){
   var profesionalesSeleccionados = personas.filter(function(p){ return nombresUsuarios.indexOf(p)===-1; });
   var html = htmlTablaActaComite('Acta '+tipo+' — '+fechaBonita, fechaBonita, usuariosSeleccionados, profesionalesSeleccionados, objeto);
   mostrarAviso('Generando el acta…', '⏳');
-  crearDocumentoDesdeHtml(carpeta, 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
-    if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
-    mostrarAviso('Acta generada correctamente en Drive.', '✅');
+  obtenerOCrearSubcarpetaRegistros('R. Comité y Asambleas', function(errCarpeta, carpetaId){
+    if(errCarpeta){ mostrarAviso('No se pudo generar el acta: '+(errCarpeta.message||errCarpeta), '⚠️'); return; }
+    crearDocumentoDesdeHtml(carpetaId, 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
+      if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
+      mostrarAviso('Acta generada correctamente en Drive.', '✅');
+    });
   });
 }
 
