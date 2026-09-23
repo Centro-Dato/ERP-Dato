@@ -657,6 +657,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <button class="btn-back" onclick="navTo('paap')">← Volver a PAAP</button>
       <div class="page-header">
         <div><div class="page-title">Registros PAAP</div><div class="page-subtitle">Marca cada alumno cuando corresponda; una vez marcado, desaparece de esta sección hasta el curso siguiente</div></div>
+        <button class="btn-secondary" onclick="verCarpetaRegistrosPaap()">📁 Ver carpeta en Drive</button>
       </div>
       <div id="registros-paap-tabs" class="tabs-bar" style="margin-bottom:14px"></div>
       <div class="card" id="registros-paap-lista"></div>
@@ -4244,6 +4245,11 @@ var REGISTROS_PAAP_SECCIONES = [
 ];
 var _paapSeccionActual = 'entregaSept';
 var _paapYaHechos = {};
+function verCarpetaRegistrosPaap(){
+  var carpeta = CARPETA_PAAP_ID || CARPETA_REGISTROS_DIGITALES_ID;
+  if(!carpeta){ mostrarAviso('Todavía no hay ninguna carpeta de Drive conectada.'); return; }
+  window.open('https://drive.google.com/drive/folders/'+carpeta, '_blank');
+}
 function abrirRegistrosPaap(){
   mostrarAviso('Cargando…', '⏳');
   cargarDatosRegistrosPaap(function(){
