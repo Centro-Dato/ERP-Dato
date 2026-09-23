@@ -3926,20 +3926,7 @@ function abrirDocumentoTransporte(id, titulo){
     mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
     return;
   }
-  if(!CARPETA_CIRCULARES_ID){
-    mostrarAviso('Todavía no está conectada la carpeta de Drive de Circulares.', 'ℹ️');
-    return;
-  }
-  document.getElementById('carpeta-archivos-titulo').textContent = titulo;
-  document.getElementById('carpeta-archivos-listado').innerHTML = '<div class="empty-state">⏳ Cargando desde Drive…</div>';
-  var btnSubir = document.getElementById('carpeta-archivos-btn-subir');
-  btnSubir.classList.remove('hidden');
-  btnSubir.setAttribute('data-carpeta-subir', CARPETA_CIRCULARES_ID);
-  document.getElementById('carpeta-archivos-btn-vercarpeta').onclick = function(){ window.open('https://drive.google.com/drive/folders/'+CARPETA_CIRCULARES_ID, '_blank'); };
-  document.getElementById('modal-carpeta-archivos').classList.remove('hidden');
-  autorizarGoogleDrive(function(){
-    renderContenidoCarpetaExpediente(CARPETA_CIRCULARES_ID, titulo, 'carpeta-archivos-listado', null);
-  });
+  abrirCarpetaArchivosPopup(CARPETA_CIRCULARES_ID, titulo);
 }
 function subirArchivoCarpetaModal(){
   var carpetaId = document.getElementById('carpeta-archivos-btn-subir').getAttribute('data-carpeta-subir');
@@ -4187,32 +4174,37 @@ function abrirCarpetaPP(id, volverA){
 // todavía no está conectado, en vez de fallar o simular algo que parezca real.
 var CARPETA_PROYECTO_PERSONAL_ID = '';
 var _ppDocVolverA = null;
-function abrirDocumentoPP(id, titulo, volverA){
-  _ppDocVolverA = volverA;
-  document.getElementById('doc-titulo').textContent = titulo;
-  document.getElementById('doc-info').textContent = 'Proyecto Personal';
-  document.getElementById('doc-preview-box').classList.remove('hidden');
-  document.getElementById('doc-preview-box').innerHTML = 'Vista previa del documento (se cargará desde Google Drive)';
-  document.getElementById('doc-btn-descargar').classList.remove('hidden');
-  document.getElementById('doc-btn-imprimir').classList.remove('hidden');
-  document.getElementById('doc-listado-real').classList.add('hidden');
-  document.getElementById('doc-btn-ver-carpeta').classList.add('hidden');
-  var btnSubir = document.getElementById('doc-btn-subir');
-  btnSubir.classList.remove('hidden');
-  btnSubir.onclick = function(){ subirDocumentoPP(id, titulo); };
-  document.getElementById('doc-btn-descargar').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
-  document.getElementById('doc-btn-imprimir').onclick = function(){ mostrarAviso('Todavía no hay ningún archivo subido para "'+titulo+'".'); };
-  document.getElementById('btn-volver-documento').onclick = function(){ if(volverA==='paap'){ navTo('paap'); } else { abrirCarpetaPP(volverA,'paap'); } };
-  navTo('documento');
-}
-function subirDocumentoPP(id, titulo){
-  if(!CARPETA_PROYECTO_PERSONAL_ID){
-    mostrarAviso('Todavía no está conectada la carpeta de Drive de Proyecto Personal — en cuanto Ana me pase el enlace, aquí ya podrás subir el archivo de verdad.', 'ℹ️');
+// Función genérica: abre la ventana emergente de archivos reales de una carpeta, con opción de
+// subir. La reutilizan tanto Circulares (Transporte) como los documentos de Proyecto Personal.
+function abrirCarpetaArchivosPopup(carpetaId, titulo){
+  if(!carpetaId){
+    mostrarAviso('Todavía no está conectada la carpeta de Drive de "'+titulo+'".', 'ℹ️');
     return;
   }
-  abrirSelectorArchivoParaSubir(CARPETA_PROYECTO_PERSONAL_ID, function(){
-    mostrarAviso('Archivo de "'+titulo+'" subido correctamente.', '✅');
+  document.getElementById('carpeta-archivos-titulo').textContent = titulo;
+  document.getElementById('carpeta-archivos-listado').innerHTML = '<div class="empty-state">⏳ Cargando desde Drive…</div>';
+  var btnSubir = document.getElementById('carpeta-archivos-btn-subir');
+  btnSubir.classList.remove('hidden');
+  btnSubir.setAttribute('data-carpeta-subir', carpetaId);
+  document.getElementById('carpeta-archivos-btn-vercarpeta').onclick = function(){ window.open('https://drive.google.com/drive/folders/'+carpetaId, '_blank'); };
+  document.getElementById('modal-carpeta-archivos').classList.remove('hidden');
+  autorizarGoogleDrive(function(){
+    renderContenidoCarpetaExpediente(carpetaId, titulo, 'carpeta-archivos-listado', null);
   });
+}
+// Carpetas reales de cada documento de Proyecto Personal, ya conectadas.
+var CARPETAS_DOCUMENTOS_PP = {
+  hoja_aceptacion: '1hQJw4y5rXoL_7LZoxqh0PrHlfiQJrkD6',
+  opinion_paap: '12Ysrmo-qtKh7GTjNGTGQYtxNlVsk5C82',
+  programa_general: '1fGLN17JscusTONUkOMa5_3Om-bUeD0HJ',
+  programa_areas: '1RikrkJFbIEDTye8tqjRrN0UtzHlQM2Yf',
+  test: '1uLxftcED9A6NuiUvWjfaKTFHjJYNQfiQ',
+  valoracion_trimestral: '1FKEASBUvCvcU6E-QVhagTtEBCQN7ATB5',
+  valoracion_semestral: '1FKEASBUvCvcU6E-QVhagTtEBCQN7ATB5',
+  fichas_actividades: '1o5xsWfAHpsPpmUDzzDaxlGI9XURQI2SD'
+};
+function abrirDocumentoPP(id, titulo, volverA){
+  abrirCarpetaArchivosPopup(CARPETAS_DOCUMENTOS_PP[id], titulo);
 }
 // Carpeta real de Drive donde irán las respuestas del Diario Mensual, junto con todo lo de PAAP.
 // Pendiente del enlace real que Ana dará más adelante.
