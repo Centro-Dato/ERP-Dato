@@ -4321,24 +4321,34 @@ function guardarRegistroPaap(){
   var carpeta = CARPETA_PAAP_ID || CARPETA_REGISTROS_DIGITALES_ID;
   var nombreArchivo = nombreArchivoRegistrosPaap();
   var headersIndividual = ['Fecha','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
-  var pendientes = seleccionados.length;
-  var huboError = null;
-  var nombresOk = [];
-  mostrarAviso('Guardando '+pendientes+' alumno'+(pendientes>1?'s':'')+'…', '⏳');
-  seleccionados.forEach(function(chk){
-    var nombre = chk.value;
+  var nombres = seleccionados.map(function(chk){ return chk.value; });
+  // Una sola petición con todas las filas (General + cada pestaña individual), en vez de 2
+  // peticiones por alumno — así no se suman los segundos de Apps Script por cada uno.
+  var escrituras = [];
+  nombres.forEach(function(nombre){
     var fila = [fechaBonita, nombre, '', '', '', ''];
     fila[REGISTROS_PAAP_HEADERS.indexOf(seccion.columna)] = 'Entregado: '+fechaBonita;
-    guardarFilaViaAppsScript(carpeta, nombreArchivo, 'General', REGISTROS_PAAP_HEADERS, fila, '#065f46', function(err){
-      if(err){ huboError = err; pendientes--; if(pendientes<=0) terminarGuardadoPaap(huboError, nombresOk); return; }
-      var filaIndividual = fila.slice(1);
-      guardarFilaViaAppsScript(carpeta, nombreArchivo, nombre, headersIndividual, filaIndividual, '#065f46', function(err2){
-        if(err2){ huboError = err2; } else { nombresOk.push(nombre); _paapYaHechos[_paapSeccionActual][nombre] = true; }
-        pendientes--;
-        if(pendientes<=0) terminarGuardadoPaap(huboError, nombresOk);
-      });
-    });
+    escrituras.push({pestana: 'General', cabecera: REGISTROS_PAAP_HEADERS, fila: fila});
+    escrituras.push({pestana: nombre, cabecera: headersIndividual, fila: fila.slice(1)});
   });
+  mostrarAviso('Guardando '+nombres.length+' alumno'+(nombres.length>1?'s':'')+'…', '⏳');
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'guardarFilasEnLote', carpetaId: carpeta, nombreArchivo: nombreArchivo, color: '#065f46', escrituras: escrituras})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok){
+        mostrarAviso('No se pudo guardar: '+((data&&data.error)||'error_desconocido'), '⚠️');
+        seleccionados.forEach(function(chk){ chk.disabled = false; });
+        return;
+      }
+      nombres.forEach(function(nombre){ _paapYaHechos[_paapSeccionActual][nombre] = true; });
+      terminarGuardadoPaap(null, nombres);
+    })
+    .catch(function(err){
+      mostrarAviso('No se pudo guardar (revisa la conexión): '+err, '⚠️');
+      seleccionados.forEach(function(chk){ chk.disabled = false; });
+    });
 }
 function terminarGuardadoPaap(huboError, nombresOk){
   nombresOk.forEach(function(nombre){
