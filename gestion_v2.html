@@ -2687,18 +2687,13 @@ function ejecutarLimpiezaHoja1(candidatos, indice, contadorLimpiados){
 // Lista el contenido de una carpeta cualquiera, dado su ID directamente (sirve tanto para la
 // carpeta ya vinculada como para navegar dentro de sus subcarpetas).
 function listarHijosDeCarpeta(folderId, callback){
-  autorizarGoogleDrive(function(){
-    try{
-      if(!gapi.client.drive){ callback(null, 'drive_no_cargado'); return; }
-      gapi.client.drive.files.list({
-        q: "'"+folderId+"' in parents and trashed = false",
-        fields: 'files(id, name, mimeType, webViewLink, modifiedTime)',
-        orderBy: 'folder,name_natural',
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true
-      }).then(function(resp){ callback(resp.result.files, null); }, function(err){ callback(null, err); });
-    } catch(e){ callback(null, e); }
-  });
+  fetch(APPS_SCRIPT_URL + '?accion=listarArchivos&carpetaId=' + encodeURIComponent(folderId))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok){ callback(null, (data&&data.error)||'error_desconocido'); return; }
+      callback(data.files, null);
+    })
+    .catch(function(err){ callback(null, err); });
 }
 // Convierte los archivos/carpetas devueltos por Drive en "docs" para la tabla: las carpetas
 // navegan dentro del propio programa; los archivos se abren en una pestaña nueva de Drive.
@@ -4188,9 +4183,7 @@ function abrirCarpetaArchivosPopup(carpetaId, titulo){
   btnSubir.setAttribute('data-carpeta-subir', carpetaId);
   document.getElementById('carpeta-archivos-btn-vercarpeta').onclick = function(){ window.open('https://drive.google.com/drive/folders/'+carpetaId, '_blank'); };
   document.getElementById('modal-carpeta-archivos').classList.remove('hidden');
-  autorizarGoogleDrive(function(){
-    renderContenidoCarpetaExpediente(carpetaId, titulo, 'carpeta-archivos-listado', null);
-  });
+  renderContenidoCarpetaExpediente(carpetaId, titulo, 'carpeta-archivos-listado', null);
 }
 // Carpetas reales de cada documento de Proyecto Personal, ya conectadas.
 var CARPETAS_DOCUMENTOS_PP = {
