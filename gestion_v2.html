@@ -1075,6 +1075,21 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   </div>
 </div>
 
+<!-- ===== MODAL: ARCHIVOS DE UNA CARPETA (ventana emergente) ===== -->
+<div id="modal-carpeta-archivos" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalCarpetaArchivos()">
+  <div class="modal-box" style="max-width:640px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="modal-title" id="carpeta-archivos-titulo" style="margin:0">Archivos</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary btn-sm hidden" id="carpeta-archivos-btn-subir" onclick="subirArchivoCarpetaModal()">⬆ Subir</button>
+        <button class="btn-secondary btn-sm" id="carpeta-archivos-btn-vercarpeta">📁 Ver carpeta en Drive</button>
+        <button class="btn-secondary btn-sm" onclick="cerrarModalCarpetaArchivos()">✕ Cerrar</button>
+      </div>
+    </div>
+    <div id="carpeta-archivos-listado" class="docs-grid" style="max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <!-- ===== MODAL CONFIRMACIÓN REGISTRO GUARDADO ===== -->
 <!-- ===== MODAL AVISO (sustituye a mostrarAviso(), que puede quedar bloqueado en algunos entornos) ===== -->
 <div id="modal-aviso" class="modal-overlay hidden" onclick="if(event.target===this)cerrarAviso()">
@@ -3019,38 +3034,19 @@ function generarActaComiteUsuarios(){
 }
 
 function subirArchivoRealADrive(folderId, file, callback){
-  autorizarGoogleDrive(function(){
-    var metadata = {name: file.name, parents: [folderId]};
-    var boundary = '-------314159265358979323846';
-    var delimiter = "\r\n--" + boundary + "\r\n";
-    var closeDelim = "\r\n--" + boundary + "--";
-    var reader = new FileReader();
-    reader.onload = function(e){
-      var contentType = file.type || 'application/octet-stream';
-      var base64Data = btoa(e.target.result);
-      var multipartRequestBody =
-        delimiter +
-        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: ' + contentType + '\r\n' +
-        'Content-Transfer-Encoding: base64\r\n\r\n' +
-        base64Data +
-        closeDelim;
-      fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + _tokenActual,
-          'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-        },
-        body: multipartRequestBody
-      }).then(function(resp){ return resp.json(); })
-        .then(function(data){ data && data.error ? callback(data.error) : callback(null, data); })
-        .catch(function(err){ callback(err); });
-    };
-    reader.onerror = function(){ callback('No se pudo leer el archivo elegido.'); };
-    reader.readAsBinaryString(file);
-  });
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var contentType = file.type || 'application/octet-stream';
+    var base64Data = e.target.result.split(',')[1];
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({accion:'subirArchivoBase64', carpetaId: folderId, nombreArchivo: file.name, mimeType: contentType, contenidoBase64: base64Data})
+    }).then(function(resp){ return resp.json(); })
+      .then(function(data){ (data && data.ok) ? callback(null, data) : callback((data&&data.error)||'error_desconocido'); })
+      .catch(function(err){ callback(err); });
+  };
+  reader.onerror = function(){ callback('No se pudo leer el archivo elegido.'); };
+  reader.readAsDataURL(file);
 }
 function abrirSelectorArchivoParaSubir(folderId, onSubido){
   var input = document.createElement('input');
@@ -3067,9 +3063,10 @@ function abrirSelectorArchivoParaSubir(folderId, onSubido){
   };
   input.click();
 }
-function abrirPreviewDrive(fileId, nombreArchivo){
+function abrirPreviewDrive(fileId, nombreArchivo, ocultarDescargar){
   document.getElementById('preview-drive-nombre').textContent = nombreArchivo;
   document.getElementById('preview-drive-iframe').src = 'https://drive.google.com/file/d/'+fileId+'/preview';
+  document.getElementById('btn-preview-descargar').classList.toggle('hidden', !!ocultarDescargar);
   document.getElementById('btn-preview-descargar').onclick = function(){
     window.open('https://drive.google.com/uc?export=download&id='+fileId, '_blank');
   };
@@ -3929,60 +3926,45 @@ function abrirDocumentoTransporte(id, titulo){
     mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
     return;
   }
-  document.getElementById('doc-titulo').textContent = titulo;
-  document.getElementById('doc-info').textContent = 'Transporte';
-  document.getElementById('doc-preview-box').classList.add('hidden');
-  document.getElementById('doc-btn-descargar').classList.add('hidden');
-  document.getElementById('doc-btn-imprimir').classList.add('hidden');
-  var listado = document.getElementById('doc-listado-real');
-  listado.classList.remove('hidden');
-  var btnVerCarpeta = document.getElementById('doc-btn-ver-carpeta');
-  var btnSubir = document.getElementById('doc-btn-subir');
   if(!CARPETA_CIRCULARES_ID){
-    listado.innerHTML = '<div class="empty-state">Todavía no está conectada la carpeta de Drive de Circulares.</div>';
-    btnSubir.classList.add('hidden');
-    btnVerCarpeta.classList.add('hidden');
-  } else {
-    listado.innerHTML = '<div class="empty-state">⏳ Cargando desde Drive…</div>';
-    btnSubir.classList.remove('hidden');
-    btnVerCarpeta.classList.remove('hidden');
-    btnVerCarpeta.onclick = function(){ window.open('https://drive.google.com/drive/folders/'+CARPETA_CIRCULARES_ID, '_blank'); };
-    btnSubir.onclick = function(){
-      abrirSelectorArchivoParaSubir(CARPETA_CIRCULARES_ID, function(){
-        renderContenidoCarpetaExpediente(CARPETA_CIRCULARES_ID, titulo, 'doc-listado-real', null);
-      });
-    };
-    autorizarGoogleDrive(function(){
-      renderContenidoCarpetaExpediente(CARPETA_CIRCULARES_ID, titulo, 'doc-listado-real', null);
-    });
+    mostrarAviso('Todavía no está conectada la carpeta de Drive de Circulares.', 'ℹ️');
+    return;
   }
-  document.getElementById('btn-volver-documento').onclick = function(){ navTo('transporte'); };
-  navTo('documento');
+  document.getElementById('carpeta-archivos-titulo').textContent = titulo;
+  document.getElementById('carpeta-archivos-listado').innerHTML = '<div class="empty-state">⏳ Cargando desde Drive…</div>';
+  var btnSubir = document.getElementById('carpeta-archivos-btn-subir');
+  btnSubir.classList.remove('hidden');
+  btnSubir.setAttribute('data-carpeta-subir', CARPETA_CIRCULARES_ID);
+  document.getElementById('carpeta-archivos-btn-vercarpeta').onclick = function(){ window.open('https://drive.google.com/drive/folders/'+CARPETA_CIRCULARES_ID, '_blank'); };
+  document.getElementById('modal-carpeta-archivos').classList.remove('hidden');
+  autorizarGoogleDrive(function(){
+    renderContenidoCarpetaExpediente(CARPETA_CIRCULARES_ID, titulo, 'carpeta-archivos-listado', null);
+  });
 }
-// Direcciones Rutas es un único archivo fijo (no una carpeta con varios), así que se muestra
-// igual de sencillo, con sus botones de vista previa/descargar/ver en Drive.
+function subirArchivoCarpetaModal(){
+  var carpetaId = document.getElementById('carpeta-archivos-btn-subir').getAttribute('data-carpeta-subir');
+  var titulo = document.getElementById('carpeta-archivos-titulo').textContent;
+  abrirSelectorArchivoParaSubir(carpetaId, function(){
+    renderContenidoCarpetaExpediente(carpetaId, titulo, 'carpeta-archivos-listado', null);
+  });
+}
+function cerrarModalCarpetaArchivos(){
+  document.getElementById('modal-carpeta-archivos').classList.add('hidden');
+}
+// Direcciones Rutas es un único archivo fijo (no una carpeta con varios) — se ve con la misma
+// ventana emergente de vista previa que se usa en Expedientes.
 function abrirVistaDireccionesRutas(){
   if(nivelApartadoModulo('transporte', 'direcciones_rutas')==='nada'){
     mostrarAviso('No tienes acceso a este apartado. Pídele a un Coordinador que te dé permiso.');
     return;
   }
-  document.getElementById('doc-titulo').textContent = 'Direcciones Rutas';
-  document.getElementById('doc-info').textContent = 'Transporte';
-  document.getElementById('doc-preview-box').classList.add('hidden');
-  document.getElementById('doc-btn-subir').classList.add('hidden');
-  document.getElementById('doc-btn-descargar').classList.remove('hidden');
-  document.getElementById('doc-btn-imprimir').classList.add('hidden');
-  document.getElementById('doc-btn-descargar').textContent = '⬇ Descargar';
-  document.getElementById('doc-btn-descargar').onclick = function(){ window.open(ENLACE_DIRECCIONES_FURGONETAS, '_blank'); };
-  var listado = document.getElementById('doc-listado-real');
-  listado.classList.remove('hidden');
-  listado.innerHTML = '<div class="doc-item"><div class="doc-ic">📍</div><div><div class="doc-name">Direcciones Furgonetas</div><div class="doc-sub">Archivo de Drive</div></div>'+
-    '<div class="doc-actions">'+
-    '<button class="doc-btn" title="Vista previa" onclick="window.open(\''+ENLACE_DIRECCIONES_FURGONETAS+'\',\'_blank\')">👁</button>'+
-    '<button class="doc-btn" title="Ver en Drive" onclick="window.open(\''+ENLACE_DIRECCIONES_FURGONETAS+'\',\'_blank\')">🔗</button>'+
-    '</div></div>';
-  document.getElementById('btn-volver-documento').onclick = function(){ navTo('transporte'); };
-  navTo('documento');
+  var idArchivo = extraerIdDeEnlaceDrive_(ENLACE_DIRECCIONES_FURGONETAS);
+  if(!idArchivo){ mostrarAviso('No se pudo abrir el archivo.', '⚠️'); return; }
+  abrirPreviewDrive(idArchivo, 'Direcciones Rutas', true);
+}
+function extraerIdDeEnlaceDrive_(enlace){
+  var m = /\/d\/([^\/]+)/.exec(enlace||'');
+  return m ? m[1] : null;
 }
 function guardarEmpleadosLocalStorage(){
   try{ localStorage.setItem('empleados_guardado', JSON.stringify(EMPLEADOS)); }catch(e){}
