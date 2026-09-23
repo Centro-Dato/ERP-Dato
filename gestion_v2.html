@@ -652,6 +652,16 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 
     <!-- ===== PERSONAL - ACTAS DE REUNIONES ===== -->
     <!-- ===== PAAP - SEGUIMIENTO - DIARIO MENSUAL ===== -->
+    <!-- ===== REGISTROS PAAP (4 secciones, listas de pendientes) ===== -->
+    <div id="view-registros-paap" class="page hidden">
+      <button class="btn-back" onclick="navTo('paap')">← Volver a PAAP</button>
+      <div class="page-header">
+        <div><div class="page-title">Registros PAAP</div><div class="page-subtitle">Marca cada alumno cuando corresponda; una vez marcado, desaparece de esta sección hasta el curso siguiente</div></div>
+      </div>
+      <div id="registros-paap-tabs" class="tabs-bar" style="margin-bottom:14px"></div>
+      <div class="card" id="registros-paap-lista"></div>
+    </div>
+
     <div id="view-diario-mensual" class="page hidden">
       <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="page-header">
@@ -4108,7 +4118,7 @@ var PP_ESTRUCTURA = {
     {tipo:'doc', id:'hoja_aceptacion', titulo:'Hoja Aceptación PAAP', icon:'📄', colorClase:'c-blue'},
     {tipo:'doc', id:'opinion_paap', titulo:'Opinión para la Realización del PAAP', icon:'📄', colorClase:'c-pink'},
     {tipo:'carpeta', id:'seguimiento', titulo:'Seguimiento', icon:'📅', colorClase:'c-orange'},
-    {tipo:'registro-real', id:'registros_paap'}
+    {tipo:'especial', id:'registros_paap', titulo:'Registros PAAP', icon:'📋', sub:'Entregas y revisiones', colorClase:'c-pistacho', accion:'abrirRegistrosPaap'}
   ]},
   escalas_test: { titulo:'Escalas y Test', items:[
     {tipo:'doc', id:'test', titulo:'Test', icon:'📄'},
@@ -4224,6 +4234,100 @@ function subirDocumentoPP(id, titulo){
 // Carpeta real de Drive donde irán las respuestas del Diario Mensual, junto con todo lo de PAAP.
 // Pendiente del enlace real que Ana dará más adelante.
 var CARPETA_PAAP_ID = '';
+// ===== Registros PAAP: 4 secciones, cada una con la lista de alumnos pendientes =====
+var REGISTROS_PAAP_HEADERS = ['Fecha','Alumno','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
+var REGISTROS_PAAP_SECCIONES = [
+  {id:'entregaSept', titulo:'Entrega PAAP Sept', columna:'Entrega PAAP Sept'},
+  {id:'revisionDic', titulo:'Revisión PAAP Dic', columna:'Revisión PAAP Dic'},
+  {id:'revisionMarzo', titulo:'Revisión PAAP Marzo', columna:'Revisión PAAP Marzo'},
+  {id:'revisionJunio', titulo:'Revisión PAAP Junio', columna:'Revisión PAAP Junio'}
+];
+var _paapSeccionActual = 'entregaSept';
+var _paapYaHechos = {};
+function abrirRegistrosPaap(){
+  mostrarAviso('Cargando…', '⏳');
+  cargarDatosRegistrosPaap(function(){
+    _paapSeccionActual = 'entregaSept';
+    renderRegistrosPaap();
+    cerrarAviso();
+    navTo('registros-paap');
+  });
+}
+function nombreArchivoRegistrosPaap(){ return 'R. PAAP '+CURSO_REGISTROS_ACTUAL(); }
+function cargarDatosRegistrosPaap(callback){
+  var carpeta = CARPETA_PAAP_ID || CARPETA_REGISTROS_DIGITALES_ID;
+  REGISTROS_PAAP_SECCIONES.forEach(function(s){ _paapYaHechos[s.id] = {}; });
+  leerFilasViaAppsScript(nombreArchivoRegistrosPaap(), 'General', function(err, headers, filas){
+    if(!err && headers && headers.length){
+      var idx = {};
+      headers.forEach(function(h,i){ idx[h]=i; });
+      filas.forEach(function(fila){
+        var alumno = fila[idx['Alumno']];
+        if(!alumno) return;
+        REGISTROS_PAAP_SECCIONES.forEach(function(s){
+          var col = idx[s.columna];
+          if(col!==undefined && fila[col] && fila[col].trim()) _paapYaHechos[s.id][alumno] = true;
+        });
+      });
+    }
+    // Si el archivo todavía no existe (curso nuevo, o recién borrado), simplemente no hay nadie
+    // hecho todavía — no es un error real, se sigue mostrando la lista completa de alumnos.
+    callback();
+  }, carpeta);
+}
+function cambiarSeccionPaap(id){
+  _paapSeccionActual = id;
+  renderRegistrosPaap();
+}
+function renderRegistrosPaap(){
+  var h = '';
+  REGISTROS_PAAP_SECCIONES.forEach(function(s){
+    h += '<button class="tab-btn '+(s.id===_paapSeccionActual?'active':'')+'" onclick="cambiarSeccionPaap(\''+s.id+'\')">'+esc(s.titulo)+'</button>';
+  });
+  document.getElementById('registros-paap-tabs').innerHTML = h;
+
+  var yaHechos = _paapYaHechos[_paapSeccionActual] || {};
+  var pendientes = ordenarAlfabetico(USUARIOS, function(u){ return u.nombre+' '+u.apellidos; })
+    .map(function(u){ return u.nombre+' '+u.apellidos; })
+    .filter(function(nombre){ return !yaHechos[nombre]; });
+
+  var h2 = '';
+  if(pendientes.length===0){
+    h2 = '<div class="empty-state">✅ Ya está hecho para todos los alumnos en esta sección este curso.</div>';
+  } else {
+    pendientes.forEach(function(nombre, i){
+      h2 += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9">';
+      h2 += '<div style="flex:1;font-size:13.5px">'+esc(nombre)+'</div>';
+      h2 += '<input type="date" class="form-input" style="max-width:160px" id="paap-fecha-'+i+'"/>';
+      h2 += '<button class="btn-primary btn-sm" onclick="marcarHechoPaap('+i+',\''+nombre.replace(/'/g,"\\'")+'\')">✓ Marcar hecho</button>';
+      h2 += '</div>';
+    });
+  }
+  document.getElementById('registros-paap-lista').innerHTML = h2;
+}
+function marcarHechoPaap(idx, nombre){
+  var fechaIso = document.getElementById('paap-fecha-'+idx).value;
+  if(!fechaIso){ mostrarAviso('Elige primero la fecha.'); return; }
+  var partes = fechaIso.split('-');
+  var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+  var seccion = REGISTROS_PAAP_SECCIONES.filter(function(s){ return s.id===_paapSeccionActual; })[0];
+  var fila = [fechaBonita, nombre, '', '', '', ''];
+  fila[REGISTROS_PAAP_HEADERS.indexOf(seccion.columna)] = 'Entregado: '+fechaBonita;
+  var carpeta = CARPETA_PAAP_ID || CARPETA_REGISTROS_DIGITALES_ID;
+  var nombreArchivo = nombreArchivoRegistrosPaap();
+  mostrarAviso('Guardando…', '⏳');
+  guardarFilaViaAppsScript(carpeta, nombreArchivo, 'General', REGISTROS_PAAP_HEADERS, fila, '#065f46', function(err){
+    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    var headersIndividual = ['Fecha','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
+    var filaIndividual = fila.slice(1);
+    guardarFilaViaAppsScript(carpeta, nombreArchivo, nombre, headersIndividual, filaIndividual, '#065f46', function(err2){
+      if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
+      _paapYaHechos[_paapSeccionActual][nombre] = true;
+      renderRegistrosPaap();
+      mostrarAviso('Guardado correctamente.', '✅');
+    });
+  });
+}
 function abrirRegistroDiarioMensual(){
   prepararVueltaRegistro('carpeta:seguimiento');
   var selAlumno = document.getElementById('diario-alumno');
@@ -5986,7 +6090,7 @@ var REGISTRO_TIPOS = [
   {id:'registros_paap',titulo:'Registros PAAP',archivoNombre:'R. PAAP',icon:'📋',color:'#ecfdf5',iconColor:'#065f46',desc:'Entregas y revisiones del PAAP',carpetaVar:'CARPETA_PAAP_ID',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Usuario(s)',type:'checkboxes',opts:'BD',req:true},
+    {k:'usuario',label:'Alumno',type:'checkboxes',opts:'BD',req:true},
     {k:'entregaSept',label:'Entrega PAAP Sept',type:'checkbox-entregado'},
     {k:'revisionDic',label:'Revisión PAAP Dic',type:'checkbox-entregado'},
     {k:'revisionMarzo',label:'Revisión PAAP Marzo',type:'checkbox-entregado'},
@@ -6255,7 +6359,7 @@ function navTo(view){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
   });
-  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','medias-transporte','ocio','evaluacion-ocio','medias-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','diario-mensual','config','editar-registros'].forEach(function(v){
+  ['inicio','usuarios-familias','usuarios','expediente','documento','drive','registros','registros-carpeta','form-registro','registro-menus','transporte','medias-transporte','ocio','evaluacion-ocio','medias-ocio','horarios','historico-horarios','paap','pp-carpeta','personal','actas-reuniones','comite-usuarios','diario-mensual','registros-paap','config','editar-registros'].forEach(function(v){
     document.getElementById('view-'+v).classList.add('hidden');
   });
   document.getElementById('view-'+view).classList.remove('hidden');
