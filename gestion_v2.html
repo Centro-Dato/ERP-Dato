@@ -2888,11 +2888,11 @@ function toggleProfesionalActa(nombre, marcado){
   if(marcado && idx===-1) _actaFilasProfesionales.push(nombre);
   else if(!marcado && idx>-1) _actaFilasProfesionales.splice(idx,1);
 }
+// Carpeta propia de Actas de Reuniones (Ana la crea a mano y me pasa el enlace).
+var CARPETA_ACTAS_REUNIONES_ID = '';
 function verCarpetaActasReuniones(){
-  obtenerOCrearSubcarpetaRegistros('Actas de Reuniones', function(err, carpetaId){
-    if(err){ mostrarAviso('No se pudo abrir la carpeta: '+(err.message||err), '⚠️'); return; }
-    window.open('https://drive.google.com/drive/folders/'+carpetaId, '_blank');
-  });
+  if(!CARPETA_ACTAS_REUNIONES_ID){ mostrarAviso('Todavía no está conectada la carpeta de Actas de Reuniones.', 'ℹ️'); return; }
+  window.open('https://drive.google.com/drive/folders/'+CARPETA_ACTAS_REUNIONES_ID, '_blank');
 }
 // Recoge lo que hay escrito ahora mismo en el formulario, sin necesidad de haberlo guardado —
 // lo usan tanto la Vista previa/Descargar/Imprimir como el propio Generar Acta.
@@ -2941,15 +2941,18 @@ function generarActaReunionPersonal(){
   var objeto = d.objeto;
   var fechaBonita = d.fechaBonita;
   var html = htmlTablaActaReunion('Acta de Reunión — '+fechaBonita, fechaBonita, profesionales, objeto);
+  if(!CARPETA_ACTAS_REUNIONES_ID){
+    mostrarAviso('Todavía no está conectada la carpeta de Drive de Actas de Reuniones — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
+    return;
+  }
   mostrarAviso('Generando el acta…', '⏳');
-  crearDocumentoEnSubcarpetaRegistros('Actas de Reuniones', 'Acta de Reunión '+fechaBonita.replace(/\//g,'-'), html, function(err){
+  crearDocumentoDesdeHtml(CARPETA_ACTAS_REUNIONES_ID, 'Acta de Reunión '+fechaBonita.replace(/\//g,'-'), html, function(err){
     if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
     mostrarAviso('Acta generada correctamente en Drive.', '✅');
   });
 }
 
 // --- R. Comité de Usuarios ---
-var CARPETA_COMITE_USUARIOS_ID = ''; // de momento reutiliza la de Registros Digitales una vez conectada
 function renderComiteUsuariosPersonas(){
   var nombresUsuarios = ordenarAlfabetico(USUARIOS.map(function(u){ return u.nombre+' '+u.apellidos; }), function(n){return n;});
   var nombresEmpleados = ordenarAlfabetico(EMPLEADOS.filter(function(e){ return !e.oculto; }).map(function(e){ return e.nombre; }), function(n){return n;});
@@ -2971,11 +2974,11 @@ function renderComiteUsuariosPersonas(){
   document.getElementById('comite-fecha').value = '';
   document.getElementById('comite-objeto').value = '';
 }
+// Carpeta propia de R. Comité y Asambleas (Ana la crea a mano y me pasa el enlace).
+var CARPETA_COMITE_USUARIOS_ID = '';
 function verCarpetaComiteUsuarios(){
-  obtenerOCrearSubcarpetaRegistros('R. Comité y Asambleas', function(err, carpetaId){
-    if(err){ mostrarAviso('No se pudo abrir la carpeta: '+(err.message||err), '⚠️'); return; }
-    window.open('https://drive.google.com/drive/folders/'+carpetaId, '_blank');
-  });
+  if(!CARPETA_COMITE_USUARIOS_ID){ mostrarAviso('Todavía no está conectada la carpeta de R. Comité y Asambleas.', 'ℹ️'); return; }
+  window.open('https://drive.google.com/drive/folders/'+CARPETA_COMITE_USUARIOS_ID, '_blank');
 }
 function generarActaComiteUsuarios(){
   var fechaIso = document.getElementById('comite-fecha').value;
@@ -2993,8 +2996,12 @@ function generarActaComiteUsuarios(){
   var usuariosSeleccionados = personas.filter(function(p){ return nombresUsuarios.indexOf(p)>-1; });
   var profesionalesSeleccionados = personas.filter(function(p){ return nombresUsuarios.indexOf(p)===-1; });
   var html = htmlTablaActaComite('Acta '+tipo+' — '+fechaBonita, fechaBonita, usuariosSeleccionados, profesionalesSeleccionados, objeto);
+  if(!CARPETA_COMITE_USUARIOS_ID){
+    mostrarAviso('Todavía no está conectada la carpeta de Drive de R. Comité y Asambleas — en cuanto Ana me pase el enlace, aquí ya se podrá generar el documento de verdad.', 'ℹ️');
+    return;
+  }
   mostrarAviso('Generando el acta…', '⏳');
-  crearDocumentoEnSubcarpetaRegistros('R. Comité y Asambleas', 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
+  crearDocumentoDesdeHtml(CARPETA_COMITE_USUARIOS_ID, 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
     if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
     mostrarAviso('Acta generada correctamente en Drive.', '✅');
   });
