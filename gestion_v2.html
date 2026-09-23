@@ -4331,6 +4331,7 @@ function marcarHechoPaap(idx, nombre, checkbox){
       _paapYaHechos[_paapSeccionActual][nombre] = true;
       var item = document.getElementById('paap-item-'+idx);
       if(item) item.style.display = 'none';
+      mostrarAviso(nombre+' guardado correctamente ('+fechaBonita+').', '✅');
     });
   });
 }
