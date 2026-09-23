@@ -2681,36 +2681,33 @@ function listarHijosDeCarpeta(folderId, callback){
 // Crea un Google Doc DE VERDAD (no un archivo cualquiera) a partir de una tabla en HTML — se
 // sube como HTML y se le pide a Drive que lo convierta directamente en Documento de Google, así
 // sale con una tabla real y editable, en vez de tener que construirla a mano con la API de Docs.
-// Busca (o crea si no existe) una subcarpeta con nombre propio dentro de la carpeta general de
-// Registros Digitales, y devuelve su id. Se usa para las Actas (Comité y Asambleas, Reuniones),
-// que ahora tienen su propia carpeta en vez de mezclarse sueltas en la carpeta general.
+// Busca (o crea) una subcarpeta con nombre propio dentro de la carpeta general de Registros
+// Digitales, vía Apps Script (con sus propios permisos, no los del navegador de cada empleado).
 var _subcarpetasRegistrosCache = {};
 function obtenerOCrearSubcarpetaRegistros(nombreCarpeta, callback){
   if(_subcarpetasRegistrosCache[nombreCarpeta]){ callback(null, _subcarpetasRegistrosCache[nombreCarpeta]); return; }
-  autorizarGoogleDrive(function(){
-    var q = "mimeType='application/vnd.google-apps.folder' and name='"+nombreCarpeta.replace(/'/g,"\\'")+"' and '"+CARPETA_REGISTROS_DIGITALES_ID+"' in parents and trashed=false";
-    fetch('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name)', {
-      headers: {'Authorization': 'Bearer '+_tokenActual}
-    }).then(function(r){ return r.json(); })
-      .then(function(data){
-        if(data.error){ callback(data.error); return; }
-        if(data.files && data.files.length>0){
-          _subcarpetasRegistrosCache[nombreCarpeta] = data.files[0].id;
-          callback(null, data.files[0].id);
-          return;
-        }
-        fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: {'Authorization': 'Bearer '+_tokenActual, 'Content-Type': 'application/json'},
-          body: JSON.stringify({name: nombreCarpeta, mimeType: 'application/vnd.google-apps.folder', parents: [CARPETA_REGISTROS_DIGITALES_ID]})
-        }).then(function(r){ return r.json(); })
-          .then(function(data2){
-            if(data2.error){ callback(data2.error); return; }
-            _subcarpetasRegistrosCache[nombreCarpeta] = data2.id;
-            callback(null, data2.id);
-          }).catch(function(err){ callback(err); });
-      }).catch(function(err){ callback(err); });
-  });
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: CARPETA_REGISTROS_DIGITALES_ID, nombreSubcarpeta: nombreCarpeta})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok){ callback((data&&data.error)||'error_desconocido'); return; }
+      _subcarpetasRegistrosCache[nombreCarpeta] = data.carpetaId;
+      callback(null, data.carpetaId);
+    }).catch(function(err){ callback(err); });
+}
+// Crea un documento (Google Doc) a partir de HTML, dentro de una subcarpeta con nombre propio de
+// Registros Digitales — vía Apps Script, para que funcione igual para todo el equipo.
+function crearDocumentoEnSubcarpetaRegistros(nombreSubcarpeta, nombreArchivo, html, callback){
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'crearDocumentoConHtml', carpetaPadreId: CARPETA_REGISTROS_DIGITALES_ID, nombreSubcarpeta: nombreSubcarpeta, nombreArchivo: nombreArchivo, html: html})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok){ callback((data&&data.error)||'error_desconocido'); return; }
+      _subcarpetasRegistrosCache[nombreSubcarpeta] = data.carpetaId;
+      callback(null, data);
+    }).catch(function(err){ callback(err); });
 }
 function crearDocumentoDesdeHtml(carpetaId, nombre, html, callback){
   autorizarGoogleDrive(function(){
@@ -2945,12 +2942,9 @@ function generarActaReunionPersonal(){
   var fechaBonita = d.fechaBonita;
   var html = htmlTablaActaReunion('Acta de Reunión — '+fechaBonita, fechaBonita, profesionales, objeto);
   mostrarAviso('Generando el acta…', '⏳');
-  obtenerOCrearSubcarpetaRegistros('Actas de Reuniones', function(errCarpeta, carpetaId){
-    if(errCarpeta){ mostrarAviso('No se pudo generar el acta: '+(errCarpeta.message||errCarpeta), '⚠️'); return; }
-    crearDocumentoDesdeHtml(carpetaId, 'Acta de Reunión '+fechaBonita.replace(/\//g,'-'), html, function(err){
-      if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
-      mostrarAviso('Acta generada correctamente en Drive.', '✅');
-    });
+  crearDocumentoEnSubcarpetaRegistros('Actas de Reuniones', 'Acta de Reunión '+fechaBonita.replace(/\//g,'-'), html, function(err){
+    if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
+    mostrarAviso('Acta generada correctamente en Drive.', '✅');
   });
 }
 
@@ -3000,12 +2994,9 @@ function generarActaComiteUsuarios(){
   var profesionalesSeleccionados = personas.filter(function(p){ return nombresUsuarios.indexOf(p)===-1; });
   var html = htmlTablaActaComite('Acta '+tipo+' — '+fechaBonita, fechaBonita, usuariosSeleccionados, profesionalesSeleccionados, objeto);
   mostrarAviso('Generando el acta…', '⏳');
-  obtenerOCrearSubcarpetaRegistros('R. Comité y Asambleas', function(errCarpeta, carpetaId){
-    if(errCarpeta){ mostrarAviso('No se pudo generar el acta: '+(errCarpeta.message||errCarpeta), '⚠️'); return; }
-    crearDocumentoDesdeHtml(carpetaId, 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
-      if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
-      mostrarAviso('Acta generada correctamente en Drive.', '✅');
-    });
+  crearDocumentoEnSubcarpetaRegistros('R. Comité y Asambleas', 'Acta '+tipo+' '+fechaBonita.replace(/\//g,'-'), html, function(err){
+    if(err){ mostrarAviso('No se pudo generar el acta: '+(err.message||err), '⚠️'); return; }
+    mostrarAviso('Acta generada correctamente en Drive.', '✅');
   });
 }
 
