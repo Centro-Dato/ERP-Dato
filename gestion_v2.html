@@ -4303,37 +4303,51 @@ function renderRegistrosPaap(){
   } else {
     h2 = '<div class="chk-group" id="registros-paap-grid">';
     pendientes.forEach(function(nombre, i){
-      h2 += '<label class="chk-item" id="paap-item-'+i+'"><input type="checkbox" onchange="marcarHechoPaap('+i+',\''+nombre.replace(/'/g,"\\'")+'\',this)"/> '+esc(nombre)+'</label>';
+      h2 += '<label class="chk-item" id="paap-item-'+i+'"><input type="checkbox" value="'+esc(nombre)+'"/> '+esc(nombre)+'</label>';
     });
     h2 += '</div>';
+    h2 += '<div class="modal-actions"><button class="btn-primary" onclick="guardarRegistroPaap()">💾 Guardar registro</button></div>';
   }
   document.getElementById('registros-paap-lista').innerHTML = h2;
 }
-function marcarHechoPaap(idx, nombre, checkbox){
-  if(checkbox) checkbox.disabled = true;
+function guardarRegistroPaap(){
+  var seleccionados = [];
+  document.querySelectorAll('#registros-paap-grid input[type=checkbox]:checked').forEach(function(chk){ seleccionados.push(chk); });
+  if(seleccionados.length===0){ mostrarAviso('Marca al menos un alumno.'); return; }
+  seleccionados.forEach(function(chk){ chk.disabled = true; });
   var hoy = new Date();
   var fechaBonita = String(hoy.getDate()).padStart(2,'0')+'/'+String(hoy.getMonth()+1).padStart(2,'0')+'/'+hoy.getFullYear();
   var seccion = REGISTROS_PAAP_SECCIONES.filter(function(s){ return s.id===_paapSeccionActual; })[0];
-  var fila = [fechaBonita, nombre, '', '', '', ''];
-  fila[REGISTROS_PAAP_HEADERS.indexOf(seccion.columna)] = 'Entregado: '+fechaBonita;
   var carpeta = CARPETA_PAAP_ID || CARPETA_REGISTROS_DIGITALES_ID;
   var nombreArchivo = nombreArchivoRegistrosPaap();
-  guardarFilaViaAppsScript(carpeta, nombreArchivo, 'General', REGISTROS_PAAP_HEADERS, fila, '#065f46', function(err){
-    if(err){
-      mostrarAviso('No se pudo guardar: '+err, '⚠️');
-      if(checkbox){ checkbox.checked = false; checkbox.disabled = false; }
-      return;
-    }
-    var headersIndividual = ['Fecha','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
-    var filaIndividual = fila.slice(1);
-    guardarFilaViaAppsScript(carpeta, nombreArchivo, nombre, headersIndividual, filaIndividual, '#065f46', function(err2){
-      if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
-      _paapYaHechos[_paapSeccionActual][nombre] = true;
-      var item = document.getElementById('paap-item-'+idx);
-      if(item) item.style.display = 'none';
-      mostrarAviso(nombre+' guardado correctamente ('+fechaBonita+').', '✅');
+  var headersIndividual = ['Fecha','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
+  var pendientes = seleccionados.length;
+  var huboError = null;
+  var nombresOk = [];
+  mostrarAviso('Guardando '+pendientes+' alumno'+(pendientes>1?'s':'')+'…', '⏳');
+  seleccionados.forEach(function(chk){
+    var nombre = chk.value;
+    var fila = [fechaBonita, nombre, '', '', '', ''];
+    fila[REGISTROS_PAAP_HEADERS.indexOf(seccion.columna)] = 'Entregado: '+fechaBonita;
+    guardarFilaViaAppsScript(carpeta, nombreArchivo, 'General', REGISTROS_PAAP_HEADERS, fila, '#065f46', function(err){
+      if(err){ huboError = err; pendientes--; if(pendientes<=0) terminarGuardadoPaap(huboError, nombresOk); return; }
+      var filaIndividual = fila.slice(1);
+      guardarFilaViaAppsScript(carpeta, nombreArchivo, nombre, headersIndividual, filaIndividual, '#065f46', function(err2){
+        if(err2){ huboError = err2; } else { nombresOk.push(nombre); _paapYaHechos[_paapSeccionActual][nombre] = true; }
+        pendientes--;
+        if(pendientes<=0) terminarGuardadoPaap(huboError, nombresOk);
+      });
     });
   });
+}
+function terminarGuardadoPaap(huboError, nombresOk){
+  nombresOk.forEach(function(nombre){
+    document.querySelectorAll('#registros-paap-grid input[type=checkbox]').forEach(function(chk){
+      if(chk.value===nombre) chk.closest('.chk-item').style.display = 'none';
+    });
+  });
+  if(huboError) mostrarAviso('Guardado con algún aviso ('+huboError+'). Los que sí se guardaron ya han desaparecido de la lista.', '⚠️');
+  else mostrarAviso(nombresOk.length+' alumno'+(nombresOk.length>1?'s':'')+' guardado'+(nombresOk.length>1?'s':'')+' correctamente.', '✅');
 }
 function abrirRegistroDiarioMensual(){
   prepararVueltaRegistro('carpeta:seguimiento');
