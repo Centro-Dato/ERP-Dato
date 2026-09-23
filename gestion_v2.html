@@ -4301,36 +4301,36 @@ function renderRegistrosPaap(){
   if(pendientes.length===0){
     h2 = '<div class="empty-state">✅ Ya está hecho para todos los alumnos en esta sección este curso.</div>';
   } else {
+    h2 = '<div class="chk-group" id="registros-paap-grid">';
     pendientes.forEach(function(nombre, i){
-      h2 += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9">';
-      h2 += '<div style="flex:1;font-size:13.5px">'+esc(nombre)+'</div>';
-      h2 += '<input type="date" class="form-input" style="max-width:160px" id="paap-fecha-'+i+'"/>';
-      h2 += '<button class="btn-primary btn-sm" onclick="marcarHechoPaap('+i+',\''+nombre.replace(/'/g,"\\'")+'\')">✓ Marcar hecho</button>';
-      h2 += '</div>';
+      h2 += '<label class="chk-item" id="paap-item-'+i+'"><input type="checkbox" onchange="marcarHechoPaap('+i+',\''+nombre.replace(/'/g,"\\'")+'\',this)"/> '+esc(nombre)+'</label>';
     });
+    h2 += '</div>';
   }
   document.getElementById('registros-paap-lista').innerHTML = h2;
 }
-function marcarHechoPaap(idx, nombre){
-  var fechaIso = document.getElementById('paap-fecha-'+idx).value;
-  if(!fechaIso){ mostrarAviso('Elige primero la fecha.'); return; }
-  var partes = fechaIso.split('-');
-  var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
+function marcarHechoPaap(idx, nombre, checkbox){
+  if(checkbox) checkbox.disabled = true;
+  var hoy = new Date();
+  var fechaBonita = String(hoy.getDate()).padStart(2,'0')+'/'+String(hoy.getMonth()+1).padStart(2,'0')+'/'+hoy.getFullYear();
   var seccion = REGISTROS_PAAP_SECCIONES.filter(function(s){ return s.id===_paapSeccionActual; })[0];
   var fila = [fechaBonita, nombre, '', '', '', ''];
   fila[REGISTROS_PAAP_HEADERS.indexOf(seccion.columna)] = 'Entregado: '+fechaBonita;
   var carpeta = CARPETA_PAAP_ID || CARPETA_REGISTROS_DIGITALES_ID;
   var nombreArchivo = nombreArchivoRegistrosPaap();
-  mostrarAviso('Guardando…', '⏳');
   guardarFilaViaAppsScript(carpeta, nombreArchivo, 'General', REGISTROS_PAAP_HEADERS, fila, '#065f46', function(err){
-    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+    if(err){
+      mostrarAviso('No se pudo guardar: '+err, '⚠️');
+      if(checkbox){ checkbox.checked = false; checkbox.disabled = false; }
+      return;
+    }
     var headersIndividual = ['Fecha','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
     var filaIndividual = fila.slice(1);
     guardarFilaViaAppsScript(carpeta, nombreArchivo, nombre, headersIndividual, filaIndividual, '#065f46', function(err2){
       if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
       _paapYaHechos[_paapSeccionActual][nombre] = true;
-      renderRegistrosPaap();
-      mostrarAviso('Guardado correctamente.', '✅');
+      var item = document.getElementById('paap-item-'+idx);
+      if(item) item.style.display = 'none';
     });
   });
 }
