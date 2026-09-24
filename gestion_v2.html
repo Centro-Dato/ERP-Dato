@@ -6002,23 +6002,21 @@ var REGISTRO_TIPOS = [
   {id:'mantenimiento',titulo:'R. Mantenimiento',icon:'🔧',color:'#fff7ed',iconColor:'#9a3412',desc:'Mantenimiento de edificios, equipos y piscina',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'seccionEdificios',label:'MANTENIMIENTO EDIFICIOS',type:'seccion'},
     {k:'edificioMantenimiento',label:'Edificio',type:'select',opts:['EDIFICIO 1','EDIFICIO 2']},
-    {k:'banos',label:'Baños',type:'text'},
-    {k:'puertas',label:'Puertas',type:'text'},
-    {k:'ventanas',label:'Ventanas',type:'text'},
-    {k:'pintura',label:'Pintura',type:'text'},
-    {k:'azulejosSuelo',label:'Azulejos y suelo',type:'text'},
-    {k:'otrosMantenimiento',label:'Otros',type:'text'},
-    {k:'seccionEquipos',label:'EQUIPOS (AIRE ACONDICIONADO)',type:'seccion'},
-    {k:'edificioEquipos',label:'Edificio',type:'select',opts:['EDIFICIO 1','EDIFICIO 2']},
-    {k:'aireAcondicionado',label:'Aire acondicionado',type:'text'},
-    {k:'seccionOtrosElementos',label:'OTROS ELEMENTOS',type:'seccion'},
-    {k:'gruaTechoSalon',label:'Grúa techo salón',type:'text'},
-    {k:'seccionPiscina',label:'PISCINA',type:'seccion'},
-    {k:'piscinaCloro',label:'Cloro',type:'text'},
-    {k:'piscinaFondo',label:'Fondo',type:'text'},
-    {k:'observaciones',label:'Observaciones',type:'textarea'}
+    {k:'banos',label:'Baños',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'puertas',label:'Puertas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'ventanas',label:'Ventanas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'armario',label:'Armario',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'persianas',label:'Persianas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'pintura',label:'Pintura',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'azulejosSuelo',label:'Azulejos y suelo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'aireAcondicionado',label:'Aire acondicionado',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'gruaTechoSalon',label:'Grúa techo salón',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'piscinaCloro',label:'Piscina: Cloro',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'piscinaFondo',label:'Piscina: Fondo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'piscinaLimpieza',label:'Piscina: Limpieza',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'otrosMantenimiento',label:'Otros',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'otrosMantenimientoTexto',label:'Aclaración de "Otros"',type:'text'}
    ]},
   {id:'limpieza',titulo:'R. Limpieza',icon:'🧹',color:'#f1f5f9',iconColor:'#475569',desc:'Limpieza de espacios e instrumental',
    fields:[
@@ -7509,7 +7507,7 @@ function renderCampoFormulario(tipoId, campo){
     h += '</select>';
     h += '<input type="text" class="form-input hidden" id="'+id+'_otro" placeholder="Especifica..." style="margin-top:8px"/>';
   } else if(campo.type==='checkbox-entregado'){
-    h += '<label class="chk-item"><input type="checkbox" id="'+id+'"/> Marcar como entregado</label>';
+    h += '<label class="chk-item"><input type="checkbox" id="'+id+'"/> '+(campo.textoCheckbox||'Marcar como entregado')+'</label>';
   } else if(campo.type==='aspectos-actividad'){
     h += '<div id="wrap-aspectos-actividad"><div class="empty-state" style="padding:16px">Elige primero una actividad/área arriba</div></div>';
   } else if(campo.type==='matriz-radio'){
