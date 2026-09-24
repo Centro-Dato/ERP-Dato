@@ -656,7 +656,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="view-registros-paap" class="page hidden">
       <button class="btn-back" onclick="navTo('paap')">← Volver a PAAP</button>
       <div class="page-header">
-        <div><div class="page-title">Registros PAAP</div><div class="page-subtitle">Marca cada alumno cuando corresponda; una vez marcado, desaparece de esta sección hasta el curso siguiente</div></div>
+        <div><div class="page-title">Registros PAAP</div><div class="page-subtitle">Marca cada usuario cuando corresponda; una vez marcado, desaparece de esta sección hasta el curso siguiente</div></div>
         <button class="btn-secondary" onclick="verCarpetaRegistrosPaap()">📁 Ver carpeta en Drive</button>
       </div>
       <div id="registros-paap-tabs" class="tabs-bar" style="margin-bottom:14px"></div>
@@ -4212,7 +4212,7 @@ function abrirDocumentoPP(id, titulo, volverA){
 // Pendiente del enlace real que Ana dará más adelante.
 var CARPETA_PAAP_ID = '';
 // ===== Registros PAAP: 4 secciones, cada una con la lista de alumnos pendientes =====
-var REGISTROS_PAAP_HEADERS = ['Fecha','Alumno','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
+var REGISTROS_PAAP_HEADERS = ['Fecha','Usuario','Entrega PAAP Sept','Revisión PAAP Dic','Revisión PAAP Marzo','Revisión PAAP Junio'];
 var REGISTROS_PAAP_SECCIONES = [
   {id:'entregaSept', titulo:'Entrega PAAP Sept', columna:'Entrega PAAP Sept'},
   {id:'revisionDic', titulo:'Revisión PAAP Dic', columna:'Revisión PAAP Dic'},
@@ -4244,7 +4244,7 @@ function cargarDatosRegistrosPaap(callback){
       var idx = {};
       headers.forEach(function(h,i){ idx[h]=i; });
       filas.forEach(function(fila){
-        var alumno = fila[idx['Alumno']];
+        var alumno = fila[idx['Usuario']];
         if(!alumno) return;
         REGISTROS_PAAP_SECCIONES.forEach(function(s){
           var col = idx[s.columna];
@@ -6095,7 +6095,7 @@ var REGISTRO_TIPOS = [
   {id:'registros_paap',titulo:'Registros PAAP',archivoNombre:'R. PAAP',icon:'📋',color:'#ecfdf5',iconColor:'#065f46',desc:'Entregas y revisiones del PAAP',carpetaVar:'CARPETA_PAAP_ID',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
-    {k:'usuario',label:'Alumno',type:'checkboxes',opts:'BD',req:true},
+    {k:'usuario',label:'Usuario',type:'checkboxes',opts:'BD',req:true},
     {k:'entregaSept',label:'Entrega PAAP Sept',type:'checkbox-entregado'},
     {k:'revisionDic',label:'Revisión PAAP Dic',type:'checkbox-entregado'},
     {k:'revisionMarzo',label:'Revisión PAAP Marzo',type:'checkbox-entregado'},
