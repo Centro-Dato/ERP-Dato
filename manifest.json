@@ -1,0 +1,20 @@
+{
+  "name": "Centro Dato",
+  "short_name": "Centro Dato",
+  "start_url": "https://centro-dato.github.io/ERP-Dato/gestion_v2.html",
+  "display": "standalone",
+  "background_color": "#0b2149",
+  "theme_color": "#0b2149",
+  "icons": [
+    {
+      "src": "https://centro-dato.github.io/ERP-Dato/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://centro-dato.github.io/ERP-Dato/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
