@@ -2197,13 +2197,22 @@ function recogerValoresFormulario(tipo){
       valorPorCampo[campo.k] = valorSelOtro;
     } else if(campo.type==='checkbox-entregado'){
       var elChkEntregado = document.getElementById(id);
-      var elFechaForm = document.getElementById('f_'+tipo.id+'_fecha');
-      var fechaTxtEntregado = '';
-      if(elFechaForm && elFechaForm.value){
-        var partesFechaEnt = elFechaForm.value.split('-');
-        fechaTxtEntregado = partesFechaEnt[2]+'/'+partesFechaEnt[1]+'/'+partesFechaEnt[0];
+      var textoGuardadoFijo = campo.textoGuardado || null;
+      var valorGuardar = '';
+      if(elChkEntregado && elChkEntregado.checked){
+        if(textoGuardadoFijo){
+          valorGuardar = textoGuardadoFijo;
+        } else {
+          var elFechaForm = document.getElementById('f_'+tipo.id+'_fecha');
+          var fechaTxtEntregado = '';
+          if(elFechaForm && elFechaForm.value){
+            var partesFechaEnt = elFechaForm.value.split('-');
+            fechaTxtEntregado = partesFechaEnt[2]+'/'+partesFechaEnt[1]+'/'+partesFechaEnt[0];
+          }
+          valorGuardar = 'Entregado: '+fechaTxtEntregado;
+        }
       }
-      valorPorCampo[campo.k] = (elChkEntregado && elChkEntregado.checked) ? ('Entregado: '+fechaTxtEntregado) : '';
+      valorPorCampo[campo.k] = valorGuardar;
     } else {
       var el = document.getElementById(id);
       var valor = el ? el.value : '';
@@ -6003,20 +6012,20 @@ var REGISTRO_TIPOS = [
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'edificioMantenimiento',label:'Edificio',type:'select',opts:['EDIFICIO 1','EDIFICIO 2']},
-    {k:'banos',label:'Baños',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'puertas',label:'Puertas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'ventanas',label:'Ventanas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'armario',label:'Armario',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'persianas',label:'Persianas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'pintura',label:'Pintura',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'azulejosSuelo',label:'Azulejos y suelo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'aireAcondicionado',label:'Aire acondicionado',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'gruaTechoSalon',label:'Grúa techo salón',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'banos',label:'Baños',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'puertas',label:'Puertas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'ventanas',label:'Ventanas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'armario',label:'Armario',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'persianas',label:'Persianas',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'pintura',label:'Pintura',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'azulejosSuelo',label:'Azulejos y suelo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'aireAcondicionado',label:'Aire acondicionado',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'gruaTechoSalon',label:'Grúa techo salón',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
     {k:'otrosMantenimientoTexto',label:'Otros',type:'text'},
     {k:'seccionPiscina',label:'PISCINA',type:'seccion'},
-    {k:'piscinaCloro',label:'Cloro',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'piscinaFondo',label:'Fondo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'piscinaLimpieza',label:'Limpieza',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'}
+    {k:'piscinaCloro',label:'Cloro',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'piscinaFondo',label:'Fondo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'},
+    {k:'piscinaLimpieza',label:'Limpieza',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado',textoGuardado:'Realizado'}
    ]},
   {id:'limpieza',titulo:'R. Limpieza',icon:'🧹',color:'#f1f5f9',iconColor:'#475569',desc:'Limpieza de espacios e instrumental',
    fields:[
