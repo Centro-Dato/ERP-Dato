@@ -6015,8 +6015,7 @@ var REGISTRO_TIPOS = [
     {k:'piscinaCloro',label:'Piscina: Cloro',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
     {k:'piscinaFondo',label:'Piscina: Fondo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
     {k:'piscinaLimpieza',label:'Piscina: Limpieza',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'otrosMantenimiento',label:'Otros',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'otrosMantenimientoTexto',label:'Aclaración de "Otros"',type:'text'}
+    {k:'otrosMantenimientoTexto',label:'Otros',type:'text'}
    ]},
   {id:'limpieza',titulo:'R. Limpieza',icon:'🧹',color:'#f1f5f9',iconColor:'#475569',desc:'Limpieza de espacios e instrumental',
    fields:[
@@ -7491,6 +7490,12 @@ function renderCampoFormulario(tipoId, campo){
   if(campo.type==='seccion'){
     return '<div class="span2 form-seccion-titulo">'+campo.label+'</div>';
   }
+  if(campo.type==='checkbox-entregado'){
+    return '<div class="span2" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9">'+
+      '<span style="font-size:13.5px;font-weight:600;color:#374151">'+campo.label+'</span>'+
+      '<label class="chk-item" style="margin:0;white-space:nowrap"><input type="checkbox" id="'+id+'"/> '+(campo.textoCheckbox||'Marcar como entregado')+'</label>'+
+      '</div>';
+  }
   var req = campo.req ? ' <span class="req">*</span>' : '';
   var wrapClass = (campo.type==='textarea' || campo.type==='checkboxes' || campo.type==='lista-numero' || campo.type==='aspectos-actividad' || campo.type==='matriz-radio' || campo.type==='matriz-checkbox' || campo.type==='select-otro') ? 'span2' : '';
   var h = '<div class="'+wrapClass+'"><label class="form-lbl" for="'+id+'">'+campo.label+req+'</label>';
@@ -7506,8 +7511,6 @@ function renderCampoFormulario(tipoId, campo){
     opcionesDeCampo(campo, tipoId).forEach(function(op){ h += '<option value="'+op+'">'+op+'</option>'; });
     h += '</select>';
     h += '<input type="text" class="form-input hidden" id="'+id+'_otro" placeholder="Especifica..." style="margin-top:8px"/>';
-  } else if(campo.type==='checkbox-entregado'){
-    h += '<label class="chk-item"><input type="checkbox" id="'+id+'"/> '+(campo.textoCheckbox||'Marcar como entregado')+'</label>';
   } else if(campo.type==='aspectos-actividad'){
     h += '<div id="wrap-aspectos-actividad"><div class="empty-state" style="padding:16px">Elige primero una actividad/área arriba</div></div>';
   } else if(campo.type==='matriz-radio'){
