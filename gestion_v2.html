@@ -234,7 +234,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 .home-btn.c-indigo{background:#5b6bd6}
 .home-btn.disabled{opacity:.55;cursor:default;pointer-events:none}
 .home-btn.disabled:hover{transform:none;box-shadow:none}
-@media(max-width:640px){.home-grid{grid-template-columns:1fr}.chk-group{flex-direction:column;align-items:stretch}.chk-item{width:100%;box-sizing:border-box}}
+@media(max-width:640px){.home-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.chk-group{flex-direction:column;align-items:stretch}.chk-item{width:100%;box-sizing:border-box}}
 /* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
 .stat-card{background:#fff;border-radius:16px;border:2px solid #14141a;padding:22px}
@@ -263,7 +263,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   .page-header{gap:10px}
   .home-ic{width:46px;height:46px;font-size:34px}
   .home-txt-title{font-size:18px}
-  .grid2,.form-grid{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
   .stats-row{grid-template-columns:1fr 1fr}
   .filters-row{flex-direction:column;align-items:stretch}
   .search-box{width:100%}
@@ -6012,9 +6012,10 @@ var REGISTRO_TIPOS = [
     {k:'azulejosSuelo',label:'Azulejos y suelo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
     {k:'aireAcondicionado',label:'Aire acondicionado',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
     {k:'gruaTechoSalon',label:'Grúa techo salón',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'piscinaCloro',label:'Piscina: Cloro',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'piscinaFondo',label:'Piscina: Fondo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
-    {k:'piscinaLimpieza',label:'Piscina: Limpieza',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'seccionPiscina',label:'PISCINA',type:'seccion'},
+    {k:'piscinaCloro',label:'Cloro',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'piscinaFondo',label:'Fondo',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
+    {k:'piscinaLimpieza',label:'Limpieza',type:'checkbox-entregado',textoCheckbox:'Marcar como realizado'},
     {k:'otrosMantenimientoTexto',label:'Otros',type:'text'}
    ]},
   {id:'limpieza',titulo:'R. Limpieza',icon:'🧹',color:'#f1f5f9',iconColor:'#475569',desc:'Limpieza de espacios e instrumental',
@@ -7491,7 +7492,7 @@ function renderCampoFormulario(tipoId, campo){
     return '<div class="span2 form-seccion-titulo">'+campo.label+'</div>';
   }
   if(campo.type==='checkbox-entregado'){
-    return '<div class="span2" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9">'+
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9">'+
       '<span style="font-size:13.5px;font-weight:600;color:#374151">'+campo.label+'</span>'+
       '<label class="chk-item" style="margin:0;white-space:nowrap"><input type="checkbox" id="'+id+'"/> '+(campo.textoCheckbox||'Marcar como entregado')+'</label>'+
       '</div>';
