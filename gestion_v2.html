@@ -672,7 +672,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="view-diario-mensual" class="page hidden">
       <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="page-header">
-        <div><div class="page-title">Diario Mensual</div><div class="page-subtitle">Elige el alumno; cada profesional rellena su propia observación</div></div>
+        <div><div class="page-title">Diario Mensual</div><div class="page-subtitle">Elige el alumno, tu área y escribe un comentario</div></div>
       </div>
       <div class="card">
         <div class="form-grid">
@@ -684,9 +684,25 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
             <label class="form-lbl">Alumno</label>
             <select class="form-input" id="diario-alumno"></select>
           </div>
+          <div>
+            <label class="form-lbl">Área</label>
+            <select class="form-input" id="diario-area">
+              <option value="">— Selecciona —</option>
+              <option value="ATENCIÓN PSICOLÓGICA">ATENCIÓN PSICOLÓGICA</option>
+              <option value="FISIOTERAPIA">FISIOTERAPIA</option>
+              <option value="LOGOPEDIA">LOGOPEDIA</option>
+              <option value="NEUROPSICOLOGÍA Y ESTIMULACIÓN COGNITIVA">NEUROPSICOLOGÍA Y ESTIMULACIÓN COGNITIVA</option>
+              <option value="OCIO">OCIO</option>
+              <option value="TECNOLOGÍA">TECNOLOGÍA</option>
+              <option value="TERAPIA OCUPACIONAL">TERAPIA OCUPACIONAL</option>
+              <option value="VIDA COMUNITARIA">VIDA COMUNITARIA</option>
+            </select>
+          </div>
         </div>
-        <div class="fl-lbl" style="margin:16px 0 8px">Observación de cada profesional</div>
-        <div id="diario-profesionales-lista"></div>
+        <div style="margin-top:16px">
+          <label class="form-lbl">Comentario</label>
+          <textarea class="form-input" id="diario-comentario" rows="4"></textarea>
+        </div>
         <div class="modal-actions">
           <button class="btn-primary" onclick="guardarDiarioMensual()">✓ Guardar</button>
         </div>
@@ -4349,19 +4365,9 @@ function abrirRegistroDiarioMensual(){
     return '<option value="'+esc(nombre)+'">'+esc(abreviarNombreCompleto(nombre))+'</option>';
   }).join('');
   document.getElementById('diario-fecha').value = '';
-  renderProfesionalesDiarioMensual();
+  document.getElementById('diario-area').value = '';
+  document.getElementById('diario-comentario').value = '';
   navTo('diario-mensual');
-}
-function renderProfesionalesDiarioMensual(){
-  var profesionales = ordenarAlfabetico(EMPLEADOS.filter(function(e){ return !e.oculto; }), function(e){return e.nombre;});
-  var h = '';
-  profesionales.forEach(function(p, i){
-    h += '<div style="margin-bottom:12px">';
-    h += '<label class="form-lbl" for="diario-obs-'+i+'">'+esc(p.nombre)+'</label>';
-    h += '<textarea class="form-input" id="diario-obs-'+i+'" data-profesional="'+esc(p.nombre)+'" rows="2" placeholder="Observación de este mes..."></textarea>';
-    h += '</div>';
-  });
-  document.getElementById('diario-profesionales-lista').innerHTML = h;
 }
 function guardarDiarioMensual(){
   var fechaIso = document.getElementById('diario-fecha').value;
@@ -4370,24 +4376,21 @@ function guardarDiarioMensual(){
   var fechaBonita = partes[2]+'/'+partes[1]+'/'+partes[0];
   var alumno = document.getElementById('diario-alumno').value;
   if(!alumno){ mostrarAviso('Elige un alumno.'); return; }
-  var observaciones = [];
-  document.querySelectorAll('#diario-profesionales-lista textarea').forEach(function(txt){
-    var val = txt.value.trim();
-    if(val) observaciones.push(txt.getAttribute('data-profesional')+': '+val);
-  });
-  if(observaciones.length===0){ mostrarAviso('Rellena la observación de al menos un profesional.'); return; }
+  var area = document.getElementById('diario-area').value;
+  if(!area){ mostrarAviso('Elige tu área.'); return; }
+  var comentario = document.getElementById('diario-comentario').value.trim();
+  if(!comentario){ mostrarAviso('Escribe un comentario.'); return; }
   if(!CARPETA_PAAP_ID){
     mostrarAviso('Todavía no está conectada la carpeta de Drive de PAAP — en cuanto Ana me pase el enlace, aquí ya se podrá guardar de verdad.', 'ℹ️');
     return;
   }
   var nombreArchivo = 'R. Diario Mensual '+CURSO_REGISTROS_ACTUAL();
-  var headersGeneral = ['Fecha','Alumno','Observaciones'];
-  var headersIndividual = ['Fecha','Observaciones'];
-  var textoObservaciones = observaciones.join('\n');
+  var headersGeneral = ['Fecha','Usuario','Área','Comentario'];
+  var headersIndividual = ['Fecha','Área','Comentario'];
   mostrarAviso('Guardando el diario…', '⏳');
-  guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, 'General', headersGeneral, [fechaBonita, abreviarNombreCompleto(alumno), textoObservaciones], '#f2994a', function(err){
+  guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(err){
     if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
-    guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, alumno, headersIndividual, [fechaBonita, textoObservaciones], '#f2994a', function(err2){
+    guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err2){
       if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
       mostrarAviso('Diario Mensual guardado correctamente.', '✅');
     });
