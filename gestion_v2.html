@@ -4358,7 +4358,7 @@ function terminarGuardadoPaap(huboError, nombresOk){
   else mostrarAviso(nombresOk.length+' alumno'+(nombresOk.length>1?'s':'')+' guardado'+(nombresOk.length>1?'s':'')+' correctamente.', '✅');
 }
 function abrirRegistroDiarioMensual(){
-  prepararVueltaRegistro('carpeta:seguimiento');
+  prepararVueltaRegistro('pp:seguimiento');
   var selAlumno = document.getElementById('diario-alumno');
   selAlumno.innerHTML = ordenarAlfabetico(USUARIOS, function(u){return u.nombre+' '+u.apellidos;}).map(function(u){
     var nombre = u.nombre+' '+u.apellidos;
@@ -6994,6 +6994,17 @@ function cargarDocsRealesTab(tabKey, folderIdUsuario, contenedorId){
 // Lista el contenido de una carpeta real dentro de un hueco fijo del Expediente. Al hacer clic
 // en una subcarpeta, navega dentro de ella EN LA MISMA TARJETA (sin salir a Drive); "⬅ Volver"
 // regresa al nivel anterior.
+// Devuelve un emoji según la extensión del archivo, para que se vea claro qué tipo de documento
+// es en los listados de carpetas reales de Drive.
+function iconoPorExtension(nombreArchivo){
+  var ext = (nombreArchivo||'').split('.').pop().toLowerCase();
+  var mapa = {
+    pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊', csv:'📊',
+    ppt:'📽️', pptx:'📽️', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', gif:'🖼️', webp:'🖼️',
+    mp4:'🎬', mov:'🎬', avi:'🎬', mp3:'🎵', wav:'🎵', zip:'🗜️', rar:'🗜️', txt:'📄'
+  };
+  return mapa[ext] || '📄';
+}
 function renderContenidoCarpetaExpediente(folderId, folderNombre, contenedorId, folderAnteriorId){
   var cont = document.getElementById(contenedorId);
   if(cont) cont.innerHTML = '<div class="empty-state">⏳ Cargando…</div>';
