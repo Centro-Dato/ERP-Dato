@@ -2921,13 +2921,38 @@ function abrirActasReuniones(){
 // Conductores y acompañantes de transporte: no tienen cuenta ni entran al programa, pero pueden
 // aparecer como asistentes en un acta de reunión.
 var CONDUCTORES_ACOMPANANTES = ['Angel González','Eduardo García','Jesús Acuña','Silvia','Belén'];
+// Listado completo de personal para las Actas de Reuniones (nombre, apellidos y categoría
+// profesional), tal y como lo pasó Ana — sustituye a la mezcla de Empleados+Conductores que
+// había antes, solo para esta pantalla concreta.
+var PERSONAL_ACTAS_REUNIONES = [
+  {nombre:'M.Teresa Millán Pacheco', categoria:'Psicólogo'},
+  {nombre:'Javier Sanz Pacho', categoria:'Psicólogo'},
+  {nombre:'Patricia Mateo Escribano', categoria:'Logopeda'},
+  {nombre:'Marcial Martín Torres', categoria:'Fisioterapeuta'},
+  {nombre:'Erika García Osorio', categoria:'Trabajador Social'},
+  {nombre:'Ana de Frutos Martínez', categoria:'Terapeuta ocupacional'},
+  {nombre:'Mª José Bermejo Mateo', categoria:'Profesora de Taller'},
+  {nombre:'Ana Carrizosa Ruiz', categoria:'Transporte'},
+  {nombre:'Leandro Sanz Juez', categoria:'Profesor de taller'},
+  {nombre:'Pablo Sanz Pacho', categoria:'Profesor de taller'},
+  {nombre:'Carlos Sanz Pacho', categoria:'Atención Dependencia'},
+  {nombre:'Sandra Martín Alberquilla', categoria:'Aux. Enfermería'},
+  {nombre:'Gustavo Delgado Rodríguez', categoria:'Transporte'},
+  {nombre:'Belén Abreira Martínez', categoria:'Transporte'},
+  {nombre:'Jesús Acuña Colmenares', categoria:'Transporte'},
+  {nombre:'Juan Carlos Agüera Merlo', categoria:'Transporte'},
+  {nombre:'Ángel González Delgado', categoria:'Transporte'},
+  {nombre:'Eduardo García Maza', categoria:'Transporte'},
+  {nombre:'Silvia Mateo Escribano', categoria:'Transporte'},
+  {nombre:'José del Rosario Ávalos González', categoria:'Mantenimiento'},
+  {nombre:'Pedro García Hernández-Lasso', categoria:'Jardinería'}
+];
 function renderFilasActaProfesionales(){
   var cont = document.getElementById('acta-profesionales-lista');
-  var todosNombres = EMPLEADOS.filter(function(e){ return !e.oculto; }).map(function(e){ return e.nombre; }).concat(CONDUCTORES_ACOMPANANTES);
   var h = '<div style="background:#fdf4ff;border:1.5px solid #e9d5ff;border-radius:14px;padding:14px 16px;margin-bottom:10px">';
-  ordenarAlfabetico(todosNombres, function(n){return n;}).forEach(function(nombre){
-    var marcado = _actaFilasProfesionales.indexOf(nombre)>-1;
-    h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleProfesionalActa(\''+nombre.replace(/'/g,"\\'")+'\',this.checked)"/> '+esc(nombre)+'</label>';
+  ordenarAlfabetico(PERSONAL_ACTAS_REUNIONES, function(p){return p.nombre;}).forEach(function(p){
+    var marcado = _actaFilasProfesionales.indexOf(p.nombre)>-1;
+    h += '<label class="chk-item"><input type="checkbox" '+(marcado?'checked':'')+' onchange="toggleProfesionalActa(\''+p.nombre.replace(/'/g,"\\'")+'\',this.checked)"/> '+esc(p.nombre)+' <span style="color:#94a3b8;font-size:12px">('+esc(p.categoria)+')</span></label>';
   });
   h += '</div>';
   h += '<label class="form-lbl">Añadir</label>';
