@@ -6850,6 +6850,41 @@ function darDeBajaUsuarioActual(){
 
 /* ===================== EXPEDIENTE - DETALLE ===================== */
 var _expActual = null, _tabActual = 'identificacion';
+// Carpetas individuales reales de cada usuario en Drive (dentro de la carpeta general de
+// Usuarios), para poder ver ahí sus registros. Emparejadas por nombre con las carpetas reales
+// que Ana compartió — algunos usuarios tenían el apellido distinto en el sistema respecto a la
+// carpeta real; se han enlazado igualmente por ser la misma persona, pendiente de que Ana lo
+// confirme y corrija el nombre en el sistema si hace falta.
+var CARPETAS_USUARIOS = {
+  1: '1kxXjFTRlJhoCRDqXpcAyjkGUafkAoPzJ',  // Alan Hermo Placeres
+  2: '1aWVl7amWe03XdOB0EpQSDQ8m9OFt6BYC',  // Alejandra Sagüés García
+  3: '14Ac3Aq_kbAFF6EIAi4AEEx7-e_nRLoj0',  // Alejandro González Arias
+  4: '1YSyMK2ajEdLvvG1LUH2LVEdB3sLncQ2b',  // Alfonso Luis Julián Vicaria
+  5: '1rDsI1pafiKtaWJ7Hix95ZTuCfH6MJOuQ',  // Beatriz González (carpeta real: "González Martínez")
+  6: '1TBAYTKz7qA7MufVvVkVWQlFF8FjYgm6B',  // Carlos Izaguirre Nazar
+  7: '1bFiAUNW_WPx6FHSQXTpNJ8hfrEPZ9z1g',  // Carlos Velasco Martín
+  8: '1zzugeM3guUyNAnGdWljb3A5TXAMm-R5G',  // Carmen Eduarte Lendínez
+  9: '1G4leCz_yrzovsdY5Afs7Dfdx4cBjiKG6',  // Cristina Pulido Rincón
+  10: '1YPE20sVG13PJ3RZ0tVQyD5wgoelO9m_h', // David Bonilla Granados
+  11: '1DKak_ofTE4qIB6lPy6X2MzALNbNG8avk', // Eduardo Cebrecos Rol
+  12: '1TVl9HPPW1zcEwo8LC57JAvOb69K096sM', // Edurne Chunchurreta Merino
+  13: '19fi3xsEKwC_hnpmSk1I8f5Ai5fHe0HOa', // Isabel Contreras de Blas
+  14: '1HZGHpuyevBK6_3Ul442m0LLXWA_3ZbF6', // Javier Ibáñez González
+  15: '1ADwP1X8eSTiUlH9qXNJ8kOMmKPs2VjTj', // José Antonio Brihuega Salas
+  16: '1Qci3hlHxL6qptHnr9GarLl45qV0nOICX', // José María Rodríguez Lucas
+  17: '1uMn6legX1ER986favR109_GJql-dG-vq', // Juan José Leganés Álcora (carpeta real: "Leganés Algora")
+  18: '1X5Rqpe8KAVJ1QSD1TvgZU9toei1ijvBt', // María Tisca Porras Recio (carpeta real: "Porras Piñero")
+  19: '1bkHzy5f5BUGCS37sqsYCH4hqbkXqC-wy', // Mercedes García Martínez
+  20: '1dj_rIBcruOQdoizq39KPaXE0VP-xRDaW', // Óscar Martín Pérez
+  21: '1Wab1IbxmHSr7U0wMITu3fcamkbCAClPN', // Patricia de Barrio López
+  22: '1kcpR1S71qZtdUwoOWsSFdrEWJbcLQqtk', // Raúl Álvarez Llamas
+  23: '1zouD7FGYGW_Hy3do9aRluj90IKON1S_K'  // Santiago Patón Pascual
+};
+function verCarpetaRegistrosUsuario(){
+  if(!_expActual) return;
+  var carpetaId = CARPETAS_USUARIOS[_expActual.id];
+  abrirCarpetaArchivosPopup(carpetaId, 'Carpeta de '+_expActual.nombre+' '+_expActual.apellidos);
+}
 function abrirExpediente(id){
   if(PERMISOS_ACTUAL.usuarios==='nada'){
     mostrarAviso('No tienes acceso a los Expedientes. Pídele a un Coordinador que te dé permiso.');
