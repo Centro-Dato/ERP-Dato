@@ -671,7 +671,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="view-registros-paap" class="page hidden">
       <button class="btn-back" onclick="navTo('paap')">← Volver a PAAP</button>
       <div class="page-header">
-        <div><div class="page-title">Registros PAAP</div><div class="page-subtitle">Marca cada usuario cuando corresponda; una vez marcado, desaparece de esta sección hasta el curso siguiente</div></div>
+        <div><div class="page-title">Fecha Entrega y Recepción</div><div class="page-subtitle">Marca cada usuario cuando corresponda; una vez marcado, desaparece de esta sección hasta el curso siguiente</div></div>
         <button class="btn-secondary" onclick="verCarpetaRegistrosPaap()">📁 Ver carpeta en Drive</button>
       </div>
       <div id="registros-paap-tabs" class="tabs-bar" style="margin-bottom:14px"></div>
@@ -681,7 +681,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
     <div id="view-diario-mensual" class="page hidden">
       <button class="btn-back" onclick="volverDeFormRegistro()">← Volver</button>
       <div class="page-header">
-        <div><div class="page-title">Diario Mensual</div><div class="page-subtitle">Elige el alumno, tu área y escribe un comentario</div></div>
+        <div><div class="page-title">Mensual</div><div class="page-subtitle">Elige el alumno, tu área y escribe un comentario</div></div>
       </div>
       <div class="card">
         <div class="form-grid">
@@ -4148,7 +4148,7 @@ var PP_ESTRUCTURA = {
     {tipo:'doc', id:'hoja_aceptacion', titulo:'Hoja Aceptación PAAP', icon:'📄', colorClase:'c-blue'},
     {tipo:'doc', id:'opinion_paap', titulo:'Opinión para la Realización del PAAP', icon:'📄', colorClase:'c-pink'},
     {tipo:'carpeta', id:'seguimiento', titulo:'Seguimiento', icon:'📅', colorClase:'c-orange'},
-    {tipo:'especial', id:'registros_paap', titulo:'Registros PAAP', icon:'📋', sub:'Entregas y revisiones', colorClase:'c-pistacho', accion:'abrirRegistrosPaap'}
+    {tipo:'especial', id:'registros_paap', titulo:'Fecha Entrega y Recepción', icon:'📋', sub:'Entregas y revisiones', colorClase:'c-pistacho', accion:'abrirRegistrosPaap'}
   ]},
   escalas_test: { titulo:'Escalas y Test', items:[
     {tipo:'doc', id:'test', titulo:'Test', icon:'📄'},
@@ -4156,9 +4156,9 @@ var PP_ESTRUCTURA = {
     {tipo:'doc', id:'programa_areas', titulo:'Programa por Áreas', icon:'📄'}
   ]},
   seguimiento: { titulo:'Seguimiento', items:[
-    {tipo:'especial', id:'diario_mensual', titulo:'Diario Mensual', icon:'📔', accion:'abrirRegistroDiarioMensual'},
-    {tipo:'doc', id:'valoracion_trimestral', titulo:'Valoración Trimestral', icon:'📄'},
-    {tipo:'doc', id:'valoracion_semestral', titulo:'Valoración Semestral', icon:'📄'}
+    {tipo:'especial', id:'diario_mensual', titulo:'Mensual', icon:'📔', accion:'abrirRegistroDiarioMensual'},
+    {tipo:'doc', id:'valoracion_trimestral', titulo:'Marzo', icon:'📄'},
+    {tipo:'doc', id:'valoracion_semestral', titulo:'Julio', icon:'📄'}
   ]}
 };
 // Registros PAAP ya es un registro real con sus propios campos — se abre igual que cualquier
@@ -4414,7 +4414,7 @@ function guardarDiarioMensual(){
   if(!area){ mostrarAviso('Elige tu área.'); return; }
   var comentario = document.getElementById('diario-comentario').value.trim();
   if(!comentario){ mostrarAviso('Escribe un comentario.'); return; }
-  var nombreArchivo = 'R. Diario Mensual '+CURSO_REGISTROS_ACTUAL();
+  var nombreArchivo = 'R. Mensual '+CURSO_REGISTROS_ACTUAL();
   var headersGeneral = ['Fecha','Usuario','Área','Comentario'];
   var headersIndividual = ['Fecha','Área','Comentario'];
   mostrarAviso('Guardando el diario…', '⏳');
@@ -4426,18 +4426,18 @@ function guardarDiarioMensual(){
       // conectada su carpeta personal).
       var usuarioObj = USUARIOS.filter(function(u){ return (u.nombre+' '+u.apellidos)===alumno; })[0];
       var carpetaIndividual = usuarioObj ? CARPETAS_USUARIOS[usuarioObj.id] : null;
-      if(!carpetaIndividual){ mostrarAviso('Diario Mensual guardado correctamente.', '✅'); return; }
+      if(!carpetaIndividual){ mostrarAviso('Mensual guardado correctamente.', '✅'); return; }
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaIndividual, nombreSubcarpeta: 'Registros'})
       }).then(function(r){ return r.json(); })
         .then(function(data){
-          if(!data || !data.ok){ mostrarAviso('Diario Mensual guardado, pero no se pudo copiar en su carpeta individual: '+((data&&data.error)||'error'), '⚠️'); return; }
-          guardarFilaViaAppsScript(data.carpetaId, 'Registros '+CURSO_REGISTROS_ACTUAL(), 'Diario Mensual', headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err3){
-            mostrarAviso(err3 ? ('Diario Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err3) : 'Diario Mensual guardado correctamente.', err3 ? '⚠️' : '✅');
+          if(!data || !data.ok){ mostrarAviso('Mensual guardado, pero no se pudo copiar en su carpeta individual: '+((data&&data.error)||'error'), '⚠️'); return; }
+          guardarFilaViaAppsScript(data.carpetaId, 'Registros '+CURSO_REGISTROS_ACTUAL(), 'Mensual', headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err3){
+            mostrarAviso(err3 ? ('Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err3) : 'Mensual guardado correctamente.', err3 ? '⚠️' : '✅');
           });
         })
-        .catch(function(err4){ mostrarAviso('Diario Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err4, '⚠️'); });
+        .catch(function(err4){ mostrarAviso('Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err4, '⚠️'); });
     });
   });
 }
@@ -6146,7 +6146,7 @@ var REGISTRO_TIPOS = [
    ]},
   {id:'comite_usuarios',titulo:'R. Comité y Asambleas',icon:'🗳️',color:'#ecfeff',iconColor:'#155e75',desc:'Reuniones de comité y asambleas de usuarios',
    fields:[]},
-  {id:'registros_paap',titulo:'Registros PAAP',archivoNombre:'R. PAAP',icon:'📋',color:'#ecfdf5',iconColor:'#065f46',desc:'Entregas y revisiones del PAAP',carpetaVar:'CARPETA_PAAP_ID',
+  {id:'registros_paap',titulo:'Fecha Entrega y Recepción',archivoNombre:'R. PAAP',icon:'📋',color:'#ecfdf5',iconColor:'#065f46',desc:'Entregas y revisiones del PAAP',carpetaVar:'CARPETA_PAAP_ID',
    fields:[
     {k:'fecha',label:'Fecha',type:'date',req:true},
     {k:'usuario',label:'Usuario',type:'checkboxes',opts:'BD',req:true},
