@@ -497,7 +497,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
       <div class="table-card">
         <table class="tabla-col1-fija">
-          <thead><tr><th>Nombre y Apellidos</th><th>Datos Persona Contacto</th><th>Expedientes</th><th>Registros</th><th>Ficha de Urgencias</th></tr></thead>
+          <thead><tr><th>Nombre y Apellidos</th><th>Datos Personales y Personas Referencia</th><th>Expedientes</th><th>Registros</th><th>Ficha de Urgencias</th></tr></thead>
           <tbody id="tbl-usuarios"></tbody>
         </table>
       </div>
@@ -1107,6 +1107,16 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 </div>
 
 <!-- ===== MODAL: ARCHIVOS DE UNA CARPETA (ventana emergente) ===== -->
+<div id="modal-datos-personales" class="modal-overlay hidden" onclick="if(event.target===this)cerrarDatosPersonalesModal()">
+  <div class="modal-box" style="max-width:640px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="modal-title" id="datos-personales-modal-titulo" style="margin:0">Datos Personales y Personas de Referencia</div>
+      <button class="btn-secondary btn-sm" onclick="cerrarDatosPersonalesModal()">✕ Cerrar</button>
+    </div>
+    <div id="datos-personales-modal-contenido" style="max-height:70vh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <div id="modal-carpeta-archivos" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalCarpetaArchivos()">
   <div class="modal-box" style="max-width:640px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -4447,14 +4457,13 @@ function guardarDiarioMensual(){
 var TABS = [
   {id:'identificacion',label:'1. Identificación'},
   {id:'ingresobaja',label:'2. Ingreso - Baja'},
-  {id:'personales',label:'3. Datos Personales'},
-  {id:'discapacidad',label:'4. Discapacidad'},
-  {id:'docs_ingreso',label:'5. Ingreso (docs.)'},
-  {id:'docs_sujeciones',label:'6. Dispositivos Posturales'},
-  {id:'docs_informes',label:'7. Informes Adjuntos'},
-  {id:'docs_medicacion',label:'8. Medicación'},
-  {id:'docs_otros',label:'9. Otros'},
-  {id:'docs_autorizaciones',label:'10. Autorizaciones'}
+  {id:'discapacidad',label:'3. Discapacidad'},
+  {id:'docs_ingreso',label:'4. Ingreso (docs.)'},
+  {id:'docs_sujeciones',label:'5. Dispositivos Posturales'},
+  {id:'docs_informes',label:'6. Informes Adjuntos'},
+  {id:'docs_medicacion',label:'7. Medicación'},
+  {id:'docs_otros',label:'8. Otros'},
+  {id:'docs_autorizaciones',label:'9. Autorizaciones'}
 ];
 
 /* ===================== ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) ===================== */
@@ -6848,7 +6857,7 @@ function renderUsuarios(filtro){
     if(filtro && full.indexOf(filtro.toLowerCase())===-1) return;
     h += '<tr onclick="abrirExpediente('+us.id+')">';
     h += '<td><div class="name-cell"><div class="avatar">'+us.nombre[0]+'</div><div class="name-text">'+us.nombre+' '+us.apellidos+'</div></div></td>';
-    h += '<td>'+resumenPersonasContacto(us)+'</td>';
+    h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirDatosPersonalesModal('+us.id+')">👪 Datos Personales y Personas Referencia</button></td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirExpediente('+us.id+')">📁 Ver expediente</button></td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();verCarpetaRegistrosDeUsuario('+us.id+')">📊 Carpeta de Registros</button></td>';
     h += '<td><button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirFichaUrgencias('+us.id+',\''+(us.nombre+' '+us.apellidos).replace(/'/g,"\\'")+'\')">🚑 Ficha</button></td>';
@@ -7326,43 +7335,71 @@ function verDomicilioEnMapa(){
   if(!domicilio.trim()){ mostrarAviso('Escribe primero el domicilio para poder verlo en el mapa.'); return; }
   window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(domicilio), '_blank');
 }
+// Vuelve a pintar los Datos Personales tanto si se están editando dentro del Expediente
+// completo como si se abrieron sueltos, desde el botón de la tabla de Usuarios.
+function refrescarPersonalesActual(){
+  var modal = document.getElementById('modal-datos-personales');
+  if(modal && !modal.classList.contains('hidden')){
+    document.getElementById('datos-personales-modal-contenido').innerHTML = renderTabPersonales();
+  } else {
+    renderExpContent();
+  }
+}
+function actualizarTutorCabeceraSiExiste(){
+  var el = document.getElementById('exp-tutor');
+  if(el) el.textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
+}
 function guardarDatosPersonales(){
   renderUsuarios();
   mostrarAviso('Datos personales guardados.', '✅');
 }
 function anadirPersonaReferencia(){
   _expActual.exp.personales.personas.push({nombreApellidos:'',tutorRepresentante:'',noProcedeTutor:false,parentesco:'',telefonos:['']});
-  renderExpContent();
+  refrescarPersonalesActual();
 }
 function quitarPersonaReferencia(i){
   _expActual.exp.personales.personas.splice(i,1);
-  renderExpContent();
+  refrescarPersonalesActual();
 }
 function cambiarCampoPersona(i, campo, valor){
   _expActual.exp.personales.personas[i][campo] = valor;
   if(i===0 && (campo==='tutorRepresentante' || campo==='telefonos')){
-    document.getElementById('exp-tutor').textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
+    actualizarTutorCabeceraSiExiste();
   }
 }
 function cambiarNoProcedeTutor(i, marcado){
   _expActual.exp.personales.personas[i].noProcedeTutor = marcado;
-  renderExpContent();
-  document.getElementById('exp-tutor').textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
+  refrescarPersonalesActual();
+  actualizarTutorCabeceraSiExiste();
 }
 function anadirTelefonoPersona(i){
   _expActual.exp.personales.personas[i].telefonos.push('');
-  renderExpContent();
+  refrescarPersonalesActual();
 }
 function quitarTelefonoPersona(i, ti){
   _expActual.exp.personales.personas[i].telefonos.splice(ti,1);
-  renderExpContent();
+  refrescarPersonalesActual();
 }
 function cambiarTelefonoPersona(i, ti, valor){
   _expActual.exp.personales.personas[i].telefonos[ti] = valor;
-  if(i===0) document.getElementById('exp-tutor').textContent = 'Tutor: '+contactoPrincipal(_expActual).tutor;
+  if(i===0) actualizarTutorCabeceraSiExiste();
 }
 function cambiarDomicilioPersonales(valor){
   _expActual.exp.personales.domicilio = valor;
+}
+// Abre los Datos Personales y Personas de Referencia de un usuario en una ventana emergente,
+// sin tener que entrar a su Expediente completo (se usa desde el botón de la tabla de Usuarios).
+function abrirDatosPersonalesModal(usuarioId){
+  var u = USUARIOS.filter(function(x){ return x.id===usuarioId; })[0];
+  if(!u) return;
+  _expActual = u;
+  asegurarEstructuraPersonales(u.exp);
+  document.getElementById('datos-personales-modal-titulo').textContent = 'Datos Personales — '+u.nombre+' '+u.apellidos;
+  document.getElementById('datos-personales-modal-contenido').innerHTML = renderTabPersonales();
+  document.getElementById('modal-datos-personales').classList.remove('hidden');
+}
+function cerrarDatosPersonalesModal(){
+  document.getElementById('modal-datos-personales').classList.add('hidden');
 }
 
 var _editandoTabExp = false;
