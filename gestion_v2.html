@@ -4236,7 +4236,7 @@ var CARPETA_PROYECTO_PERSONAL_ID = '';
 var _ppDocVolverA = null;
 // Función genérica: abre la ventana emergente de archivos reales de una carpeta, con opción de
 // subir. La reutilizan tanto Circulares (Transporte) como los documentos de Proyecto Personal.
-function abrirCarpetaArchivosPopup(carpetaId, titulo){
+function abrirCarpetaArchivosPopup(carpetaId, titulo, nombreCursoVirtual){
   if(!carpetaId){
     mostrarAviso('Todavía no está conectada la carpeta de Drive de "'+titulo+'".', 'ℹ️');
     return;
@@ -4248,7 +4248,7 @@ function abrirCarpetaArchivosPopup(carpetaId, titulo){
   btnSubir.setAttribute('data-carpeta-subir', carpetaId);
   document.getElementById('carpeta-archivos-btn-vercarpeta').onclick = function(){ window.open('https://drive.google.com/drive/folders/'+carpetaId, '_blank'); };
   document.getElementById('modal-carpeta-archivos').classList.remove('hidden');
-  renderContenidoCarpetaExpediente(carpetaId, titulo, 'carpeta-archivos-listado', null);
+  renderContenidoCarpetaExpediente(carpetaId, titulo, 'carpeta-archivos-listado', null, nombreCursoVirtual);
 }
 // Carpetas reales de cada documento de Proyecto Personal, ya conectadas.
 var CARPETAS_DOCUMENTOS_PP = {
@@ -4262,7 +4262,7 @@ var CARPETAS_DOCUMENTOS_PP = {
   fichas_actividades: '1hlMesW5brT0NxVr6eBqSzv0yaa0ZvUn6'
 };
 function abrirDocumentoPP(id, titulo, volverA){
-  abrirCarpetaArchivosPopup(CARPETAS_DOCUMENTOS_PP[id], titulo);
+  abrirCarpetaArchivosPopup(CARPETAS_DOCUMENTOS_PP[id], titulo, CURSO_REGISTROS_ACTUAL());
 }
 // Carpeta real de Drive donde irán las respuestas del Diario Mensual, junto con todo lo de PAAP.
 // Pendiente del enlace real que Ana dará más adelante.
@@ -7131,46 +7131,80 @@ function iconoPorExtension(nombreArchivo){
   };
   return mapa[ext] || '📄';
 }
-function renderContenidoCarpetaExpediente(folderId, folderNombre, contenedorId, folderAnteriorId){
+// Guarda, por contenedor, los archivos sueltos (no carpetas) de la última carga real, para poder
+// "entrar" en la carpeta virtual de curso sin tener que volver a pedirlos a Drive.
+var _sueltosVirtualesPorContenedor = {};
+function renderContenidoCarpetaExpediente(folderId, folderNombre, contenedorId, folderAnteriorId, nombreCursoVirtual){
   var cont = document.getElementById(contenedorId);
   if(cont) cont.innerHTML = '<div class="empty-state">⏳ Cargando…</div>';
   listarHijosDeCarpeta(folderId, function(archivos, err){
     var cont2 = document.getElementById(contenedorId);
     if(!cont2) return;
     if(err){ cont2.innerHTML = '<div class="empty-state">⚠️ No se pudieron leer los archivos.</div>'; return; }
-    // Orden natural (1, 2, ..., 10, no 1, 10, 2 como saldría alfabéticamente), carpetas primero.
-    archivos = (archivos||[]).slice().sort(function(a,b){
-      var aEsCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
-      var bEsCarpeta = b.mimeType && b.mimeType.indexOf('folder')>-1;
-      if(aEsCarpeta !== bEsCarpeta) return aEsCarpeta ? -1 : 1;
-      return a.name.localeCompare(b.name, 'es', {numeric:true, sensitivity:'base'});
-    });
+    archivos = archivos || [];
+    var subcarpetas = archivos.filter(function(a){ return a.mimeType && a.mimeType.indexOf('folder')>-1; });
+    var sueltos = archivos.filter(function(a){ return !(a.mimeType && a.mimeType.indexOf('folder')>-1); });
+    // Orden natural (1, 2, ..., 10, no 1, 10, 2 como saldría alfabéticamente).
+    var ordenar = function(lista){ return lista.slice().sort(function(a,b){ return a.name.localeCompare(b.name, 'es', {numeric:true, sensitivity:'base'}); }); };
+    subcarpetas = ordenar(subcarpetas);
+    sueltos = ordenar(sueltos);
+    if(nombreCursoVirtual) _sueltosVirtualesPorContenedor[contenedorId] = sueltos;
     var h = '';
     if(folderAnteriorId){
-      h += '<button class="btn-secondary btn-sm" style="margin-bottom:10px" onclick="renderContenidoCarpetaExpediente(\''+folderAnteriorId+'\',\'\',\''+contenedorId+'\',null)">⬅ Volver</button>';
+      h += '<button class="btn-secondary btn-sm" style="margin-bottom:10px" onclick="renderContenidoCarpetaExpediente(\''+folderAnteriorId+'\',\'\',\''+contenedorId+'\',null'+(nombreCursoVirtual?(",'"+nombreCursoVirtual+"'"):'')+')">⬅ Volver</button>';
     }
-    if(!archivos || archivos.length===0){
+    if(subcarpetas.length===0 && sueltos.length===0){
       h += '<div class="empty-state">Sin documentos todavía en esta carpeta de Drive'+(folderNombre?(' ("'+esc(folderNombre)+'")'):'')+'.</div>';
       cont2.innerHTML = h;
       return;
     }
-    archivos.forEach(function(a){
-      var esCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
-      var icono = esCarpeta ? '📁' : iconoPorExtension(a.name);
+    subcarpetas.forEach(function(a){
       var nombreSeguro = a.name.replace(/'/g,"\\'");
-      h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">'+(esCarpeta?'Carpeta':formatearFechaModificacion(a.modifiedTime))+'</div></div>';
-      if(esCarpeta){
-        h += '<div class="doc-actions"><button class="doc-btn" title="Entrar" onclick="renderContenidoCarpetaExpediente(\''+a.id+'\',\''+nombreSeguro+'\',\''+contenedorId+'\',\''+folderId+'\')">📂</button></div></div>';
-      } else {
+      h += '<div class="doc-item"><div class="doc-ic">📁</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">Carpeta</div></div>';
+      h += '<div class="doc-actions"><button class="doc-btn" title="Entrar" onclick="renderContenidoCarpetaExpediente(\''+a.id+'\',\''+nombreSeguro+'\',\''+contenedorId+'\',\''+folderId+'\')">📂</button></div></div>';
+    });
+    // Carpeta virtual: agrupa aquí los archivos sueltos bajo un nombre de curso, solo dentro del
+    // programa — en Drive de verdad los archivos siguen exactamente donde estaban.
+    if(nombreCursoVirtual && sueltos.length>0){
+      h += '<div class="doc-item"><div class="doc-ic">📁</div><div><div class="doc-name">'+esc(nombreCursoVirtual)+'</div><div class="doc-sub">'+sueltos.length+' archivo'+(sueltos.length===1?'':'s')+'</div></div>';
+      h += '<div class="doc-actions"><button class="doc-btn" title="Entrar" onclick="mostrarSueltosVirtuales(\''+contenedorId+'\',\''+folderId+'\',\''+folderNombre.replace(/'/g,"\\'")+'\')">📂</button></div></div>';
+    } else if(!nombreCursoVirtual){
+      sueltos.forEach(function(a){
+        var icono = iconoPorExtension(a.name);
+        var nombreSeguro = a.name.replace(/'/g,"\\'");
+        h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">'+formatearFechaModificacion(a.modifiedTime)+'</div></div>';
         h += '<div class="doc-actions">';
         h += '<button class="doc-btn" title="Vista previa" onclick="abrirPreviewDrive(\''+a.id+'\',\''+nombreSeguro+'\')">👁</button>';
         h += '<button class="doc-btn" title="Descargar" onclick="window.open(\'https://drive.google.com/uc?export=download&id='+a.id+'\',\'_blank\')">⬇</button>';
         h += '<button class="doc-btn" title="Ver en Drive" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">🔗</button>';
         h += '</div></div>';
-      }
-    });
+      });
+    }
     cont2.innerHTML = h;
   });
+}
+// Entra en la carpeta virtual de curso, mostrando los archivos sueltos que ya se cargaron antes
+// (sin volver a pedirlos a Drive) y un botón para volver al nivel de arriba.
+function mostrarSueltosVirtuales(contenedorId, folderIdPadre, folderNombrePadre){
+  var cont = document.getElementById(contenedorId);
+  if(!cont) return;
+  var sueltos = _sueltosVirtualesPorContenedor[contenedorId] || [];
+  var h = '<button class="btn-secondary btn-sm" style="margin-bottom:10px" onclick="renderContenidoCarpetaExpediente(\''+folderIdPadre+'\',\''+folderNombrePadre.replace(/'/g,"\\'")+'\',\''+contenedorId+'\',null)">⬅ Volver</button>';
+  if(sueltos.length===0){
+    h += '<div class="empty-state">Sin documentos aquí.</div>';
+  } else {
+    sueltos.forEach(function(a){
+      var icono = iconoPorExtension(a.name);
+      var nombreSeguro = a.name.replace(/'/g,"\\'");
+      h += '<div class="doc-item"><div class="doc-ic">'+icono+'</div><div><div class="doc-name">'+esc(a.name)+'</div><div class="doc-sub">'+formatearFechaModificacion(a.modifiedTime)+'</div></div>';
+      h += '<div class="doc-actions">';
+      h += '<button class="doc-btn" title="Vista previa" onclick="abrirPreviewDrive(\''+a.id+'\',\''+nombreSeguro+'\')">👁</button>';
+      h += '<button class="doc-btn" title="Descargar" onclick="window.open(\'https://drive.google.com/uc?export=download&id='+a.id+'\',\'_blank\')">⬇</button>';
+      h += '<button class="doc-btn" title="Ver en Drive" onclick="window.open(\''+(a.webViewLink||'')+'\',\'_blank\')">🔗</button>';
+      h += '</div></div>';
+    });
+  }
+  cont.innerHTML = h;
 }
 function renderDocsCardConSlots(titulo, tabKey, nombresSlots){
   var carpetaReal = carpetaRealDelUsuarioActual();
