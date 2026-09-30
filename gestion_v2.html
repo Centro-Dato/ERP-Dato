@@ -263,6 +263,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   .sb-user-name,.sb-user-role{display:none}
   .sb-logout{font-size:0}
   .sb-logout::before{content:'⎋';font-size:20px}
+  #btn-recargar::before{content:'🔄'!important}
   .btn-menu-movil{display:flex!important;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:6px 10px}
   .page{padding:18px 16px}
   .page-title{font-size:20px}
@@ -318,6 +319,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         <div class="sb-avatar" id="sb-av">C</div>
         <div><div class="sb-user-name" id="sb-nm">Carlos</div><div class="sb-user-role" id="sb-rl">admin</div></div>
       </div>
+      <button class="sb-logout" id="btn-recargar" onclick="recargarAppSinCache()" style="margin-bottom:8px">🔄 Actualizar app</button>
       <button class="sb-logout" id="btn-logout">Cerrar sesión →</button>
     </div>
   </div>
@@ -6382,6 +6384,14 @@ cargarEmpleadosDeVerdad(function(){
   renderAvataresEquipoLogin();
   intentarAutoLoginRecordado();
 });
+// Recarga la app forzando que traiga la última versión publicada, aunque el navegador tuviera
+// guardada en caché una versión antigua — sin tener que borrar datos desde los ajustes del
+// navegador. Cambia la URL (con un parámetro que siempre es distinto) para que el navegador la
+// trate como una petición nueva y no reutilice la copia guardada.
+function recargarAppSinCache(){
+  var urlBase = window.location.href.split('?')[0].split('#')[0];
+  window.location.href = urlBase + '?nocache=' + Date.now();
+}
 document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
