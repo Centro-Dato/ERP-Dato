@@ -7096,6 +7096,13 @@ function renderContenidoCarpetaExpediente(folderId, folderNombre, contenedorId, 
     var cont2 = document.getElementById(contenedorId);
     if(!cont2) return;
     if(err){ cont2.innerHTML = '<div class="empty-state">⚠️ No se pudieron leer los archivos.</div>'; return; }
+    // Orden natural (1, 2, ..., 10, no 1, 10, 2 como saldría alfabéticamente), carpetas primero.
+    archivos = (archivos||[]).slice().sort(function(a,b){
+      var aEsCarpeta = a.mimeType && a.mimeType.indexOf('folder')>-1;
+      var bEsCarpeta = b.mimeType && b.mimeType.indexOf('folder')>-1;
+      if(aEsCarpeta !== bEsCarpeta) return aEsCarpeta ? -1 : 1;
+      return a.name.localeCompare(b.name, 'es', {numeric:true, sensitivity:'base'});
+    });
     var h = '';
     if(folderAnteriorId){
       h += '<button class="btn-secondary btn-sm" style="margin-bottom:10px" onclick="renderContenidoCarpetaExpediente(\''+folderAnteriorId+'\',\'\',\''+contenedorId+'\',null)">⬅ Volver</button>';
@@ -7298,7 +7305,8 @@ function renderExpContent(){
   }
 
   var campos = CAMPOS_POR_TAB_EXP[_tabActual];
-  if(campos){
+  var TABS_SOLO_DOCUMENTOS = ['identificacion','ingresobaja','discapacidad'];
+  if(campos && TABS_SOLO_DOCUMENTOS.indexOf(_tabActual)===-1){
     var data = d[_tabActual];
     var puedeEditar = PERMISOS_ACTUAL.usuarios==='editar' || PERMISOS_ACTUAL.usuarios==='todo';
     var h = '<div class="card"><div class="card-header"><div class="card-title">'+tabInfo.label+' — Datos</div>';
