@@ -1137,7 +1137,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   <div class="modal-box" style="max-width:440px;text-align:center">
     <div style="font-size:36px;margin-bottom:10px" id="aviso-icono">ℹ️</div>
     <div class="modal-sub" id="aviso-mensaje" style="white-space:pre-line;color:#1e293b;font-size:14px;text-align:left"></div>
-    <div class="modal-actions" style="justify-content:center">
+    <div class="modal-actions" style="justify-content:center" id="aviso-botones">
       <button class="btn-primary" onclick="cerrarAviso()">Entendido</button>
     </div>
   </div>
@@ -1343,6 +1343,9 @@ new MutationObserver(programarActualizarPistasScroll).observe(document.body, {ch
 function mostrarAviso(mensaje, icono){
   document.getElementById('aviso-icono').textContent = icono || 'ℹ️';
   document.getElementById('aviso-mensaje').textContent = mensaje;
+  // Los avisos de "cargando" (⏳) se cierran solos al terminar la acción, así que no hace falta
+  // el botón "Entendido" — solo estorbaría, ya que desaparecen antes de que dé tiempo a pulsarlo.
+  document.getElementById('aviso-botones').classList.toggle('hidden', icono==='⏳');
   document.getElementById('modal-aviso').classList.remove('hidden');
 }
 function cerrarAviso(){
