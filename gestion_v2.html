@@ -4414,19 +4414,30 @@ function guardarDiarioMensual(){
   if(!area){ mostrarAviso('Elige tu área.'); return; }
   var comentario = document.getElementById('diario-comentario').value.trim();
   if(!comentario){ mostrarAviso('Escribe un comentario.'); return; }
-  if(!CARPETA_PAAP_ID){
-    mostrarAviso('Todavía no está conectada la carpeta de Drive de PAAP — en cuanto Ana me pase el enlace, aquí ya se podrá guardar de verdad.', 'ℹ️');
-    return;
-  }
   var nombreArchivo = 'R. Diario Mensual '+CURSO_REGISTROS_ACTUAL();
   var headersGeneral = ['Fecha','Usuario','Área','Comentario'];
   var headersIndividual = ['Fecha','Área','Comentario'];
   mostrarAviso('Guardando el diario…', '⏳');
-  guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(err){
+  guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(err){
     if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
-    guardarFilaViaAppsScript(CARPETA_PAAP_ID, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err2){
+    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err2){
       if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
-      mostrarAviso('Diario Mensual guardado correctamente.', '✅');
+      // Además, una copia en la carpeta individual de Registros de ese usuario (si ya está
+      // conectada su carpeta personal).
+      var usuarioObj = USUARIOS.filter(function(u){ return (u.nombre+' '+u.apellidos)===alumno; })[0];
+      var carpetaIndividual = usuarioObj ? CARPETAS_USUARIOS[usuarioObj.id] : null;
+      if(!carpetaIndividual){ mostrarAviso('Diario Mensual guardado correctamente.', '✅'); return; }
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaIndividual, nombreSubcarpeta: 'Registros'})
+      }).then(function(r){ return r.json(); })
+        .then(function(data){
+          if(!data || !data.ok){ mostrarAviso('Diario Mensual guardado, pero no se pudo copiar en su carpeta individual: '+((data&&data.error)||'error'), '⚠️'); return; }
+          guardarFilaViaAppsScript(data.carpetaId, 'Registros '+CURSO_REGISTROS_ACTUAL(), 'Diario Mensual', headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err3){
+            mostrarAviso(err3 ? ('Diario Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err3) : 'Diario Mensual guardado correctamente.', err3 ? '⚠️' : '✅');
+          });
+        })
+        .catch(function(err4){ mostrarAviso('Diario Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err4, '⚠️'); });
     });
   });
 }
