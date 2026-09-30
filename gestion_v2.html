@@ -520,6 +520,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           </div>
         </div>
         <button class="btn-secondary" onclick="verCarpetaRegistrosUsuario()">📁 Carpeta de Registros</button>
+        <button class="btn-secondary" onclick="verCarpetaGeneralExpedienteUsuario()">🔗 Ver en Drive</button>
         <button class="btn-secondary" onclick="mostrarAviso('Descargando expediente completo en PDF (simulado)...')">⬇ Descargar expediente completo</button>
         <button class="btn-danger" id="btn-dar-de-baja" onclick="darDeBajaUsuarioActual()">🚫 Dar de baja</button>
       </div>
@@ -6911,10 +6912,42 @@ var CARPETAS_USUARIOS = {
   22: '1kcpR1S71qZtdUwoOWsSFdrEWJbcLQqtk', // Raúl Álvarez Llamas
   23: '1zouD7FGYGW_Hy3do9aRluj90IKON1S_K'  // Santiago Patón Pascual
 };
+// "Carpeta de Registros" abre (o crea si es la primera vez) una subcarpeta "Registros" dentro
+// de la carpeta individual del usuario — es donde, en el futuro, se irán guardando también las
+// filas de cada tipo de registro (Actividades, Higiene...) que le mencionen, una pestaña por
+// tipo. De momento estará vacía hasta que montemos ese guardado automático.
 function verCarpetaRegistrosUsuario(){
+  if(!_expActual) return;
+  abrirCarpetaRegistrosIndividualUsuario(_expActual.id, _expActual.nombre+' '+_expActual.apellidos);
+}
+// "Ver en Drive" abre la carpeta general del expediente (con las 11 subcarpetas administrativas:
+// Identificación, Ingreso-Baja, Discapacidad...).
+function verCarpetaGeneralExpedienteUsuario(){
   if(!_expActual) return;
   var carpetaId = CARPETAS_USUARIOS[_expActual.id];
   abrirCarpetaArchivosPopup(carpetaId, 'Carpeta de '+_expActual.nombre+' '+_expActual.apellidos);
+}
+function abrirCarpetaRegistrosIndividualUsuario(userId, nombreCompleto){
+  var carpetaPadre = CARPETAS_USUARIOS[userId];
+  if(!carpetaPadre){ mostrarAviso('Esta persona todavía no tiene carpeta individual conectada.'); return; }
+  mostrarAviso('Abriendo…', '⏳');
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaPadre, nombreSubcarpeta: 'Registros'})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok){ mostrarAviso('No se pudo abrir: '+((data&&data.error)||'error_desconocido'), '⚠️'); return; }
+      cerrarAviso();
+      abrirCarpetaArchivosPopup(data.carpetaId, 'Registros de '+nombreCompleto);
+    })
+    .catch(function(err){ mostrarAviso('No se pudo abrir: '+err, '⚠️'); });
+}
+// Igual que verCarpetaRegistrosUsuario, pero llamado desde la fila de la tabla de Usuarios (sin
+// tener que entrar antes al Expediente).
+function verCarpetaRegistrosDeUsuario(userId){
+  var u = USUARIOS.filter(function(x){ return x.id===userId; })[0];
+  if(!u) return;
+  abrirCarpetaRegistrosIndividualUsuario(userId, u.nombre+' '+u.apellidos);
 }
 function abrirExpediente(id){
   if(PERMISOS_ACTUAL.usuarios==='nada'){
