@@ -4422,22 +4422,24 @@ function guardarDiarioMensual(){
     if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
     guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err2){
       if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
-      // Además, una copia en la carpeta individual de Registros de ese usuario (si ya está
-      // conectada su carpeta personal).
-      var usuarioObj = USUARIOS.filter(function(u){ return (u.nombre+' '+u.apellidos)===alumno; })[0];
-      var carpetaIndividual = usuarioObj ? CARPETAS_USUARIOS[usuarioObj.id] : null;
-      if(!carpetaIndividual){ mostrarAviso('Mensual guardado correctamente.', '✅'); return; }
+      // Además, una copia en Proyecto Personal → Seguimiento → Mensual (con su propia pestaña
+      // General y una individual por usuario, igual que el resto de registros).
+      var carpetaSeguimiento = CARPETAS_DOCUMENTOS_PP['valoracion_trimestral'];
+      if(!carpetaSeguimiento){ mostrarAviso('Mensual guardado correctamente.', '✅'); return; }
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaIndividual, nombreSubcarpeta: 'Registros'})
+        body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaSeguimiento, nombreSubcarpeta: 'Mensual'})
       }).then(function(r){ return r.json(); })
         .then(function(data){
-          if(!data || !data.ok){ mostrarAviso('Mensual guardado, pero no se pudo copiar en su carpeta individual: '+((data&&data.error)||'error'), '⚠️'); return; }
-          guardarFilaViaAppsScript(data.carpetaId, 'Registros '+CURSO_REGISTROS_ACTUAL(), 'Mensual', headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err3){
-            mostrarAviso(err3 ? ('Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err3) : 'Mensual guardado correctamente.', err3 ? '⚠️' : '✅');
+          if(!data || !data.ok){ mostrarAviso('Mensual guardado, pero no se pudo copiar en Seguimiento: '+((data&&data.error)||'error'), '⚠️'); return; }
+          guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(errSeg){
+            if(errSeg){ mostrarAviso('Mensual guardado, pero no se pudo copiar en Seguimiento: '+errSeg, '⚠️'); return; }
+            guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err3){
+              mostrarAviso(err3 ? ('Mensual guardado, pero no se pudo copiar en Seguimiento: '+err3) : 'Mensual guardado correctamente.', err3 ? '⚠️' : '✅');
+            });
           });
         })
-        .catch(function(err4){ mostrarAviso('Mensual guardado, pero no se pudo copiar en su carpeta individual: '+err4, '⚠️'); });
+        .catch(function(err4){ mostrarAviso('Mensual guardado, pero no se pudo copiar en Seguimiento: '+err4, '⚠️'); });
     });
   });
 }
@@ -4449,11 +4451,10 @@ var TABS = [
   {id:'discapacidad',label:'4. Discapacidad'},
   {id:'docs_ingreso',label:'5. Ingreso (docs.)'},
   {id:'docs_sujeciones',label:'6. Dispositivos Posturales'},
-  {id:'docs_programa',label:'7. Programa Personal'},
-  {id:'docs_informes',label:'8. Informes Adjuntos'},
-  {id:'docs_medicacion',label:'9. Medicación'},
-  {id:'docs_otros',label:'10. Otros'},
-  {id:'docs_autorizaciones',label:'11. Autorizaciones'}
+  {id:'docs_informes',label:'7. Informes Adjuntos'},
+  {id:'docs_medicacion',label:'8. Medicación'},
+  {id:'docs_otros',label:'9. Otros'},
+  {id:'docs_autorizaciones',label:'10. Autorizaciones'}
 ];
 
 /* ===================== ASISTENCIA Y PAGO ANUAL (ACTIVIDADES DE OCIO) ===================== */
@@ -6990,7 +6991,7 @@ function renderDocsCard(titulo, docs, permitirAdjuntar, tabKeyReal){
   var carpetaReal = tabKeyReal ? carpetaRealDelUsuarioActual() : null;
   if(carpetaReal){
     var contenedorId = 'docs-real-'+tabKeyReal;
-    var h2 = '<div class="card"><div class="card-header"><div class="card-title">'+titulo+' <span style="font-size:11px;color:#16a34a;font-weight:700">🔗 Drive real</span></div>';
+    var h2 = '<div class="card"><div class="card-header"><div class="card-title">'+titulo+'</div>';
     h2 += '<div style="display:flex;gap:8px">';
     h2 += '<button class="btn-secondary btn-sm" id="btn-subir-real-'+tabKeyReal+'" style="display:none">⬆ Subir archivo</button>';
     h2 += '<button class="btn-secondary btn-sm" onclick="window.open(\'https://drive.google.com/drive/folders/'+carpetaReal.id+'\',\'_blank\')">📁 Abrir carpeta del usuario</button>';
@@ -7210,7 +7211,7 @@ function renderDocsCardConSlots(titulo, tabKey, nombresSlots){
   var carpetaReal = carpetaRealDelUsuarioActual();
   if(carpetaReal){
     var contenedorId = 'docs-real-'+tabKey;
-    var h2 = '<div class="card"><div class="card-header"><div class="card-title">'+titulo+' <span style="font-size:11px;color:#16a34a;font-weight:700">🔗 Drive real</span></div>';
+    var h2 = '<div class="card"><div class="card-header"><div class="card-title">'+titulo+'</div>';
     h2 += '<div style="display:flex;gap:8px">';
     h2 += '<button class="btn-secondary btn-sm" id="btn-subir-real-'+tabKey+'" style="display:none">⬆ Subir archivo</button>';
     h2 += '<button class="btn-secondary btn-sm" onclick="window.open(\'https://drive.google.com/drive/folders/'+carpetaReal.id+'\',\'_blank\')">📁 Abrir carpeta del usuario</button>';
