@@ -56,6 +56,11 @@ button{font-family:inherit}
 .sb-user{padding:18px 18px;border-top:1px solid rgba(255,255,255,.12)}
 .sb-user-row{display:flex;align-items:center;gap:13px;margin-bottom:13px}
 .sb-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
+.menu-avatar{position:absolute;bottom:54px;left:0;background:#fff;border:2px solid #14141a;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.3);z-index:300;overflow:hidden;min-width:160px}
+.menu-avatar button{display:block;width:100%;background:none;border:none;color:#14141a;font-size:14px;font-weight:700;padding:12px 16px;text-align:left;cursor:pointer}
+.menu-avatar button:hover{background:#f1f5f9}
+.btn-actualizar-app{background:#fbbf24;border:none;color:#14141a;font-size:13px;font-weight:800;padding:9px 12px;border-radius:10px;cursor:pointer;width:100%;text-align:center}
+.btn-actualizar-app:hover{background:#f59e0b}
 .sb-user-name{font-size:16px;font-weight:700}
 .sb-user-role{font-size:13px;color:rgba(255,255,255,.5);text-transform:capitalize}
 .sb-logout{background:none;border:none;color:rgba(255,255,255,.5);font-size:16px;cursor:pointer;padding:0;text-align:left;width:100%;font-weight:700}
@@ -263,7 +268,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   .sb-user-name,.sb-user-role{display:none}
   .sb-logout{font-size:0}
   .sb-logout::before{content:'⎋';font-size:20px}
-  #btn-recargar::before{content:'🔄'!important}
   .btn-menu-movil{display:flex!important;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:6px 10px}
   .page{padding:18px 16px}
   .page-title{font-size:20px}
@@ -315,14 +319,17 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="sb-nav-item" id="nav-buzon" onclick="abrirModalNuevoMensajeBuzon();cerrarMenuMovil()"><span class="sb-nav-ic">📬</span> Buzón de Sugerencias</div>
     </div>
     <div class="sb-user">
-      <div class="sb-user-row">
-        <div class="sb-avatar" id="sb-av">C</div>
+      <div class="sb-user-row" style="position:relative">
+        <div class="sb-avatar" id="sb-av" onclick="toggleMenuAvatar()" style="cursor:pointer">C</div>
         <div><div class="sb-user-name" id="sb-nm">Carlos</div><div class="sb-user-role" id="sb-rl">admin</div></div>
+        <div id="menu-avatar" class="menu-avatar hidden">
+          <button id="btn-logout">Cerrar sesión →</button>
+        </div>
       </div>
-      <button class="sb-logout" id="btn-recargar" onclick="recargarAppSinCache()" style="margin-bottom:8px">🔄 Actualizar app</button>
-      <button class="sb-logout" id="btn-logout">Cerrar sesión →</button>
+      <button class="btn-actualizar-app" id="btn-recargar" onclick="recargarAppSinCache()">🔄 Actualizar app</button>
     </div>
   </div>
+  <div id="overlay-menu-avatar" class="hidden" onclick="cerrarMenuAvatar()" style="position:fixed;inset:0;z-index:299"></div>
 
   <div class="main-content">
 
@@ -6391,6 +6398,18 @@ cargarEmpleadosDeVerdad(function(){
 function recargarAppSinCache(){
   var urlBase = window.location.href.split('?')[0].split('#')[0];
   window.location.href = urlBase + '?nocache=' + Date.now();
+}
+function toggleMenuAvatar(){
+  var menu = document.getElementById('menu-avatar');
+  var overlay = document.getElementById('overlay-menu-avatar');
+  var abierto = !menu.classList.contains('hidden');
+  if(abierto){ cerrarMenuAvatar(); return; }
+  menu.classList.remove('hidden');
+  overlay.classList.remove('hidden');
+}
+function cerrarMenuAvatar(){
+  document.getElementById('menu-avatar').classList.add('hidden');
+  document.getElementById('overlay-menu-avatar').classList.add('hidden');
 }
 document.getElementById('btn-logout').onclick = function(){
   document.getElementById('app-screen').classList.add('hidden');
