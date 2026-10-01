@@ -4427,34 +4427,26 @@ function guardarDiarioMensual(){
   if(!area){ mostrarAviso('Elige tu área.'); return; }
   var comentario = document.getElementById('diario-comentario').value.trim();
   if(!comentario){ mostrarAviso('Escribe un comentario.'); return; }
-  var nombreArchivo = 'R. Mensual '+CURSO_REGISTROS_ACTUAL();
+  var nombreArchivo = 'Seguimiento Mensual '+CURSO_REGISTROS_ACTUAL();
   var headersGeneral = ['Fecha','Usuario','Área','Comentario'];
   var headersIndividual = ['Fecha','Área','Comentario'];
-  mostrarAviso('Guardando el diario…', '⏳');
-  guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(err){
-    if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
-    guardarFilaViaAppsScript(CARPETA_REGISTROS_DIGITALES_ID, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err2){
-      if(err2){ mostrarAviso('Guardado en general, pero no en la pestaña individual: '+err2, '⚠️'); return; }
-      // Además, una copia en Proyecto Personal → Seguimiento → Mensual (con su propia pestaña
-      // General y una individual por usuario, igual que el resto de registros).
-      var carpetaSeguimiento = CARPETAS_DOCUMENTOS_PP['valoracion_trimestral'];
-      if(!carpetaSeguimiento){ mostrarAviso('Mensual guardado correctamente.', '✅'); return; }
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaSeguimiento, nombreSubcarpeta: 'Mensual'})
-      }).then(function(r){ return r.json(); })
-        .then(function(data){
-          if(!data || !data.ok){ mostrarAviso('Mensual guardado, pero no se pudo copiar en Seguimiento: '+((data&&data.error)||'error'), '⚠️'); return; }
-          guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(errSeg){
-            if(errSeg){ mostrarAviso('Mensual guardado, pero no se pudo copiar en Seguimiento: '+errSeg, '⚠️'); return; }
-            guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err3){
-              mostrarAviso(err3 ? ('Mensual guardado, pero no se pudo copiar en Seguimiento: '+err3) : 'Mensual guardado correctamente.', err3 ? '⚠️' : '✅');
-            });
-          });
-        })
-        .catch(function(err4){ mostrarAviso('Mensual guardado, pero no se pudo copiar en Seguimiento: '+err4, '⚠️'); });
-    });
-  });
+  var carpetaSeguimiento = CARPETAS_DOCUMENTOS_PP['valoracion_trimestral'];
+  if(!carpetaSeguimiento){ mostrarAviso('Todavía no está conectada la carpeta de Seguimiento.', 'ℹ️'); return; }
+  mostrarAviso('Guardando…', '⏳');
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaSeguimiento, nombreSubcarpeta: 'Mensual'})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok){ mostrarAviso('No se pudo guardar: '+((data&&data.error)||'error'), '⚠️'); return; }
+      guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(err){
+        if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
+        guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err2){
+          mostrarAviso(err2 ? ('Guardado en general, pero no en la pestaña individual: '+err2) : 'Mensual guardado correctamente.', err2 ? '⚠️' : '✅');
+        });
+      });
+    })
+    .catch(function(err3){ mostrarAviso('No se pudo guardar: '+err3, '⚠️'); });
 }
 
 var TABS = [
