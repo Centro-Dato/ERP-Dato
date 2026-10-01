@@ -7066,19 +7066,23 @@ function archivoSlotSeleccionado(evento){
   renderExpContent();
   mostrarAviso('"'+archivo.name+'" subido a "'+_slotPendienteSubida.nombreSlot+'" (simulado; cuando conectemos Drive de verdad, se guardará ahí directamente).');
 }
-var PALABRAS_CLAVE_TAB_ORDEN = ['ingresobaja','identificacion','personales','discapacidad','docs_sujeciones','docs_programa','docs_informes','docs_medicacion','docs_otros','docs_autorizaciones','docs_ingreso'];
+var PALABRAS_CLAVE_TAB_ORDEN = ['datos_identificacion','ingresobaja','identificacion','personales','discapacidad','docs_sujeciones','docs_programa','docs_informes','docs_medicacion','docs_autorizaciones','docs_ingreso','opinion','justificacion_ausencias','covid','evaluacion_inicial'];
 var PALABRAS_CLAVE_TAB = {
   identificacion: ['IDENTIFICACION'],
-  ingresobaja: ['INGRESO BAJA','INGRESOBAJA','INGRESO-BAJA'],
+  ingresobaja: ['INGRESO BAJA','INGRESOBAJA','INGRESO-BAJA','PLAZA BAJA','PLAZA-BAJA'],
   personales: ['PERSONALES','REFERENCIA'],
   discapacidad: ['DISCAPACIDAD'],
-  docs_ingreso: ['INGRESO'],
+  docs_ingreso: ['DOCUMENTACION ENTREGADA','INGRESO'],
+  datos_identificacion: ['DATOS IDENTIFICACION'],
   docs_sujeciones: ['DISPOSITIVO','POSTURAL','SUJECION'],
   docs_programa: ['PROGRAMA'],
   docs_informes: ['INFORME'],
   docs_medicacion: ['MEDICACION'],
-  docs_otros: ['OTROS'],
-  docs_autorizaciones: ['AUTORIZACION']
+  docs_autorizaciones: ['AUTORIZACION'],
+  opinion: ['OPINION'],
+  justificacion_ausencias: ['JUSTIFICACION','AUSENCIA'],
+  covid: ['COVID'],
+  evaluacion_inicial: ['EVALUACION INICIAL','EVALUACION']
 };
 function normalizarTextoCategoria(t){
   return (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()
