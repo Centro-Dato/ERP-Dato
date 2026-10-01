@@ -275,7 +275,9 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   .sb-logout{font-size:0}
   .sb-logout::before{content:'⎋';font-size:20px}
   .menu-avatar{position:fixed;bottom:auto;top:60px;left:14px}
-  .aviso-movil-campana:not(.hidden){display:flex;align-items:center;justify-content:center;background:#f59e0b;border:none;color:#fff;font-size:17px;border-radius:50%;width:34px;height:34px;cursor:pointer;flex-shrink:0}
+  .aviso-movil-campana:not(.hidden){display:flex;align-items:center;justify-content:center;background:#f59e0b;border:none;color:#fff;font-size:17px;border-radius:50%;width:34px;height:34px;cursor:pointer;flex-shrink:0;position:relative;animation:tambaleoCampana 2.2s ease-in-out infinite}
+  .aviso-movil-campana:not(.hidden)::after{content:'';position:absolute;top:-2px;right:-2px;width:11px;height:11px;background:#ef4444;border:2px solid #fff;border-radius:50%}
+  @keyframes tambaleoCampana{0%,70%,100%{transform:rotate(0deg)}74%{transform:rotate(-14deg)}78%{transform:rotate(12deg)}82%{transform:rotate(-9deg)}86%{transform:rotate(6deg)}90%{transform:rotate(0deg)}}
   .panel-aviso-lateral{position:fixed;top:60px;right:10px;left:10px;margin:0;z-index:260}
   .panel-aviso-lateral:not(.expandido-movil){display:none}
   .txt-app-palabra{display:none}
