@@ -269,6 +269,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
   .sb-logout{font-size:0}
   .sb-logout::before{content:'⎋';font-size:20px}
   .menu-avatar{position:fixed;bottom:auto;top:60px;left:14px}
+  .txt-app-palabra{display:none}
   .btn-menu-movil{display:flex!important;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:6px 10px}
   .page{padding:18px 16px}
   .page-title{font-size:20px}
@@ -327,7 +328,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
           <button id="btn-logout">Cerrar sesión →</button>
         </div>
       </div>
-      <button class="btn-actualizar-app" id="btn-recargar" onclick="recargarAppSinCache()">🔄 Actualizar app</button>
+      <button class="btn-actualizar-app" id="btn-recargar" onclick="recargarAppSinCache()">🔄 Actualizar<span class="txt-app-palabra"> app</span></button>
     </div>
   </div>
   <div id="overlay-menu-avatar" class="hidden" onclick="cerrarMenuAvatar()" style="position:fixed;inset:0;z-index:299"></div>
@@ -1109,9 +1110,13 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
 <!-- ===== MODAL: ARCHIVOS DE UNA CARPETA (ventana emergente) ===== -->
 <div id="modal-datos-personales" class="modal-overlay hidden" onclick="if(event.target===this)cerrarDatosPersonalesModal()">
   <div class="modal-box" style="max-width:640px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div class="modal-title" id="datos-personales-modal-titulo" style="margin:0">Datos Personales y Personas de Referencia</div>
-      <button class="btn-secondary btn-sm" onclick="cerrarDatosPersonalesModal()">✕ Cerrar</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-secondary btn-sm" onclick="verPreviaDatosPersonales()">👁 Vista previa</button>
+        <button class="btn-secondary btn-sm" onclick="descargarDatosPersonales()">⬇ Descargar</button>
+        <button class="btn-secondary btn-sm" onclick="cerrarDatosPersonalesModal()">✕ Cerrar</button>
+      </div>
     </div>
     <div id="datos-personales-modal-contenido" style="max-height:70vh;overflow-y:auto"></div>
   </div>
@@ -7395,6 +7400,34 @@ function abrirDatosPersonalesModal(usuarioId){
 }
 function cerrarDatosPersonalesModal(){
   document.getElementById('modal-datos-personales').classList.add('hidden');
+}
+// Construye un documento sencillo con los Datos Personales y Personas de Referencia del usuario
+// que esté abierto en el modal, para poder verlo o descargarlo como si fuera un documento aparte.
+function htmlDatosPersonalesParaDocumento(){
+  var u = _expActual;
+  var p = u.exp.personales;
+  var h = '<h2>Datos Personales y Personas de Referencia</h2>';
+  h += '<p><strong>Usuario:</strong> '+esc(u.nombre+' '+u.apellidos)+'</p>';
+  h += '<p><strong>Domicilio:</strong> '+esc(p.domicilio||'-')+'</p>';
+  h += '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">';
+  h += '<tr style="background:#e5e7eb;font-weight:bold"><td>Nombre y Apellidos</td><td>Parentesco</td><td>Tutor/Representante</td><td>Teléfonos</td></tr>';
+  (p.personas||[]).forEach(function(persona){
+    var tutor = persona.noProcedeTutor ? 'No procede' : (persona.tutorRepresentante||'-');
+    var telefonos = (persona.telefonos||[]).filter(function(t){return t;}).join(', ') || '-';
+    h += '<tr><td>'+esc(persona.nombreApellidos||'-')+'</td><td>'+esc(persona.parentesco||'-')+'</td><td>'+esc(tutor)+'</td><td>'+esc(telefonos)+'</td></tr>';
+  });
+  h += '</table>';
+  return h;
+}
+function verPreviaDatosPersonales(){
+  var ventana = window.open('', '_blank');
+  if(!ventana){ mostrarAviso('El navegador ha bloqueado la ventana de vista previa. Permite las ventanas emergentes.'); return; }
+  ventana.document.write('<html><head><title>Datos Personales</title><style>body{font-family:Georgia,serif;padding:40px;font-size:15px;line-height:1.7}table{border-collapse:collapse;width:100%}td,th{border:1px solid #333;padding:4px 8px}</style></head><body>'+htmlDatosPersonalesParaDocumento()+'</body></html>');
+  ventana.document.close();
+}
+function descargarDatosPersonales(){
+  var u = _expActual;
+  descargarComoDocx(htmlDatosPersonalesParaDocumento(), 'Datos Personales '+u.nombre+' '+u.apellidos, {apaisado:false});
 }
 
 var _editandoTabExp = false;
