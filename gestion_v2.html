@@ -7147,21 +7147,21 @@ function archivoSlotSeleccionado(evento){
 }
 var PALABRAS_CLAVE_TAB_ORDEN = ['datos_identificacion','ingresobaja','identificacion','personales','discapacidad','docs_sujeciones','docs_programa','docs_informes','docs_medicacion','docs_autorizaciones','docs_ingreso','opinion','justificacion_ausencias','covid','evaluacion_inicial'];
 var PALABRAS_CLAVE_TAB = {
-  identificacion: ['IDENTIFICACION'],
+  identificacion: ['EXPEDIENTE','IDENTIFICACION'],
   ingresobaja: ['INGRESO BAJA','INGRESOBAJA','INGRESO-BAJA','PLAZA BAJA','PLAZA-BAJA'],
   personales: ['PERSONALES','REFERENCIA'],
   discapacidad: ['DISCAPACIDAD'],
-  docs_ingreso: ['DOCUMENTACION ENTREGADA','INGRESO'],
+  docs_ingreso: ['DOC ENTREGADA','DOCUMENTACION ENTREGADA','ENTREGADA'],
   datos_identificacion: ['DATOS IDENTIFICACION'],
   docs_sujeciones: ['DISPOSITIVO','POSTURAL','SUJECION'],
   docs_programa: ['PROGRAMA'],
-  docs_informes: ['INFORME'],
+  docs_informes: ['INF MEDICO','INFORME MEDICO','INFORME'],
   docs_medicacion: ['MEDICACION'],
   docs_autorizaciones: ['AUTORIZACION'],
   opinion: ['OPINION'],
-  justificacion_ausencias: ['JUSTIFICACION','AUSENCIA'],
+  justificacion_ausencias: ['JUST AUSENCIA','JUSTIFICACION','AUSENCIA'],
   covid: ['COVID'],
-  evaluacion_inicial: ['EVALUACION INICIAL','EVALUACION']
+  evaluacion_inicial: ['EVAL INICIAL','EVALUACION INICIAL','EVALUACION']
 };
 function normalizarTextoCategoria(t){
   return (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()
