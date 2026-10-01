@@ -527,7 +527,7 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
         </div>
         <button class="btn-secondary" onclick="verCarpetaRegistrosUsuario()">📁 Carpeta de Registros</button>
         <button class="btn-secondary" onclick="verCarpetaGeneralExpedienteUsuario()">🔗 Ver en Drive</button>
-        <button class="btn-secondary" onclick="mostrarAviso('Descargando expediente completo en PDF (simulado)...')">⬇ Descargar expediente completo</button>
+        <button class="btn-secondary" onclick="descargarExpedienteCompleto()">⬇ Descargar expediente completo</button>
         <button class="btn-danger" id="btn-dar-de-baja" onclick="darDeBajaUsuarioActual()">🚫 Dar de baja</button>
       </div>
       <div class="tabs-bar" id="exp-tabs"></div>
@@ -7490,6 +7490,24 @@ function cerrarDatosPersonalesModal(){
 }
 // Construye un documento sencillo con los Datos Personales y Personas de Referencia del usuario
 // que esté abierto en el modal, para poder verlo o descargarlo como si fuera un documento aparte.
+// Genera un documento resumen con los datos de identificación y las personas de referencia del
+// usuario — es la "ficha" que se descarga como expediente completo.
+function htmlExpedienteCompleto(){
+  var u = _expActual;
+  var ident = u.exp.identificacion || {};
+  var h = '<h2>Expediente — '+esc(u.nombre+' '+u.apellidos)+'</h2>';
+  h += '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;margin-bottom:20px">';
+  h += '<tr style="background:#e5e7eb;font-weight:bold"><td>Nombre</td><td>'+esc(ident.nombre||u.nombre||'-')+'</td><td>Apellidos</td><td>'+esc(ident.apellidos||u.apellidos||'-')+'</td></tr>';
+  h += '<tr><td style="font-weight:bold">DNI</td><td>'+esc(ident.dni||'-')+'</td><td style="font-weight:bold">Nº Seg. Social</td><td>'+esc(ident.ss||'-')+'</td></tr>';
+  h += '<tr><td style="font-weight:bold">Lugar Nacimiento</td><td>'+esc(ident.lugarNac||'-')+'</td><td style="font-weight:bold">Fecha Nacimiento</td><td>'+esc(ident.fechaNac||'-')+'</td></tr>';
+  h += '</table>';
+  h += htmlDatosPersonalesParaDocumento();
+  return h;
+}
+function descargarExpedienteCompleto(){
+  var u = _expActual;
+  descargarComoDocx(htmlExpedienteCompleto(), 'Expediente '+u.nombre+' '+u.apellidos, {apaisado:false});
+}
 function htmlDatosPersonalesParaDocumento(){
   var u = _expActual;
   var p = u.exp.personales;
