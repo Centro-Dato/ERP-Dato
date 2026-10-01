@@ -56,6 +56,11 @@ button{font-family:inherit}
 .sb-user{padding:18px 18px;border-top:1px solid rgba(255,255,255,.12)}
 .sb-user-row{display:flex;align-items:center;gap:13px;margin-bottom:13px}
 .sb-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
+.panel-aviso-lateral{position:fixed;left:16px;bottom:16px;width:280px;background:#fffbeb;border:2px solid #f59e0b;border-radius:14px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.25);z-index:250}
+.panel-aviso-cerrar{position:absolute;top:8px;right:10px;background:none;border:none;font-size:15px;cursor:pointer;color:#92400e}
+.panel-aviso-titulo{font-weight:800;color:#92400e;font-size:14px;margin-bottom:6px;padding-right:18px}
+.panel-aviso-mensaje{font-size:12.5px;color:#78350f;line-height:1.5}
+@media(max-width:900px){.panel-aviso-lateral{left:10px;right:10px;bottom:10px;width:auto}}
 .menu-avatar{position:absolute;bottom:54px;left:0;background:#fff;border:2px solid #14141a;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.3);z-index:300;overflow:hidden;min-width:160px}
 .menu-avatar button{display:block;width:100%;background:none;border:none;color:#14141a;font-size:14px;font-weight:700;padding:12px 16px;text-align:left;cursor:pointer}
 .menu-avatar button:hover{background:#f1f5f9}
@@ -412,15 +417,11 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
     </div>
 
-    <div id="modal-aviso-mensual" class="modal-overlay hidden" onclick="if(event.target===this)cerrarAvisoMensualMasTarde()">
-      <div class="modal-box" style="max-width:420px">
-        <div class="modal-title" id="aviso-mensual-titulo">Aviso</div>
-        <div class="modal-sub" id="aviso-mensual-mensaje">Mensaje</div>
-        <div class="modal-actions">
-          <button class="btn-secondary" onclick="cerrarAvisoMensualMasTarde()">Recuérdamelo luego</button>
-          <button class="btn-primary" onclick="marcarAvisoMensualHecho()">✓ Ya lo he hecho este mes</button>
-        </div>
-      </div>
+    <div id="panel-aviso-mensual" class="panel-aviso-lateral hidden">
+      <button class="panel-aviso-cerrar" onclick="cerrarAvisoMensualMasTarde()" title="Cerrar">✕</button>
+      <div class="panel-aviso-titulo" id="aviso-mensual-titulo">Aviso</div>
+      <div class="panel-aviso-mensaje" id="aviso-mensual-mensaje">Mensaje</div>
+      <button class="btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="marcarAvisoMensualHecho()">✓ Ya lo he hecho este mes</button>
     </div>
 
     <div id="modal-editar-agenda" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalEditarAgenda()">
@@ -6260,18 +6261,24 @@ function comprobarAvisosMensuales(){
   }
 }
 function mostrarAvisoMensual(tipo, titulo, mensaje){
+  // Si el aviso se cerró "por hoy" hace menos de 3 días, no se vuelve a mostrar hasta que pasen
+  // — así no resulta molesto, pero tampoco se olvida durante mucho tiempo.
+  var clave = 'aviso_oculto_'+tipo;
+  var ocultoDesde = localStorage.getItem(clave);
+  if(ocultoDesde && (Date.now()-Number(ocultoDesde)) < 3*24*60*60*1000) return;
   _avisoMensualTipoActual = tipo;
   document.getElementById('aviso-mensual-titulo').textContent = titulo;
   document.getElementById('aviso-mensual-mensaje').textContent = mensaje;
-  document.getElementById('modal-aviso-mensual').classList.remove('hidden');
+  document.getElementById('panel-aviso-mensual').classList.remove('hidden');
 }
 function cerrarAvisoMensualMasTarde(){
-  document.getElementById('modal-aviso-mensual').classList.add('hidden');
+  if(_avisoMensualTipoActual) localStorage.setItem('aviso_oculto_'+_avisoMensualTipoActual, String(Date.now()));
+  document.getElementById('panel-aviso-mensual').classList.add('hidden');
 }
 function marcarAvisoMensualHecho(){
   var clave = (_avisoMensualTipoActual==='seguimiento' ? 'aviso_seg_' : 'aviso_ocio_') + claveMesActual();
   localStorage.setItem(clave, 'hecho');
-  document.getElementById('modal-aviso-mensual').classList.add('hidden');
+  document.getElementById('panel-aviso-mensual').classList.add('hidden');
   mostrarAviso('Marcado como hecho este mes. Gracias.', '✅');
 }
 function mostrarErrorLogin(msg){
