@@ -6951,17 +6951,26 @@ function verCarpetaGeneralExpedienteUsuario(){
   abrirCarpetaArchivosPopup(carpetaId, 'Carpeta de '+_expActual.nombre+' '+_expActual.apellidos);
 }
 function abrirCarpetaRegistrosIndividualUsuario(userId, nombreCompleto){
-  var carpetaPadre = CARPETAS_USUARIOS[userId];
-  if(!carpetaPadre){ mostrarAviso('Esta persona todavía no tiene carpeta individual conectada.'); return; }
   mostrarAviso('Abriendo…', '⏳');
+  // Registros Digitales → Registros Individuales → [nombre del usuario] — una subcarpeta
+  // compartida con una carpeta propia por persona, en vez de depender de la carpeta individual
+  // de cada usuario en Usuarios y Familias.
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: carpetaPadre, nombreSubcarpeta: 'Registros'})
+    body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: CARPETA_REGISTROS_DIGITALES_ID, nombreSubcarpeta: 'Registros Individuales'})
   }).then(function(r){ return r.json(); })
     .then(function(data){
       if(!data || !data.ok){ mostrarAviso('No se pudo abrir: '+((data&&data.error)||'error_desconocido'), '⚠️'); return; }
+      return fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: data.carpetaId, nombreSubcarpeta: nombreCompleto})
+      }).then(function(r2){ return r2.json(); });
+    })
+    .then(function(data2){
+      if(!data2){ return; }
+      if(!data2.ok){ mostrarAviso('No se pudo abrir: '+((data2&&data2.error)||'error_desconocido'), '⚠️'); return; }
       cerrarAviso();
-      abrirCarpetaArchivosPopup(data.carpetaId, 'Registros de '+nombreCompleto);
+      abrirCarpetaArchivosPopup(data2.carpetaId, 'Registros de '+nombreCompleto);
     })
     .catch(function(err){ mostrarAviso('No se pudo abrir: '+err, '⚠️'); });
 }
