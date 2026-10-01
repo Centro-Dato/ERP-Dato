@@ -56,11 +56,11 @@ button{font-family:inherit}
 .sb-user{padding:18px 18px;border-top:1px solid rgba(255,255,255,.12)}
 .sb-user-row{display:flex;align-items:center;gap:13px;margin-bottom:13px}
 .sb-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
-.panel-aviso-lateral{position:fixed;left:266px;bottom:16px;width:280px;background:#fffbeb;border:2px solid #f59e0b;border-radius:14px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.25);z-index:250}
+.panel-aviso-lateral{margin:16px 18px;background:#fffbeb;border:2px solid #f59e0b;border-radius:14px;padding:14px}
 .panel-aviso-cerrar{position:absolute;top:8px;right:10px;background:none;border:none;font-size:15px;cursor:pointer;color:#92400e}
-.panel-aviso-titulo{font-weight:800;color:#92400e;font-size:14px;margin-bottom:6px;padding-right:18px}
+.panel-aviso-titulo{font-weight:800;color:#92400e;font-size:14px;margin-bottom:6px}
 .panel-aviso-mensaje{font-size:12.5px;color:#78350f;line-height:1.5}
-@media(max-width:900px){.panel-aviso-lateral{left:10px;right:10px;bottom:10px;width:auto}}
+
 .menu-avatar{position:absolute;bottom:54px;left:0;background:#fff;border:2px solid #14141a;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.3);z-index:300;overflow:hidden;min-width:160px}
 .menu-avatar button{display:block;width:100%;background:none;border:none;color:#14141a;font-size:14px;font-weight:700;padding:12px 16px;text-align:left;cursor:pointer}
 .menu-avatar button:hover{background:#f1f5f9}
@@ -325,6 +325,11 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       <div class="sb-nav-item" id="nav-config" onclick="navTo('config');cerrarMenuMovil()"><span class="sb-nav-ic">⚙️</span> Configuración</div>
       <div class="sb-nav-item" id="nav-buzon" onclick="abrirModalNuevoMensajeBuzon();cerrarMenuMovil()"><span class="sb-nav-ic">📬</span> Buzón de Sugerencias</div>
     </div>
+    <div id="panel-aviso-mensual" class="panel-aviso-lateral hidden">
+      <div class="panel-aviso-titulo" id="aviso-mensual-titulo">Aviso</div>
+      <div class="panel-aviso-mensaje" id="aviso-mensual-mensaje">Mensaje</div>
+      <button class="btn-actualizar-app" style="margin-top:10px" onclick="irDirectoARegistroAvisoMensual()">📔 Mensual</button>
+    </div>
     <div class="sb-user">
       <div class="sb-user-row" style="position:relative">
         <div class="sb-avatar" id="sb-av" onclick="toggleMenuAvatar()" style="cursor:pointer">C</div>
@@ -417,10 +422,6 @@ td{padding:16px 22px;vertical-align:middle;color:#475569;font-size:14px}
       </div>
     </div>
 
-    <div id="panel-aviso-mensual" class="panel-aviso-lateral hidden">
-      <div class="panel-aviso-titulo" id="aviso-mensual-titulo">Aviso</div>
-      <div class="panel-aviso-mensaje" id="aviso-mensual-mensaje">Mensaje</div>
-    </div>
 
     <div id="modal-editar-agenda" class="modal-overlay hidden" onclick="if(event.target===this)cerrarModalEditarAgenda()">
       <div class="modal-box" style="max-width:480px">
@@ -4443,14 +4444,33 @@ function guardarDiarioMensual(){
   }).then(function(r){ return r.json(); })
     .then(function(data){
       if(!data || !data.ok){ mostrarAviso('No se pudo guardar: '+((data&&data.error)||'error'), '⚠️'); return; }
-      guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, 'General', headersGeneral, [fechaBonita, alumno, area, comentario], '#f2994a', function(err){
-        if(err){ mostrarAviso('No se pudo guardar: '+err, '⚠️'); return; }
-        guardarFilaViaAppsScript(data.carpetaId, nombreArchivo, alumno, headersIndividual, [fechaBonita, area, comentario], '#f2994a', function(err2){
-          mostrarAviso(err2 ? ('Guardado en general, pero no en la pestaña individual: '+err2) : 'Mensual guardado correctamente.', err2 ? '⚠️' : '✅');
-        });
-      });
+      // Una sola petición para las dos filas (General + individual), en vez de dos seguidas —
+      // así tarda bastante menos.
+      var escrituras = [
+        {pestana:'General', cabecera:headersGeneral, fila:[fechaBonita, alumno, area, comentario]},
+        {pestana:alumno, cabecera:headersIndividual, fila:[fechaBonita, area, comentario]}
+      ];
+      return fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({accion:'guardarFilasEnLote', carpetaId: data.carpetaId, nombreArchivo: nombreArchivo, color:'#f2994a', escrituras: escrituras})
+      }).then(function(r2){ return r2.json(); });
+    })
+    .then(function(data2){
+      if(!data2){ return; }
+      if(!data2.ok){ mostrarAviso('No se pudo guardar: '+((data2&&data2.error)||'error'), '⚠️'); return; }
+      cerrarAviso();
+      document.getElementById('modal-confirmacion-titulo').textContent = '✓ Mensual guardado';
+      document.querySelector('#modal-confirmacion-registro .btn-primary').setAttribute('onclick', 'otroDiarioMensualIgual()');
+      document.querySelector('#modal-confirmacion-registro .btn-secondary').setAttribute('onclick', 'document.getElementById(\'modal-confirmacion-registro\').classList.add(\'hidden\');volverDeFormRegistro()');
+      document.getElementById('modal-confirmacion-registro').classList.remove('hidden');
     })
     .catch(function(err3){ mostrarAviso('No se pudo guardar: '+err3, '⚠️'); });
+}
+function otroDiarioMensualIgual(){
+  document.getElementById('modal-confirmacion-registro').classList.add('hidden');
+  document.getElementById('diario-alumno').selectedIndex = 0;
+  document.getElementById('diario-comentario').value = '';
+  document.getElementById('diario-comentario').focus();
 }
 
 var TABS = [
@@ -6274,11 +6294,15 @@ function diasLaborablesRestantesDelAviso(hoy, n){
   }
   return '0 días';
 }
+function irDirectoARegistroAvisoMensual(){
+  cerrarMenuMovil();
+  abrirRegistroDiarioMensual();
+}
 function comprobarAvisosMensuales(){
   var hoy = new Date();
   var claveMes = claveMesActual();
   if(PERMISOS_ACTUAL.avisoSeguimientoMensual && esUnoDeLosPrimerosDiasLaborables(hoy, 3)){
-    mostrarAvisoMensual('seguimiento', '📔 Diario Mensual de Seguimiento', 'Quedan '+diasLaborablesRestantesDelAviso(hoy,3)+' de los 3 primeros días laborables del mes para rellenar el Diario Mensual de Seguimiento de quien corresponda.');
+    mostrarAvisoMensual('seguimiento', '📔 Recordatorio', 'Rellena Mensual de las Actividades.');
     return; // no se muestran los dos avisos a la vez
   }
   if(PERMISOS_ACTUAL.avisoEvaluacionOcio && localStorage.getItem('aviso_ocio_'+claveMes)!=='hecho'){
