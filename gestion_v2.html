@@ -2644,6 +2644,32 @@ function guardarCambiosEditarRegistros(){
     mostrarAviso('Cambios guardados en "General" de '+d.tipo.titulo+'.', '✅');
   }, d.carpetaOrigen);
 }
+// Carpeta compartida "Registros Individuales" dentro de Registros Digitales — se busca/crea una
+// sola vez por sesión y se guarda en caché, para no repetir la búsqueda en cada guardado.
+var _carpetaRegistrosIndividualesCache = null;
+function obtenerCarpetaRegistrosIndividuales(callback){
+  if(_carpetaRegistrosIndividualesCache){ callback(_carpetaRegistrosIndividualesCache); return; }
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: CARPETA_REGISTROS_DIGITALES_ID, nombreSubcarpeta: 'Registros Individuales'})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok) return;
+      _carpetaRegistrosIndividualesCache = data.carpetaId;
+      callback(data.carpetaId);
+    })
+    .catch(function(){});
+}
+// Guarda, en segundo plano (sin bloquear ni avisar si falla), una copia de la fila en el archivo
+// individual de ese usuario dentro de Registros Individuales — un archivo por usuario, con una
+// pestaña por tipo de registro (Actividades, Higiene, Mensual...).
+function guardarCopiaEnArchivoIndividualUsuario(nombreUsuario, nombreRegistro, cabecera, fila){
+  obtenerCarpetaRegistrosIndividuales(function(carpetaId){
+    if(!carpetaId) return;
+    var nombreArchivo = nombreUsuario+' '+CURSO_REGISTROS_ACTUAL();
+    guardarFilaViaAppsScript(carpetaId, nombreArchivo, nombreRegistro, cabecera, fila, '#2563EB', function(){});
+  });
+}
 function guardarRegistroEnDriveReal(tipo, datos, callback){
   var nombreArchivo = (tipo.archivoNombre||tipo.titulo)+' '+CURSO_REGISTROS_ACTUAL();
   var color = '#'+(REGISTRO_COLOR[tipo.id] || '2563EB');
@@ -2660,6 +2686,11 @@ function guardarRegistroEnDriveReal(tipo, datos, callback){
   function unaMenos(err){ if(err) huboError = err; pendientes--; if(pendientes<=0) callback(huboError); }
   tareas.forEach(function(t){
     guardarFilaViaAppsScript(carpetaDestino, nombreArchivo, t.pestana, t.cabecera, t.valores, color, unaMenos);
+  });
+  // Además, en segundo plano, una copia en el archivo individual de cada usuario mencionado,
+  // en su propia pestaña con el nombre de este tipo de registro.
+  datos.filas.forEach(function(f){
+    if(f.usuario) guardarCopiaEnArchivoIndividualUsuario(f.usuario, tipo.titulo, datos.headersIndividual, f.valores);
   });
 }
 
@@ -4457,6 +4488,7 @@ function guardarDiarioMensual(){
         {pestana:'General', cabecera:headersGeneral, fila:[fechaBonita, alumno, area, comentario]},
         {pestana:alumno, cabecera:headersIndividual, fila:[fechaBonita, area, comentario]}
       ];
+      guardarCopiaEnArchivoIndividualUsuario(alumno, 'Mensual', headersIndividual, [fechaBonita, area, comentario]);
       return fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({accion:'guardarFilasEnLote', carpetaId: data.carpetaId, nombreArchivo: nombreArchivo, color:'#f2994a', escrituras: escrituras})
@@ -7022,27 +7054,23 @@ function verCarpetaGeneralExpedienteUsuario(){
 }
 function abrirCarpetaRegistrosIndividualUsuario(userId, nombreCompleto){
   mostrarAviso('Abriendo…', '⏳');
-  // Registros Digitales → Registros Individuales → [nombre del usuario] — una subcarpeta
-  // compartida con una carpeta propia por persona, en vez de depender de la carpeta individual
-  // de cada usuario en Usuarios y Familias.
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: CARPETA_REGISTROS_DIGITALES_ID, nombreSubcarpeta: 'Registros Individuales'})
-  }).then(function(r){ return r.json(); })
-    .then(function(data){
-      if(!data || !data.ok){ mostrarAviso('No se pudo abrir: '+((data&&data.error)||'error_desconocido'), '⚠️'); return; }
-      return fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({accion:'buscarOCrearSubcarpeta', carpetaPadreId: data.carpetaId, nombreSubcarpeta: nombreCompleto})
-      }).then(function(r2){ return r2.json(); });
-    })
-    .then(function(data2){
-      if(!data2){ return; }
-      if(!data2.ok){ mostrarAviso('No se pudo abrir: '+((data2&&data2.error)||'error_desconocido'), '⚠️'); return; }
+  // Registros Digitales → Registros Individuales → [archivo con el nombre del usuario], con una
+  // pestaña por tipo de registro (Actividades, Higiene, Mensual...). Si todavía no tiene ningún
+  // registro guardado, el archivo no existirá hasta la primera vez que se le mencione en uno.
+  var nombreArchivoBuscado = nombreCompleto+' '+CURSO_REGISTROS_ACTUAL();
+  obtenerCarpetaRegistrosIndividuales(function(carpetaId){
+    if(!carpetaId){ mostrarAviso('No se pudo abrir la carpeta de Registros Individuales.', '⚠️'); return; }
+    listarHijosDeCarpeta(carpetaId, function(archivos, err){
       cerrarAviso();
-      abrirCarpetaArchivosPopup(data2.carpetaId, 'Registros de '+nombreCompleto);
-    })
-    .catch(function(err){ mostrarAviso('No se pudo abrir: '+err, '⚠️'); });
+      if(err){ mostrarAviso('No se pudo leer la carpeta: '+err, '⚠️'); return; }
+      var archivo = (archivos||[]).filter(function(a){ return a.name===nombreArchivoBuscado; })[0];
+      if(!archivo){
+        mostrarAviso('Todavía no hay ningún registro guardado de '+nombreCompleto+' este curso. En cuanto se guarde el primero, el archivo se creará solo.', 'ℹ️');
+        return;
+      }
+      abrirPreviewDrive(archivo.id, nombreArchivoBuscado);
+    });
+  });
 }
 // Igual que verCarpetaRegistrosUsuario, pero llamado desde la fila de la tabla de Usuarios (sin
 // tener que entrar antes al Expediente).
