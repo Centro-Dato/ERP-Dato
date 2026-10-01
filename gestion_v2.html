@@ -6244,10 +6244,25 @@ function primerLunesDelMes(anio, mesIndex){
   return d;
 }
 var _avisoMensualTipoActual = null;
+// Devuelve true si "hoy" es uno de los primeros N días laborables (de lunes a viernes) del mes.
+function esUnoDeLosPrimerosDiasLaborables(hoy, n){
+  if(hoy.getDay()===0 || hoy.getDay()===6) return false; // hoy mismo es findesemana
+  var d = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  var contados = 0;
+  while(true){
+    if(d.getDay()!==0 && d.getDay()!==6){
+      contados++;
+      if(d.toDateString()===hoy.toDateString()) return contados<=n;
+      if(contados>=n) return false; // ya pasamos los N días laborables y hoy no estaba entre ellos
+    }
+    if(d.getTime()>hoy.getTime()) return false;
+    d.setDate(d.getDate()+1);
+  }
+}
 function comprobarAvisosMensuales(){
   var hoy = new Date();
   var claveMes = claveMesActual();
-  if(PERMISOS_ACTUAL.avisoSeguimientoMensual && localStorage.getItem('aviso_seg_'+claveMes)!=='hecho'){
+  if(PERMISOS_ACTUAL.avisoSeguimientoMensual && localStorage.getItem('aviso_seg_'+claveMes)!=='hecho' && esUnoDeLosPrimerosDiasLaborables(hoy, 3)){
     mostrarAvisoMensual('seguimiento', '📔 Diario Mensual de Seguimiento', 'Todavía no has marcado como hecho el Diario Mensual de Seguimiento de este mes. En cuanto esté montado el registro, podrás rellenarlo desde aquí.');
     return; // no se muestran los dos avisos a la vez
   }
@@ -6261,18 +6276,17 @@ function comprobarAvisosMensuales(){
   }
 }
 function mostrarAvisoMensual(tipo, titulo, mensaje){
-  // Si el aviso se cerró "por hoy" hace menos de 3 días, no se vuelve a mostrar hasta que pasen
-  // — así no resulta molesto, pero tampoco se olvida durante mucho tiempo.
-  var clave = 'aviso_oculto_'+tipo;
-  var ocultoDesde = localStorage.getItem(clave);
-  if(ocultoDesde && (Date.now()-Number(ocultoDesde)) < 3*24*60*60*1000) return;
+  // Si ya se cerró el aviso HOY, no se vuelve a mostrar hasta mañana (el propio aviso ya solo
+  // aparece dentro de los primeros 3 días laborables del mes, así que no hace falta nada más).
+  var hoyTexto = new Date().toDateString();
+  if(localStorage.getItem('aviso_oculto_'+tipo)===hoyTexto) return;
   _avisoMensualTipoActual = tipo;
   document.getElementById('aviso-mensual-titulo').textContent = titulo;
   document.getElementById('aviso-mensual-mensaje').textContent = mensaje;
   document.getElementById('panel-aviso-mensual').classList.remove('hidden');
 }
 function cerrarAvisoMensualMasTarde(){
-  if(_avisoMensualTipoActual) localStorage.setItem('aviso_oculto_'+_avisoMensualTipoActual, String(Date.now()));
+  if(_avisoMensualTipoActual) localStorage.setItem('aviso_oculto_'+_avisoMensualTipoActual, new Date().toDateString());
   document.getElementById('panel-aviso-mensual').classList.add('hidden');
 }
 function marcarAvisoMensualHecho(){
