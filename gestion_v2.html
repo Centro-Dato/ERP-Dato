@@ -6550,6 +6550,8 @@ document.getElementById('btn-logout').onclick = function(){
 
 /* ===================== NAVEGACIÓN ===================== */
 function navTo(view){
+  var panelAviso = document.getElementById('panel-aviso-mensual');
+  if(panelAviso) panelAviso.classList.remove('expandido-movil');
   ['inicio','usuarios','registros','config'].forEach(function(v){
     var el = document.getElementById('nav-'+v);
     if(el) el.classList.toggle('active', v===view);
