@@ -1316,6 +1316,22 @@ function nombreAbreviado(u){
 // A partir del "Nombre Apellidos" completo (tal como se guarda de verdad), busca al usuario
 // correspondiente y devuelve su forma abreviada para mostrar. Si no lo encuentra (por ejemplo,
 // una fila añadida a mano en Ocio que no es un usuario real), devuelve el texto tal cual.
+// Devuelve el "Nombre Apellidos" exacto de la ficha del usuario aunque el texto venga escrito
+// algo distinto (apellidos cambiados de orden o uno distinto). Si no hay un único candidato
+// claro, devuelve el texto tal cual.
+function resolverNombreUsuarioReal(texto){
+  var t = (texto||'').trim();
+  if(USUARIOS.some(function(x){ return (x.nombre+' '+x.apellidos)===t; })) return t;
+  var palabras = t.toLowerCase().split(/\s+/);
+  var cand = USUARIOS.filter(function(x){
+    var nom = x.nombre.toLowerCase().split(/\s+/);
+    if(nom.some(function(p, i){ return palabras[i]!==p; })) return false;
+    var resto = palabras.slice(nom.length);
+    var aps = x.apellidos.toLowerCase().split(/\s+/);
+    return resto.some(function(p){ return aps.indexOf(p)>-1; });
+  });
+  return cand.length===1 ? (cand[0].nombre+' '+cand[0].apellidos) : t;
+}
 function abreviarNombreCompleto(nombreCompleto){
   var u = USUARIOS.filter(function(x){ return (x.nombre+' '+x.apellidos)===nombreCompleto; })[0];
   return u ? nombreAbreviado(u) : nombreCompleto;
@@ -2192,6 +2208,9 @@ function recogerValoresFormulario(tipo){
       var marcados = [];
       document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
       if(tipo.id==='medicacion' && campo.k==='cronica'){
+        // Si en la lista de opciones el nombre está escrito distinto a la ficha del usuario,
+        // se usa siempre el nombre de la ficha (así no se crean archivos/pestañas con otro nombre).
+        marcados = marcados.map(resolverNombreUsuarioReal);
         usuariosMencionadosMedicacion = (usuariosMencionadosMedicacion||[]).concat(marcados);
         medCronicaUsuarios = marcados.slice();
       }
