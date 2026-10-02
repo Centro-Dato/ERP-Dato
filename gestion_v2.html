@@ -4417,7 +4417,12 @@ function guardarRegistroPaap(){
     var fila = [fechaBonita, nombre, '', '', '', ''];
     fila[REGISTROS_PAAP_HEADERS.indexOf(seccion.columna)] = 'Entregado: '+fechaBonita;
     escrituras.push({pestana: 'General', cabecera: REGISTROS_PAAP_HEADERS, fila: fila});
-    escrituras.push({pestana: nombre, cabecera: headersIndividual, fila: fila.slice(1)});
+    // Pestaña individual: Fecha + las 4 columnas de PAAP (sin el nombre, que ya es la pestaña).
+    var filaIndividual = [fechaBonita].concat(fila.slice(2));
+    escrituras.push({pestana: nombre, cabecera: headersIndividual, fila: filaIndividual});
+    // Copia en segundo plano en el archivo individual del usuario (Registros Individuales), en
+    // su pestaña "R. PAAP" — igual que hacen el resto de registros.
+    guardarCopiaEnArchivoIndividualUsuario(nombre, 'R. PAAP', headersIndividual, filaIndividual);
   });
   mostrarAviso('Guardando '+nombres.length+' alumno'+(nombres.length>1?'s':'')+'…', '⏳');
   fetch(APPS_SCRIPT_URL, {
