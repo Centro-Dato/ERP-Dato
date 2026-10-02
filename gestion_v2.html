@@ -2173,6 +2173,10 @@ function recogerValoresFormulario(tipo){
   // Solo para R. Medicación: no tiene un campo "usuario" normal, así que las pestañas
   // individuales se deciden juntando a quién aparece marcado en "crónica" y en "temporal".
   var usuariosMencionadosMedicacion = null;
+  // Detalle por usuario de R. Medicación, para que cada pestaña/archivo individual muestre solo
+  // lo suyo (y no la lista entera de todos los usuarios).
+  var medCronicaUsuarios = [];
+  var medTemporalPorUsuario = {};
   // Los campos "seccion" son solo encabezados visuales dentro del formulario: no representan
   // datos, así que no cuentan ni como columna ni como valor a guardar.
   var camposReales = tipo.fields.filter(function(c){ return c.type!=='seccion'; });
@@ -2189,6 +2193,7 @@ function recogerValoresFormulario(tipo){
       document.querySelectorAll('#grupo_'+tipo.id+'_'+campo.k+' input[type=checkbox]:checked').forEach(function(chk){ marcados.push(chk.value); });
       if(tipo.id==='medicacion' && campo.k==='cronica'){
         usuariosMencionadosMedicacion = (usuariosMencionadosMedicacion||[]).concat(marcados);
+        medCronicaUsuarios = marcados.slice();
       }
       if(campo.abreviarNombresGuardado) marcados = marcados.map(function(n){ return abreviarNombreCompleto(n); });
       valorPorCampo[campo.k] = marcados.join(campo.listaVertical ? '\n' : ', ');
@@ -2238,6 +2243,7 @@ function recogerValoresFormulario(tipo){
           lineasMC.push(nombreMostrado+': '+marcadasFila.join(', '));
           if(tipo.id==='medicacion' && campo.k==='temporal'){
             usuariosMencionadosMedicacion = (usuariosMencionadosMedicacion||[]).concat([nombreCompletoFila]);
+            medTemporalPorUsuario[nombreCompletoFila] = marcadasFila.join(', ');
           }
         }
       });
@@ -2301,6 +2307,15 @@ function recogerValoresFormulario(tipo){
   if(usuarios.length>0){
     usuarios.forEach(function(nombreUsuario){
       var filaIndividual = columnasIndividual.map(function(c){
+        if(tipo.id==='medicacion'){
+          // Fila individual de Medicación: solo lo de este usuario.
+          if(c.campo.k==='cronica') return medCronicaUsuarios.indexOf(nombreUsuario)>-1 ? 'ADMINISTRADA' : '';
+          if(c.campo.k==='temporal') return medTemporalPorUsuario[nombreUsuario] || '';
+          if(c.campo.k==='medicacionEntregada'){
+            var recibe = (campoUsuarioKey ? (valorPorCampo[campoUsuarioKey]||[]) : []).indexOf(nombreUsuario)>-1;
+            if(!recibe) return '';
+          }
+        }
         return valorDeColumna(c, valorPorCampo, nombreUsuario, aspectosPorAlumno, campoUsuarioKey, usuarios);
       });
       filas.push({usuario: nombreUsuario, valores: filaIndividual});
